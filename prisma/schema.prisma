@@ -1,0 +1,456 @@
+// Surviver.lol — data model
+// See PRD section 39. Everything the competition scores from lives here.
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+// Prisma 7: the connection URL lives in prisma.config.ts for Migrate, and is
+// supplied to PrismaClient through the pg driver adapter in src/lib/db.ts.
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum Role {
+  FOUNDER
+  ADMIN
+}
+
+enum ProductCategory {
+  AI
+  DEV_TOOLS
+  PRODUCTIVITY
+  MARKETING
+  DESIGN
+  FOUNDER_TOOLS
+  AUTOMATION
+  NO_CODE
+  ANALYTICS
+  CREATOR
+}
+
+enum ApprovalStatus {
+  DRAFT
+  PENDING
+  APPROVED
+  REJECTED
+  CHANGES_REQUESTED
+}
+
+enum SeasonStatus {
+  DRAFT
+  REGISTRATION_OPEN
+  REGISTRATION_CLOSED
+  RUNNING
+  COMPLETED
+  CANCELLED
+}
+
+/// Lifecycle of one product's participation in one season.
+enum EntryStatus {
+  AWAITING_PAYMENT
+  AWAITING_APPROVAL
+  REJECTED
+  UPCOMING
+  ACTIVE
+  ELIMINATED
+  FINALIST
+  SURVIVOR
+  DISQUALIFIED
+  WITHDRAWN
+}
+
+enum RoundStatus {
+  PENDING
+  ACTIVE
+  FINALIZING
+  COMPLETED
+}
+
+/// Public-facing competitive standing within the active round.
+enum CompetitiveStatus {
+  COLLECTING_DATA
+  SAFE
+  RISING
+  DANGER
+  ELIMINATION_ZONE
+  ELIMINATED
+  FINALIST
+  SURVIVOR
+}
+
+/// How a visitor arrived. Drives Discovery vs Rally scoring separation (PRD section 13).
+enum SourceType {
+  DISCOVERY
+  RALLY
+  /// Rally traffic landing on the referring founder's own product. Tracked, never scored.
+  RALLY_SELF
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+  CANCELLED
+}
+
+// ---------------------------------------------------------------------------
+// Identity
+// ---------------------------------------------------------------------------
+
+model User {
+  id    String @id @default(cuid())
+  email String @unique
+  /// Null for founders who entered as a guest and never set a password.
+  /// Entering a season requires no account (see SeasonEntry.manageToken).
+  passwordHash String?
+  name         String
+  avatarUrl    String?
+  xHandle      String?
+  role         Role     @default(FOUNDER)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  products     Product[]
+  sessions     Session[]
+  payments     Payment[]
+  adminActions AdminAction[] @relation("AdminActor")
+
+  @@map("users")
+}
+
+/// Server-side session. The cookie carries only the opaque id.
+model Session {
+  id        String   @id
+  userId    String
+  expiresAt DateTime
+  userAgent String?
+  ipHash    String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+// ---------------------------------------------------------------------------
+// Catalogue
+// ---------------------------------------------------------------------------
+
+model Product {
+  id             String          @id @default(cuid())
+  ownerId        String
+  name           String
+  slug           String          @unique
+  url            String
+  tagline        String
+  description    String
+  logoUrl        String?
+  coverUrl       String?
+  category       ProductCategory
+  approvalStatus ApprovalStatus  @default(DRAFT)
+  reviewNote     String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  owner   User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  entries SeasonEntry[]
+
+  @@index([ownerId])
+  @@index([approvalStatus])
+  @@map("products")
+}
+
+// ---------------------------------------------------------------------------
+// Competition
+// ---------------------------------------------------------------------------
+
+model Season {
+  id                String       @id @default(cuid())
+  number            Int          @unique
+  name              String
+  status            SeasonStatus @default(DRAFT)
+  entryPriceCents   Int          @default(2900)
+  currency          String       @default("usd")
+  capacity          Int          @default(32)
+  registrationStart DateTime?
+  registrationEnd   DateTime?
+  seasonStart       DateTime?
+  seasonEnd         DateTime?
+
+  // --- Tunable competition rules (PRD 7, 11, 14: admin-configurable) ---
+  /// Minimum qualified impressions before a product gets a stable public rank.
+  minSampleImpressions Int   @default(250)
+  /// Default length of a normal round, in hours.
+  defaultRoundHours    Int   @default(24)
+  /// Length of the final round, in hours.
+  finalRoundHours      Int   @default(48)
+  /// Rally points required for one step of exposure bonus.
+  rallyPointsPerStep   Int   @default(10)
+  /// Exposure weight added per step, as a fraction.
+  rallyBonusPerStep    Float @default(0.02)
+  /// Hard ceiling on total Rally-derived exposure advantage (PRD 14: 10-20%).
+  rallyBonusCap        Float @default(0.15)
+  /// Seconds before the same visitor can generate another scoring impression for a product.
+  impressionDedupSec   Int   @default(1800)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  entries  SeasonEntry[]
+  rounds   Round[]
+  payments Payment[]
+
+  @@map("seasons")
+}
+
+model SeasonEntry {
+  id        String      @id @default(cuid())
+  seasonId  String
+  productId String
+  status    EntryStatus @default(AWAITING_PAYMENT)
+
+  /// Short public code powering /rally/<code> (PRD section 13).
+  rallyCode String @unique
+
+  /// Secret capability link that lets a founder manage this entry without an
+  /// account. Long and random, never guessable, never listed anywhere public.
+  manageToken String? @unique
+
+  finalRank         Int?
+  eliminatedRoundId String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  season          Season  @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  product         Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  eliminatedRound Round?  @relation("EliminatedIn", fields: [eliminatedRoundId], references: [id])
+
+  payment          Payment?
+  roundStats       ProductRoundStats[]
+  impressionEvents ImpressionEvent[]
+  clickEvents      ClickEvent[]
+  rallyVisitors    RallyVisitor[]      @relation("ReferringEntry")
+  activityEvents   ActivityEvent[]
+
+  @@unique([seasonId, productId])
+  @@index([seasonId, status])
+  @@map("season_entries")
+}
+
+model Round {
+  id               String      @id @default(cuid())
+  seasonId         String
+  roundNumber      Int
+  name             String
+  startAt          DateTime
+  endAt            DateTime
+  eliminationCount Int
+  status           RoundStatus @default(PENDING)
+  /// Set when the round is finalized. Scoring is frozen from this instant.
+  finalizedAt      DateTime?
+  createdAt        DateTime    @default(now())
+
+  season           Season              @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  stats            ProductRoundStats[]
+  impressionEvents ImpressionEvent[]
+  clickEvents      ClickEvent[]
+  eliminatedHere   SeasonEntry[]       @relation("EliminatedIn")
+  activityEvents   ActivityEvent[]
+
+  @@unique([seasonId, roundNumber])
+  @@index([status])
+  @@map("rounds")
+}
+
+/// Per-round scoreboard row. Becomes immutable once the round is finalized.
+model ProductRoundStats {
+  id            String @id @default(cuid())
+  roundId       String
+  seasonEntryId String
+
+  qualifiedImpressions Int   @default(0)
+  verifiedVisits       Int   @default(0)
+  discoveryVisits      Int   @default(0)
+  rallyVisits          Int   @default(0)
+  interestRate         Float @default(0)
+  rallyPoints          Int   @default(0)
+  suspiciousEvents     Int   @default(0)
+
+  rank   Int?
+  status CompetitiveStatus @default(COLLECTING_DATA)
+  /// Rank at the previous snapshot, for movement indicators.
+  prevRank Int?
+
+  /// True once the round closed and these numbers were sealed.
+  finalized   Boolean   @default(false)
+  finalizedAt DateTime?
+  updatedAt   DateTime  @updatedAt
+
+  round Round       @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  entry SeasonEntry @relation(fields: [seasonEntryId], references: [id], onDelete: Cascade)
+
+  @@unique([roundId, seasonEntryId])
+  @@index([roundId, rank])
+  @@map("product_round_stats")
+}
+
+// ---------------------------------------------------------------------------
+// Event ingestion
+// ---------------------------------------------------------------------------
+
+model ImpressionEvent {
+  id            String     @id @default(cuid())
+  seasonEntryId String
+  roundId       String
+  visitorId     String
+  sessionId     String
+  sourceType    SourceType @default(DISCOVERY)
+  /// Milliseconds the card stayed at least 50% in viewport, clamped server-side.
+  dwellMs       Int        @default(0)
+  /// Counts toward qualified impressions. False when deduplicated or flagged.
+  qualified     Boolean    @default(true)
+  suspicious    Boolean    @default(false)
+  ipHash        String?
+  userAgent     String?
+  createdAt     DateTime   @default(now())
+
+  entry SeasonEntry @relation(fields: [seasonEntryId], references: [id], onDelete: Cascade)
+  round Round       @relation(fields: [roundId], references: [id], onDelete: Cascade)
+
+  @@index([roundId, seasonEntryId, visitorId, createdAt])
+  @@index([roundId, createdAt])
+  @@map("impression_events")
+}
+
+model ClickEvent {
+  id            String     @id @default(cuid())
+  seasonEntryId String
+  roundId       String
+  visitorId     String
+  sessionId     String
+  sourceType    SourceType @default(DISCOVERY)
+  /// One scoring visit per visitor per product per round (PRD section 9).
+  qualifiesForScore Boolean @default(true)
+  suspicious        Boolean @default(false)
+  ipHash            String?
+  userAgent         String?
+  referrer          String?
+  createdAt         DateTime @default(now())
+
+  entry SeasonEntry @relation(fields: [seasonEntryId], references: [id], onDelete: Cascade)
+  round Round       @relation(fields: [roundId], references: [id], onDelete: Cascade)
+
+  @@index([roundId, seasonEntryId, visitorId])
+  @@index([roundId, createdAt])
+  @@map("click_events")
+}
+
+/// A spectator brought in through a founder's Rally link (PRD section 14).
+model RallyVisitor {
+  id               String    @id @default(cuid())
+  referringEntryId String
+  roundId          String?
+  visitorId        String
+  /// Set once the visitor showed genuine engagement beyond the referring product.
+  qualified        Boolean   @default(false)
+  qualifiedAt      DateTime?
+  pointsAwarded    Int       @default(0)
+  /// Distinct other products this visitor meaningfully viewed.
+  otherProductsSeen Int      @default(0)
+  ipHash            String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  referringEntry SeasonEntry @relation("ReferringEntry", fields: [referringEntryId], references: [id], onDelete: Cascade)
+
+  @@unique([referringEntryId, visitorId])
+  @@index([referringEntryId, qualified])
+  @@map("rally_visitors")
+}
+
+// ---------------------------------------------------------------------------
+// Money
+// ---------------------------------------------------------------------------
+
+model Payment {
+  id                String        @id @default(cuid())
+  userId            String
+  seasonId          String
+  seasonEntryId     String?       @unique
+  provider          String
+  providerPaymentId String?
+  amountCents       Int
+  currency          String        @default("usd")
+  status            PaymentStatus @default(PENDING)
+  refundedCents     Int           @default(0)
+  /// Last provider webhook event applied, for idempotency.
+  lastWebhookEventId String?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  events PaymentEvent[]
+
+  user   User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  season Season       @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  entry  SeasonEntry? @relation(fields: [seasonEntryId], references: [id])
+
+  @@unique([provider, providerPaymentId])
+  @@index([userId])
+  @@index([status])
+  @@map("payments")
+}
+
+/// Every manual intervention leaves a trail (PRD sections 21 and 30).
+model AdminAction {
+  id          String   @id @default(cuid())
+  adminUserId String
+  actionType  String
+  targetType  String
+  targetId    String
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  admin User @relation("AdminActor", fields: [adminUserId], references: [id])
+
+  @@index([targetType, targetId])
+  @@index([createdAt])
+  @@map("admin_actions")
+}
+
+/// Live activity feed (PRD section 19). Only ever written from real platform events.
+model ActivityEvent {
+  id            String   @id @default(cuid())
+  roundId       String?
+  seasonEntryId String?
+  type          String
+  message       String
+  metadata      Json?
+  createdAt     DateTime @default(now())
+
+  round Round?       @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  entry SeasonEntry? @relation(fields: [seasonEntryId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
+  @@map("activity_events")
+}
+
+/// Durable deduplication; older retries remain idempotent after newer events.
+model PaymentEvent {
+  id String @id
+  paymentId String
+  kind String
+  createdAt DateTime @default(now())
+  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  @@index([paymentId])
+  @@map("payment_events")
+}

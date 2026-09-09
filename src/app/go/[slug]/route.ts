@@ -1,0 +1,65 @@
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/db";
+import { getVisitorContext } from "@/lib/tracking/visitor";
+import { recordInteraction } from "@/lib/tracking/events";
+
+/**
+ * Outbound tracking redirect (PRD 9).
+ *
+ * Every click on a contestant leaves through here so the visit can be verified
+ * before the visitor is handed to the destination. Only the first visit from a
+ * given visitor to a given product within a round scores; later ones are still
+ * recorded for analytics.
+ */
+
+/** Only ever redirect to a plain web address we stored ourselves. */
+function isSafeDestination(raw: string): boolean {
+  try {
+    const url = new URL(raw);
+    return url.protocol === "https:" || url.protocol === "http:";
+  } catch {
+    return false;
+  }
+}
+
+export async function GET(request: Request, ctx: RouteContext<"/go/[slug]">) {
+  const { slug } = await ctx.params;
+
+  const product = await prisma.product.findUnique({
+    where: { slug },
+    select: {
+      id: true,
+      url: true,
+      approvalStatus: true,
+      entries: {
+        where: { status: { in: ["ACTIVE", "FINALIST", "SURVIVOR", "ELIMINATED"] } },
+        orderBy: { createdAt: "desc" },
+        take: 1,
+        select: {
+          id: true,
+          status: true,
+          rallyCode: true,
+          season: { select: { id: true } },
+        },
+      },
+    },
+  });
+
+  if (!product || product.approvalStatus !== "APPROVED" || !isSafeDestination(product.url)) {
+    return NextResponse.redirect(new URL("/board", request.url), 302);
+  }
+
+  const entry = product.entries[0];
+
+  // Record the interaction, but never let a tracking failure block the visitor
+  // from reaching the destination they asked for.
+  if (entry) {
+    try {
+      await recordInteraction(entry.id, await getVisitorContext(), "visit");
+    } catch (error) {
+      console.error("[surviver] failed to record outbound visit", error);
+    }
+  }
+
+  return NextResponse.redirect(product.url, 302);
+}

@@ -1,0 +1,184 @@
+@import "tailwindcss";
+
+/* Colours lifted from the Claude Design canvas: cool lavender-grey paper,
+ * structural blue, coral for the cut.
+ *
+ * The canvas carries two signal colours, not four. Blue means above the line
+ * and climbing; coral means at risk and cut; the survivor takes the ink. No
+ * gradients anywhere — flat fills and hairlines only. */
+
+@theme {
+  /* --- Ground and surfaces ------------------------------------------- */
+  --color-background: #f4f2f5;
+  --color-surface: #ffffff;
+  --color-muted: #efedf1;
+  --color-muted-strong: #e7e2ea;
+
+  /* --- Hairlines ------------------------------------------------------ */
+  --color-border: #dfdae3;
+  --color-border-strong: #cfc9d4;
+
+  /* --- Ink ------------------------------------------------------------ */
+  --color-foreground: #221d26;
+  --color-subtle: #5d5566;
+  /* Decorative only. Too light to carry small text on its own. */
+  --color-faint: #8d8593;
+
+  /* --- Brand ---------------------------------------------------------- */
+  --color-primary: #2f52c8;
+  --color-primary-foreground: #ffffff;
+  --color-primary-soft: #e9edfa;
+
+  /* --- Competitive state ---------------------------------------------- */
+  /* Two states, as the canvas draws them: blue is safe and rising, coral is
+     at risk and eliminated. The survivor takes the ink, the one colour left
+     that reads as final rather than in-progress. */
+  --color-safe: #2f52c8;
+  --color-rising: #2f52c8;
+  --color-danger: #e0603f;
+  --color-gold: #221d26;
+
+  /* --- Type ----------------------------------------------------------- */
+  --font-sans: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* --- Geometry ------------------------------------------------------- */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+
+  /* One breakpoint below Tailwind's `sm`, so the header CTA can shorten
+     rather than overflow at 320px. */
+  --breakpoint-xs: 25rem;
+
+  --tracking-label: 0.08em;
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    letter-spacing: -0.011em;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.03em;
+  }
+
+  /* Visible and on-brand, never a soft glow. */
+  :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  ::selection {
+    background: var(--color-primary-soft);
+    color: var(--color-foreground);
+  }
+
+  /* Thin, warm scrollbars so dense standings tables don't get a heavy gutter.
+     Any element can still opt out with `[scrollbar-width:none]`. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border-strong) transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: var(--color-border-strong);
+    border: 3px solid var(--color-background);
+    border-radius: 999px;
+  }
+}
+
+@layer components {
+  /* Every competing number is tabular so ranks and rates never jitter. */
+  .num {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
+
+  /* Monospaced figures for anything read as data rather than prose. */
+  .mono {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
+
+  /* Small structural captions: ROUND 2, INTEREST RATE, QUALIFIED VIEWS.
+     At 10px these need real contrast, so they take the subtle ink rather than
+     the faint one, which is reserved for decoration. */
+  .label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    line-height: 1.2;
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--color-subtle);
+  }
+
+  .label-bright {
+    color: var(--color-foreground);
+  }
+
+  /* Elevation: two soft, warm shadows, one for cards and one for raised tiles. */
+  .shadow-card {
+    box-shadow: 0 12px 50px rgba(34, 29, 38, 0.08);
+  }
+
+  .shadow-tile {
+    box-shadow:
+      0 0 0 1px rgba(34, 29, 38, 0.06),
+      0 10px 24px rgba(34, 29, 38, 0.06);
+  }
+
+  .shadow-raised {
+    box-shadow:
+      0 0 0 1px rgba(34, 29, 38, 0.05),
+      0 2px 4px rgba(34, 29, 38, 0.04);
+  }
+
+  /* The live pulse, used for the LIVE dot and nothing that competes with
+     reading numbers. */
+  .pulse-dot {
+    animation: surviver-pulse 1.8s ease-in-out infinite;
+  }
+}
+
+@keyframes surviver-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pulse-dot {
+    animation: none;
+  }
+}
+
+@layer base { button, select, summary { cursor: pointer; } a, button, input, select { touch-action: manipulation; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; } }
