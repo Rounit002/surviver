@@ -9,7 +9,7 @@ services:
   - type: web
     name: surviver
     runtime: node
-    plan: starter
+    plan: free
     region: oregon
     branch: main
 

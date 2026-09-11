@@ -33,6 +33,18 @@ Useful scripts:
 | `npm run db:migrate` | `prisma migrate dev` |
 | `npm run db:seed` | Seed sample season data |
 | `npm run db:studio` | Prisma Studio |
+| `npm run db:check` | Check development database credentials and Season table access |
+
+If Prisma reports an authentication failure, run `npm run db:check`. Replace
+`DATABASE_URL` with the current connection string for your database, then restart
+`npm run dev`. Check `.env.local` and shell environment variables too: they can
+override `.env`. The checker uses the same environment precedence as Next dev.
+
+A hydration warning showing an extra `__processed_...` attribute on `<body>`
+indicates HTML was modified outside this component. Retry with browser extensions
+disabled. For a separate `200.js` / `M_ID` error, inspect the script's full URL in
+DevTools; a `chrome-extension://` or `moz-extension://` URL identifies the extension
+that needs disabling or updating.
 
 ## Deploying to Render
 
