@@ -211,7 +211,7 @@ export function EntryForm({
       </Panel>
 
       <Panel>
-        <StepHeader n={3} title="Rules and payment" hint="One flat fee, reviewed before it goes live." />
+        <StepHeader n={3} title="Rules and payment" hint="One flat fee. Your listing goes live after payment." />
 
         <div className="p-5">
           <Field
@@ -260,7 +260,7 @@ export function EntryForm({
           </Button>
 
           <p className="text-faint mt-3 text-center text-[12px]">
-            Reviewed before it goes live. Save the private link shown after checkout.
+            Your listing is live after payment. Save the private link shown after checkout.
           </p>
         </div>
       </Panel>

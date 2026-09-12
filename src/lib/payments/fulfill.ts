@@ -24,8 +24,10 @@ export async function applyPaymentResult(result: WebhookResult): Promise<{ appli
       const claimed = await tx.seasonEntry.count({ where: { seasonId: season.id, status: { in: CLAIMED_ENTRY_STATUSES } } });
       if (claimed >= season.capacity) return { applied: false, reason: "season full" };
       await tx.payment.update({ where: { id: payment.id }, data: { status: "SUCCEEDED", lastWebhookEventId: result.eventId } });
-      await tx.seasonEntry.update({ where: { id: payment.entry.id }, data: { status: "AWAITING_APPROVAL" } });
-      await tx.product.update({ where: { id: payment.entry.productId }, data: { approvalStatus: "PENDING" } });
+      // A successful payment is the publication gate. Entries are live immediately
+      // after payment; moderation can still be handled later through withdrawal.
+      await tx.seasonEntry.update({ where: { id: payment.entry.id }, data: { status: "UPCOMING" } });
+      await tx.product.update({ where: { id: payment.entry.productId }, data: { approvalStatus: "APPROVED" } });
     } else if (result.kind === "failed") {
       if (!["PENDING", "FAILED"].includes(payment.status)) return { applied: false, reason: "already settled" };
       await tx.payment.update({ where: { id: payment.id }, data: { status: "FAILED", lastWebhookEventId: result.eventId } });
