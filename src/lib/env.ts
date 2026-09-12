@@ -38,4 +38,8 @@ export const env = {
   get isProduction() {
     return process.env.NODE_ENV === "production";
   },
+  get dodoApiKey() { return read("DODO_PAYMENTS_API_KEY", ""); },
+  get dodoWebhookKey() { return read("DODO_PAYMENTS_WEBHOOK_KEY", ""); },
+  get dodoProductId() { return read("DODO_PAYMENTS_PRODUCT_ID", ""); },
+  get dodoEnvironment() { return read("DODO_PAYMENTS_ENVIRONMENT", "test_mode"); },
 };

@@ -7,6 +7,8 @@ const LINKS = [
   { href: "/seasons", label: "Seasons" },
   { href: "/survivors", label: "Survivors" },
   { href: "/dashboard", label: "Your campaigns" },
+  { href: "/privacy", label: "Privacy" },
+  { href: "/terms", label: "Terms" },
 ];
 
 /**
