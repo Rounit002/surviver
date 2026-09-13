@@ -16,7 +16,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.APP_URL || "https://surviver.lol"),
+  // Social metadata belongs to the public brand domain, even when APP_URL
+  // still points at the deployment provider's internal/default hostname.
+  metadataBase: new URL("https://surviver.lol"),
   title: {
     default: "Surviver.lol — 32 products enter. One survives.",
     template: "%s — Surviver.lol",

@@ -63,7 +63,7 @@ Create a **Web Service** pointed at this repo, or use the committed
 | Variable | Required | Notes |
 | --- | --- | --- |
 | `DATABASE_URL` | **Yes** | Postgres connection string. No default — the app fails fast without it. |
-| `APP_URL` | **Yes in production** | Public origin, no trailing slash, e.g. `https://surviver.lol`. Rally links and social preview image URLs are built from it. Set this to the live HTTPS origin, never localhost, in production. Defaults to `http://localhost:3000` for application links. |
+| `APP_URL` | **Yes in production** | Public origin, no trailing slash, e.g. `https://surviver.lol`. Rally links are built from it. Set this to the live HTTPS origin, never localhost, in production. Defaults to `http://localhost:3000` for application links. Social preview image URLs always use the public `https://surviver.lol` domain. |
 | `IP_HASH_SALT` | **Yes in production** | Salt for hashing visitor IPs; raw addresses are never stored. Changing it resets visitor de-duplication. Generate with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`. |
 | `CRON_SECRET` | **Yes in production** | Shared secret the scheduled round-transition job must present to `/api/cron/rounds`. |
 | `PAYMENT_PROVIDER` | No | `dev` simulates checkout and charges nothing. Leave as `dev` until a real provider is wired up. |
