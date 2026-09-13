@@ -16,6 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.APP_URL || "https://surviver.lol"),
   title: {
     default: "Surviver.lol — 32 products enter. One survives.",
     template: "%s — Surviver.lol",
@@ -28,9 +29,19 @@ export const metadata: Metadata = {
       "A performance-based promotional tournament for SaaS products. Every product gets equal exposure. Measured visitor interest decides who advances.",
     siteName: "Surviver.lol",
     type: "website",
+    images: [{
+      url: "/social-preview.png",
+      width: 1200,
+      height: 630,
+      alt: "Surviver.lol — 32 products enter. One survives. A tournament for SaaS products.",
+    }],
   },
   twitter: {
     card: "summary_large_image",
+    images: [{
+      url: "/social-preview.png",
+      alt: "Surviver.lol — 32 products enter. One survives. A tournament for SaaS products.",
+    }],
     title: "Surviver.lol — 32 products enter. One survives.",
     description:
       "A performance-based promotional tournament for SaaS products. Attention decides who advances.",
