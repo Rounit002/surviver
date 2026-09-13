@@ -19,7 +19,7 @@ export function RoundBar({
   serverNow: string;
 }) {
   return (
-    <div className="bg-surface shadow-tile flex flex-wrap items-center gap-x-5 gap-y-3 rounded-full px-5 py-3">
+    <div className="bg-surface shadow-tile flex flex-wrap items-center gap-x-5 gap-y-3 rounded-2xl px-4 py-4 sm:rounded-full sm:px-5 sm:py-3">
       <div className="flex items-center gap-2">
         {round?.status === "ACTIVE" ? (
           <LiveBadge label={round.name} />
@@ -45,7 +45,7 @@ export function RoundBar({
             </span>
           </div>
 
-          <div className="ml-auto flex items-baseline gap-2">
+          <div className="flex w-full flex-wrap items-baseline gap-2 sm:ml-auto sm:w-auto">
             <span className="label">
               {round.status === "ACTIVE" ? "Round ends in" : "Round closed"}
             </span>

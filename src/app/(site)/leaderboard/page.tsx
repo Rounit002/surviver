@@ -104,7 +104,7 @@ function Row({ row, eliminated }: { row: StandingRow; eliminated: boolean }) {
   return (
     <div
       className={cn(
-        "grid grid-cols-[2.5rem_1fr_auto] items-center gap-3 px-4 py-3 transition-colors",
+        "grid grid-cols-[2rem_minmax(0,1fr)_auto] items-center gap-3 px-4 py-3 transition-colors",
         "md:grid-cols-[3rem_1fr_6rem_6rem_6rem_9rem]",
         eliminated ? "bg-danger/4" : "hover:bg-muted/60",
       )}
@@ -136,7 +136,7 @@ function Row({ row, eliminated }: { row: StandingRow; eliminated: boolean }) {
           href={`/go/${row.product.slug}`}
           target="_blank"
           rel="noopener noreferrer nofollow sponsored"
-          className="hover:text-primary truncate text-sm font-medium transition-colors"
+          className="hover:text-primary block min-h-11 content-center truncate text-sm font-medium transition-colors"
         >
           {row.product.name}
         </a>

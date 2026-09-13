@@ -36,7 +36,7 @@ export function SiteFooter() {
               ) : null}
               <Link
                 href={link.href}
-                className="text-primary hover:text-primary/80 transition-colors"
+                className="text-primary hover:text-primary/80 inline-flex min-h-11 items-center px-1 transition-colors"
               >
                 {link.label}
               </Link>

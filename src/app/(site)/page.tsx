@@ -28,7 +28,7 @@ export default async function HomePage() {
         <span className={`size-1.5 rounded-full ${round ? "bg-safe" : "bg-primary"}`} />
         {round ? `${season?.name} · ${round.name}` : open ? `${open.name} · Registration open` : "The next season is on its way"}
       </div>
-      <h1 className="mt-5 text-4xl leading-[1.12] font-semibold tracking-tight sm:text-[52px]">Good products deserve<br className="sm:hidden" /> <span className="text-primary">a fighting chance.</span></h1>
+      <h1 className="mt-5 text-[clamp(1.875rem,8vw,2.5rem)] leading-[1.15] font-semibold tracking-tight sm:text-[52px]">Good products deserve<br className="sm:hidden" /> <span className="text-primary">a fighting chance.</span></h1>
       <p className="text-subtle mx-auto mt-4 max-w-xl text-sm leading-7 sm:text-base">A tournament for the next great SaaS products.<br />One flat fee. Real interest. One survivor.</p>
       <QuickEntry available={available} />
       <div className="text-subtle mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs">
@@ -39,7 +39,7 @@ export default async function HomePage() {
 
     <section className="mt-10 sm:mt-14" aria-labelledby="board-title">
       <div className="border-border flex flex-wrap items-center justify-between gap-4 border-b pb-4">
-        <div className="flex items-center gap-3"><Icon name="grid" className="text-primary" /><h2 id="board-title" className="text-lg font-semibold">The discovery board</h2><span className="bg-muted text-subtle rounded-full px-2.5 py-1 text-xs">{rows.length} products</span></div>
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3"><Icon name="grid" className="text-primary" /><h2 id="board-title" className="text-lg font-semibold">The discovery board</h2><span className="bg-muted text-subtle rounded-full px-2.5 py-1 text-xs">{rows.length} products</span></div>
         <Link href="/leaderboard" className="text-subtle flex items-center gap-2 text-xs hover:text-primary"><Icon name="trophy" width="15" />Leaderboard<Icon name="arrow" width="14" /></Link>
       </div>
       <div className="mt-5 grid gap-6 lg:grid-cols-[minmax(0,1fr)_260px]">
@@ -68,7 +68,7 @@ export default async function HomePage() {
     </section>
 
     <section id="how-it-works" className="border-border mt-12 border-t pt-9">
-      <div className="flex items-center justify-between gap-3"><h2 className="text-lg font-semibold">A little competition. A lot of discovery.</h2><Link href="/how-it-works" className="text-primary shrink-0 text-xs">The details ↗</Link></div>
+      <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-lg font-semibold">A little competition. A lot of discovery.</h2><Link href="/how-it-works" className="text-primary shrink-0 text-xs">The details ↗</Link></div>
       <div className="mt-6 grid gap-6 sm:grid-cols-3">{[
         ["01", "Put your product in", "Submit your link, pay the flat fee. Every listing is reviewed."],
         ["02", "Let curiosity do its thing", "Visitors explore the board. Views and visits measure real interest."],

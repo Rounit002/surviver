@@ -34,7 +34,7 @@ export function ProductCard({
       data-entry-id={row.entryId}
     >
       <ImpressionTracker entryId={row.entryId} />
-      <div className="flex items-start gap-3">
+      <div className="grid grid-cols-[2.5rem_minmax(0,1fr)] items-start gap-3 sm:flex">
         <Monogram
           name={product.name}
           logoUrl={product.logoUrl}
@@ -48,10 +48,10 @@ export function ProductCard({
               <span className="label text-faint shrink-0">#{row.rank}</span>
             ) : null}
           </div>
-          <p className="text-subtle mt-0.5 truncate text-[13px]">{product.tagline}</p>
+          <p className="text-subtle mt-1 text-sm sm:truncate sm:text-[13px]">{product.tagline}</p>
         </div>
 
-        <div className="shrink-0 text-right">
+        <div className="col-span-2 flex items-center gap-2 sm:block sm:shrink-0 sm:text-right">
           {row.collecting ? (
             <>
               <div className="num text-subtle text-[15px] leading-none font-semibold">&mdash;</div>
@@ -100,13 +100,13 @@ export function ProductCard({
         </span>
       </div>
 
-      <div className="border-border mt-4 flex items-center justify-between gap-3 border-t pt-4">
+      <div className="border-border mt-4 flex flex-wrap items-center justify-between gap-3 border-t pt-3">
         <a
           href={`/go/${product.slug}`}
           target="_blank"
           // Paid placement: never pass ranking signal to the destination.
           rel="noopener noreferrer nofollow sponsored"
-          className="text-primary hover:text-primary/80 inline-flex items-center gap-1.5 text-[13px] font-medium transition-colors"
+          className="text-primary hover:text-primary/80 inline-flex min-h-11 min-w-0 items-center gap-1.5 text-sm font-medium transition-colors [overflow-wrap:anywhere]"
         >
           Visit {product.name}
           <span aria-hidden>&rarr;</span>

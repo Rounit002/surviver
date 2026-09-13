@@ -323,7 +323,7 @@ function PreviewCard({
 
   return (
     <div className="bg-surface shadow-tile mt-2 rounded-lg p-5">
-      <div className="flex items-start gap-3">
+      <div className="grid grid-cols-[2.5rem_minmax(0,1fr)] items-start gap-3 sm:flex">
         {faviconUrl ? (
           // Arbitrary remote host, so a plain img rather than next/image.
           // eslint-disable-next-line @next/next/no-img-element
@@ -352,7 +352,7 @@ function PreviewCard({
           </p>
         </div>
 
-        <div className="shrink-0 text-right">
+        <div className="col-span-2 flex items-center gap-2 sm:block sm:shrink-0 sm:text-right">
           <div className="num text-subtle text-[15px] leading-none font-semibold">&mdash;</div>
           <div className="label mt-1.5">Collecting</div>
         </div>

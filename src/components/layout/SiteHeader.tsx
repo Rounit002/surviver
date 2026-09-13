@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { Wordmark } from "@/components/brand/Wordmark";
-import { cn } from "@/lib/cn";
 import { CategoryBar } from "@/components/layout/CategoryBar";
 import { LiveDot } from "@/components/ui/Chip";
 import { getActiveRound, getCurrentSeason } from "@/lib/competition/season";
 import { prisma } from "@/lib/db";
 import { formatCount } from "@/lib/format";
+import { MobileNavigation } from "./MobileNavigation";
 
 /**
  * Two rows, after outbid.lol: identity plus a live status pill on the first,
@@ -17,33 +17,28 @@ export async function SiteHeader() {
   return (
     <header className="w-full">
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-3 px-4 pt-5 pb-3.5 md:pb-4">
-        <div className="flex w-full items-center justify-between gap-4">
+        <div className="relative flex w-full items-center justify-between gap-4">
           <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
             <Wordmark />
-            <div className="hidden min-w-0 md:block">
+            <div className="hidden min-w-0 lg:block">
               <Suspense fallback={null}>
                 <SeasonTicker />
               </Suspense>
             </div>
           </div>
 
-          <nav className="flex items-center gap-3 text-xs sm:gap-6 sm:text-sm">
+          <MobileNavigation />
+          <nav aria-label="Main navigation" className="hidden items-center gap-4 text-sm sm:flex lg:gap-6">
             {[
               { href: "/board", label: "Board" },
               { href: "/leaderboard", label: "Leaderboard" },
-              { href: "/seasons", label: "Seasons", from: "sm" },
-              { href: "/survivors", label: "Survivors", from: "md" },
+              { href: "/seasons", label: "Seasons" },
+              { href: "/survivors", label: "Survivors" },
             ].map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                // Links drop off as the row gets tight rather than wrapping or
-                // colliding with the wordmark.
-                className={cn(
-                  "text-subtle hover:text-foreground font-medium transition-colors",
-                  link.from === "sm" && "hidden sm:inline",
-                  link.from === "md" && "hidden md:inline",
-                )}
+                className="text-subtle hover:text-foreground inline-flex min-h-11 items-center font-medium transition-colors"
               >
                 {link.label}
               </Link>

@@ -2,7 +2,7 @@ import type { ComponentProps, ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
 const CONTROL =
-  "w-full rounded-md border border-border bg-surface px-3.5 text-sm text-foreground " +
+  "min-w-0 w-full rounded-md border border-border bg-surface px-3.5 text-base sm:text-sm text-foreground " +
   "placeholder:text-faint transition-colors " +
   "hover:border-border-strong focus:border-primary focus:outline-none " +
   "disabled:opacity-50 disabled:bg-muted aria-[invalid=true]:border-danger";
@@ -25,7 +25,7 @@ export function Field({
   className?: string;
 }) {
   return (
-    <div className={cn("space-y-1.5", className)}>
+    <div className={cn("min-w-0 space-y-1.5", className)}>
       <label htmlFor={htmlFor} className="label label-bright block">
         {label}
         {required ? <span className="text-danger ml-1">*</span> : null}

@@ -52,7 +52,7 @@ export function Wordmark({
   if (!href) return content;
 
   return (
-    <Link href={href} className="inline-flex items-center" aria-label="Surviver.lol home">
+    <Link href={href} className="inline-flex min-h-11 items-center" aria-label="Surviver.lol home">
       {content}
     </Link>
   );

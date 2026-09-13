@@ -152,9 +152,9 @@ export function EliminatedReport({ entry }: { entry: CampaignEntry }) {
           <PanelHeader title="Round by round" />
           <ul className="divide-border divide-y">
             {[...entry.roundStats].reverse().map((stat) => (
-              <li key={stat.id} className="flex items-center justify-between px-5 py-3 text-[13px]">
+              <li key={stat.id} className="flex flex-wrap items-center justify-between gap-2 px-5 py-3 text-[13px]">
                 <span className="font-medium">{stat.round.name}</span>
-                <span className="text-subtle flex items-center gap-4">
+                <span className="text-subtle flex flex-wrap items-center gap-x-4 gap-y-2">
                   <span className="num">{formatCount(stat.qualifiedImpressions)} views</span>
                   <span className="num">{formatCount(stat.verifiedVisits)} visits</span>
                   <span className="num">{formatInterestRate(stat.interestRate)}</span>

@@ -159,7 +159,7 @@ export default async function SeasonPage(props: PageProps<"/seasons/[number]">) 
                   <li
                     key={row.entryId}
                     className={cn(
-                      "grid grid-cols-[2.5rem_1fr_auto] items-center gap-3 px-4 py-3",
+                      "grid grid-cols-[2rem_minmax(0,1fr)_auto] items-center gap-3 px-4 py-3",
                       eliminated && "bg-danger/4",
                     )}
                   >

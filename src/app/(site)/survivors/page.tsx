@@ -43,7 +43,7 @@ export default async function SurvivorsPage() {
             <p className="text-subtle mx-auto mt-2 max-w-sm text-[13px] leading-relaxed">
               When the current season ends, its last product standing is recorded here.
             </p>
-            <div className="mt-6 flex gap-2">
+            <div className="mt-6 flex w-full flex-col justify-center gap-2 sm:w-auto sm:flex-row">
               <ButtonLink href="/leaderboard" variant="primary" size="sm">
                 Watch the standings
               </ButtonLink>

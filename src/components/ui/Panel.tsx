@@ -22,7 +22,7 @@ export function Panel({
   return (
     <div
       className={cn(
-        "rounded-lg border",
+        "min-w-0 rounded-lg border",
         inset ? "bg-muted border-border" : "bg-surface border-border",
         elevated && !inset && "shadow-card",
         className,
@@ -45,7 +45,7 @@ export function PanelHeader({
   return (
     <div
       className={cn(
-        "border-border flex items-center justify-between gap-3 border-b px-4 py-3",
+        "border-border flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3",
         className,
       )}
     >

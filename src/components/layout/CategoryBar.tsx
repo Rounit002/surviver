@@ -28,7 +28,7 @@ export function CategoryBar() {
 
   const chip =
     "inline-flex shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-full " +
-    "min-h-9 px-2.5 py-1 text-[13px] whitespace-nowrap transition-colors";
+    "min-h-11 px-2.5 py-1 text-[13px] whitespace-nowrap transition-colors";
 
   const isBoard = pathname === "/board" || pathname === "/";
 
@@ -93,7 +93,7 @@ export function CategoryBar() {
 
         <Link
           href="/enter"
-          className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[13px] font-semibold transition-colors"
+          className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[13px] font-semibold transition-colors"
         >
           Enter
           <span aria-hidden>&rarr;</span>

@@ -21,9 +21,9 @@ const VARIANTS: Record<Variant, string> = {
 };
 
 const SIZES: Record<Size, string> = {
-  sm: "h-8 px-3.5 text-[13px] gap-1.5",
-  md: "h-10 px-4.5 text-sm gap-2",
-  lg: "h-12 px-6 text-[15px] gap-2",
+  sm: "min-h-11 sm:min-h-8 px-3.5 py-2 text-[13px] gap-1.5",
+  md: "min-h-11 sm:min-h-10 px-4.5 py-2 text-sm gap-2",
+  lg: "min-h-12 px-6 py-3 text-[15px] gap-2",
 };
 
 // Note: `inline-flex` here will beat a `hidden` passed through `className`,
@@ -31,8 +31,8 @@ const SIZES: Record<Size, string> = {
 // the order they appear in the attribute. To hide a button responsively, wrap
 // it in an element that carries the visibility classes.
 const BASE =
-  "inline-flex items-center justify-center rounded-full transition-all duration-150 " +
-  "disabled:opacity-50 disabled:pointer-events-none whitespace-nowrap select-none cursor-pointer";
+  "inline-flex max-w-full items-center justify-center rounded-full text-center transition-all duration-150 " +
+  "disabled:opacity-50 disabled:pointer-events-none whitespace-normal [overflow-wrap:anywhere] select-none cursor-pointer";
 
 type CommonProps = {
   variant?: Variant;

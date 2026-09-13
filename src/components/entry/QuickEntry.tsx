@@ -2,14 +2,14 @@ import { CATEGORY_LABELS, CATEGORY_VALUES } from "@/lib/competition/constants";
 import { Icon } from "@/components/ui/Icon";
 
 export function QuickEntry({ available }: { available: boolean }) {
-  return <form action="/enter" className="mx-auto mt-7 flex max-w-3xl flex-col gap-2.5 sm:flex-row">
+  return <form action="/enter" className="mx-auto mt-7 flex max-w-3xl flex-col gap-2.5 md:flex-row">
     <div className="relative min-w-0 flex-1">
       <Icon name="globe" className="text-subtle absolute top-3.5 left-4" />
       <label htmlFor="quick-url" className="sr-only">Your product URL</label>
-      <input id="quick-url" name="url" required maxLength={2048} placeholder="Your product URL" className="border-border bg-surface h-12 w-full rounded-full border pr-4 pl-12 text-sm" />
+      <input id="quick-url" name="url" required maxLength={2048} inputMode="url" autoComplete="url" autoCapitalize="none" spellCheck={false} placeholder="Your product URL" className="border-border bg-surface h-12 w-full rounded-full border pr-4 pl-12 text-base sm:text-sm" />
     </div>
     <label className="sr-only" htmlFor="quick-category">Category</label>
-    <select id="quick-category" name="category" defaultValue="" required className="border-border bg-surface text-subtle h-12 rounded-full border px-5 text-sm sm:w-48">
+    <select id="quick-category" name="category" defaultValue="" required className="border-border bg-surface text-subtle h-12 rounded-full border px-5 text-base sm:text-sm md:w-48">
       <option value="" disabled>Choose a category</option>
       {CATEGORY_VALUES.map(c => <option key={c} value={c}>{CATEGORY_LABELS[c]}</option>)}
     </select>

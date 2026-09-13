@@ -110,7 +110,7 @@ function ClosedState({ full = false, seasonName }: { full?: boolean; seasonName?
             ? "Every slot in this season has been claimed. The next season opens once this one is under way."
             : "No season is taking entries right now. The next one opens shortly."}
         </p>
-        <div className="mt-6 flex justify-center gap-2">
+        <div className="mt-6 flex flex-col justify-center gap-2 sm:flex-row">
           <ButtonLink href="/board" variant="primary" size="sm">
             Watch the current season
           </ButtonLink>

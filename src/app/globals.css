@@ -69,6 +69,16 @@
     text-rendering: optimizeLegibility;
   }
 
+  /* User-entered names and URLs must not enlarge cards or grid tracks. */
+  main {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  input, select, textarea {
+    max-width: 100%;
+  }
+
   h1,
   h2,
   h3 {
