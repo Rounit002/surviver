@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState, useTransition } from "react";
+import { LogoLoader } from "@/components/brand/Logo";
 import { Button } from "@/components/ui/Button";
 import { Field, FormError, Input, Select, Textarea } from "@/components/ui/Field";
 import { Panel } from "@/components/ui/Panel";
@@ -110,7 +111,14 @@ export function EntryForm({
                 disabled={looking}
                 className="shrink-0"
               >
-                {looking ? "Reading…" : "Fetch"}
+                {looking ? (
+                  <>
+                    <LogoLoader className="size-3.5" />
+                    Reading…
+                  </>
+                ) : (
+                  "Fetch"
+                )}
               </Button>
             </div>
           </Field>
@@ -256,7 +264,14 @@ export function EntryForm({
             className="mt-5 w-full"
             disabled={submitting}
           >
-            {submitting ? "Taking you to checkout…" : `Continue to test checkout · ${priceLabel}`}
+            {submitting ? (
+              <>
+                <LogoLoader className="size-4" />
+                Taking you to checkout…
+              </>
+            ) : (
+              `Continue to test checkout · ${priceLabel}`
+            )}
           </Button>
 
           <p className="text-faint mt-3 text-center text-[12px]">

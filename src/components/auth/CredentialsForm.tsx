@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { LogoLoader } from "@/components/brand/Logo";
 import { Button } from "@/components/ui/Button";
 import { Field, FormError, Input } from "@/components/ui/Field";
 import type { AuthFormState } from "@/lib/auth/actions";
@@ -68,7 +69,14 @@ export function CredentialsForm({
       </Field>
 
       <Button type="submit" variant="primary" size="md" className="w-full" disabled={pending}>
-        {pending ? "Working…" : submitLabel}
+        {pending ? (
+          <>
+            <LogoLoader className="size-4" />
+            Working…
+          </>
+        ) : (
+          submitLabel
+        )}
       </Button>
     </form>
   );

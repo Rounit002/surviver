@@ -162,6 +162,15 @@
   .pulse-dot {
     animation: surviver-pulse 1.8s ease-in-out infinite;
   }
+
+  /* The loading mark. Each bar of the logo rises and falls between the two
+     heights the logo itself uses — the short cut and the tall survivor — so
+     waiting reads as the board still deciding. Animating `y` alongside
+     `height` keeps the bars pinned to their baseline and leaves the corner
+     radii undistorted, which scaling would not. */
+  .logo-bar {
+    animation: surviver-bar 1.05s ease-in-out infinite;
+  }
 }
 
 @keyframes surviver-pulse {
@@ -174,8 +183,24 @@
   }
 }
 
+@keyframes surviver-bar {
+  0%,
+  100% {
+    y: 18px;
+    height: 9px;
+  }
+  50% {
+    y: 5px;
+    height: 22px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .pulse-dot {
+  .pulse-dot,
+  /* Dropping the name rather than the duration leaves each bar on its
+     authored attributes, which is the resolved logo rather than a frozen
+     frame of the loop. */
+  .logo-bar {
     animation: none;
   }
 }

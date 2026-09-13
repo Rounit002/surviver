@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
-import { Button, ButtonLink } from "@/components/ui/Button";
+import { ButtonLink } from "@/components/ui/Button";
+import { SubmitButton } from "@/components/ui/SubmitButton";
 import { Panel } from "@/components/ui/Panel";
 import { getSessionUser } from "@/lib/auth/session";
 import { PENDING_PAYMENT_COOKIE } from "@/lib/competition/constants";
@@ -79,17 +80,17 @@ export default async function CheckoutPage(props: PageProps<"/enter/checkout/[pa
           <form action={simulatePaymentAction}>
             <input type="hidden" name="paymentId" value={payment.id} />
             <input type="hidden" name="outcome" value="succeeded" />
-            <Button type="submit" variant="primary" size="lg" className="w-full">
+            <SubmitButton variant="primary" size="lg" className="w-full" pendingLabel="Taking payment…">
               Simulate successful payment
-            </Button>
+            </SubmitButton>
           </form>
 
           <form action={simulatePaymentAction}>
             <input type="hidden" name="paymentId" value={payment.id} />
             <input type="hidden" name="outcome" value="failed" />
-            <Button type="submit" variant="secondary" size="md" className="w-full">
+            <SubmitButton variant="secondary" size="md" className="w-full" pendingLabel="Working…">
               Simulate a declined card
-            </Button>
+            </SubmitButton>
           </form>
         </div>
 

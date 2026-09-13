@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Surviver.lol">
+  <!-- Structural blue tile, the same primary the chrome uses, so the mark
+       holds as a solid block on both light and dark tab strips. -->
+  <rect width="32" height="32" rx="7" fill="#2f52c8"/>
+  <!-- Two cut in coral, one left standing in white: the tournament in three
+       bars. Flat fills only, as everywhere else in the palette. -->
+  <rect x="5" y="18" width="6" height="9" rx="2" fill="#e0603f"/>
+  <rect x="13" y="5" width="6" height="22" rx="2" fill="#ffffff"/>
+  <rect x="21" y="18" width="6" height="9" rx="2" fill="#e0603f"/>
+</svg>

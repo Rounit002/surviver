@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Button } from "@/components/ui/Button";
+import { SubmitButton } from "@/components/ui/SubmitButton";
 import { Chip } from "@/components/ui/Chip";
 import { Panel, PanelHeader } from "@/components/ui/Panel";
 import { Stat } from "@/components/ui/Stat";
@@ -126,9 +126,9 @@ export default async function AdminPage() {
                   <div className="flex shrink-0 flex-col gap-2 sm:w-56">
                     <form action={approveEntryAction}>
                       <input type="hidden" name="entryId" value={entry.id} />
-                      <Button type="submit" variant="primary" size="sm" className="w-full">
+                      <SubmitButton variant="primary" size="sm" className="w-full" pendingLabel="Approving…">
                         Approve
-                      </Button>
+                      </SubmitButton>
                     </form>
 
                     <form action={rejectEntryAction} className="space-y-2">
@@ -139,9 +139,9 @@ export default async function AdminPage() {
                         maxLength={500}
                         className="border-border bg-surface placeholder:text-faint hover:border-border-strong focus:border-primary h-8 w-full rounded-md border px-2.5 text-[13px] focus:outline-none"
                       />
-                      <Button type="submit" variant="danger" size="sm" className="w-full">
+                      <SubmitButton variant="danger" size="sm" className="w-full" pendingLabel="Rejecting…">
                         Reject · refund owed
-                      </Button>
+                      </SubmitButton>
                     </form>
                   </div>
                 </div>
@@ -166,7 +166,7 @@ export default async function AdminPage() {
                   </div>
                 </div>
                 <div className="flex flex-col items-end gap-2"><Chip>{season.status.replaceAll("_", " ").toLowerCase()}</Chip>
-                {["REGISTRATION_OPEN", "REGISTRATION_CLOSED", "RUNNING"].includes(season.status) && <form action={season.status === "RUNNING" ? advanceSeasonAction : startSeasonAction}><input type="hidden" name="seasonId" value={season.id} /><Button size="sm" variant="secondary" type="submit">{season.status === "RUNNING" ? "Process due round" : "Start approved lineup"}</Button></form>}</div>
+                {["REGISTRATION_OPEN", "REGISTRATION_CLOSED", "RUNNING"].includes(season.status) && <form action={season.status === "RUNNING" ? advanceSeasonAction : startSeasonAction}><input type="hidden" name="seasonId" value={season.id} /><SubmitButton size="sm" variant="secondary" pendingLabel="Running…">{season.status === "RUNNING" ? "Process due round" : "Start approved lineup"}</SubmitButton></form>}</div>
               </li>
             ))}
           </ul>

@@ -12,6 +12,7 @@
     "db:check": "node scripts/check-db.mjs",
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
+    "icons": "node scripts/generate-icons.mjs",
     "typecheck": "tsc --noEmit",
     "postinstall": "prisma generate",
     "test": "node --conditions=react-server --import tsx --test tests/*.test.ts"

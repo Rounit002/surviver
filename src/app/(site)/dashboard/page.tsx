@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { Button, ButtonLink } from "@/components/ui/Button";
+import { ButtonLink } from "@/components/ui/Button";
+import { SubmitButton } from "@/components/ui/SubmitButton";
 import {
   CampaignHeader,
   EliminatedReport,
@@ -46,9 +47,9 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
         </div>
 
         <form action={signOutAction}>
-          <Button type="submit" variant="ghost" size="sm">
+          <SubmitButton variant="ghost" size="sm" pendingLabel="Signing out…">
             Sign out
-          </Button>
+          </SubmitButton>
         </form>
       </header>
 
