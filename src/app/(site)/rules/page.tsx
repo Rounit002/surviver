@@ -1,7 +1,8 @@
+import { pageMetadata } from "@/lib/seo";
 import Link from "next/link";
 import { getCurrentSeason, getOpenSeason } from "@/lib/competition/season";
 import { formatMoney } from "@/lib/format";
-export const metadata = { title: "Competition rules" };
+export const metadata = pageMetadata("/rules");
 export const dynamic = "force-dynamic";
 export default async function RulesPage() {
   const season = await getOpenSeason() ?? await getCurrentSeason();

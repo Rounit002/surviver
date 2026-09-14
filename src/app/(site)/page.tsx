@@ -1,3 +1,5 @@
+import { pageMetadata } from "@/lib/seo";
+export const metadata = pageMetadata("/");
 import Link from "next/link";
 import { QuickEntry } from "@/components/entry/QuickEntry";
 import { ProductCard } from "@/components/product/ProductCard";

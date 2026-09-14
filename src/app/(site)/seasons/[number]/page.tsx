@@ -1,3 +1,4 @@
+import { pageMetadata } from "@/lib/seo";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { RoundBar } from "@/components/competition/RoundBar";
@@ -33,10 +34,7 @@ export async function generateMetadata(
   });
   if (!season) notFound();
 
-  return {
-    title: season.name,
-    description: `Full standings and results for ${season.name} on Surviver.lol.`,
-  };
+  return pageMetadata(`/seasons/${parsed}`, season.name, `Full standings and results for ${season.name} on Surviver.lol.`);
 }
 
 export default async function SeasonPage(props: PageProps<"/seasons/[number]">) {

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import Link from "next/link";
 import { Fragment } from "react";
 import { RoundBar } from "@/components/competition/RoundBar";
@@ -11,10 +11,7 @@ import { getActiveRound, getCurrentSeason } from "@/lib/competition/season";
 import { getStandings, rankMovement, type StandingRow } from "@/lib/competition/standings";
 import { formatCount, formatInterestRate } from "@/lib/format";
 
-export const metadata: Metadata = {
-  title: "Leaderboard",
-  description: "Live standings, and who goes out when the round clock reaches zero.",
-};
+export const metadata = pageMetadata("/leaderboard");
 
 export const dynamic = "force-dynamic";
 

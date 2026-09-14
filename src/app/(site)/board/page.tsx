@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import Link from "next/link";
 import { RoundBar } from "@/components/competition/RoundBar";
 import { ProductCard } from "@/components/product/ProductCard";
@@ -10,10 +10,7 @@ import { getStandings, balanceForVisitor } from "@/lib/competition/standings";
 import { getVisitorContext } from "@/lib/tracking/visitor";
 import type { ProductCategory } from "@/generated/prisma";
 
-export const metadata: Metadata = {
-  title: "Discovery board",
-  description: "Every product competing this season. Browse, and visit the ones worth a look.",
-};
+export const metadata = pageMetadata("/board");
 
 export const dynamic = "force-dynamic";
 
@@ -72,6 +69,7 @@ export default async function BoardPage(props: PageProps<"/board">) {
         </Panel>
       ) : (
         <div className="mt-6 grid grid-cols-1 gap-3">
+          <h2 className="sr-only">Competing products</h2>
           {visible.map((row) => (
             <ProductCard key={row.entryId} row={row} roundName={round?.name} />
           ))}

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import Link from "next/link";
 import { EntryForm } from "@/components/entry/EntryForm";
 import { ButtonLink } from "@/components/ui/Button";
@@ -9,11 +9,7 @@ import type { ProductCategory } from "@/generated/prisma";
 import { prisma } from "@/lib/db";
 import { formatCount, formatMoney } from "@/lib/format";
 
-export const metadata: Metadata = {
-  title: "Enter a season",
-  description:
-    "Paste your link, pick a category, pay the flat entry fee. No account needed.",
-};
+export const metadata = pageMetadata("/enter");
 
 export const dynamic = "force-dynamic";
 

@@ -49,7 +49,7 @@ export function PanelHeader({
         className,
       )}
     >
-      <div className="label label-bright">{title}</div>
+      <h2 className="label label-bright">{title}</h2>
       {action}
     </div>
   );

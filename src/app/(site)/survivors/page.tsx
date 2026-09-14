@@ -1,14 +1,11 @@
-import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import { ButtonLink } from "@/components/ui/Button";
 import { Panel } from "@/components/ui/Panel";
 import { prisma } from "@/lib/db";
 import { CATEGORY_LABELS } from "@/lib/competition/constants";
 import { displayHost, formatCount, formatDate, formatInterestRate } from "@/lib/format";
 
-export const metadata: Metadata = {
-  title: "Hall of Survivors",
-  description: "Every product that outlasted its entire season.",
-};
+export const metadata = pageMetadata("/survivors");
 
 export const dynamic = "force-dynamic";
 

@@ -138,7 +138,9 @@ function Monogram({
       // eslint-disable-next-line @next/next/no-img-element
       <img
         src={logoUrl}
-        alt=""
+        alt={`${name} logo`}
+        loading="lazy"
+        decoding="async"
         width={40}
         height={40}
         className="border-border size-10 shrink-0 rounded-md border object-cover"

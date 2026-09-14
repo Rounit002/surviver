@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Fragment } from "react";
 
 const LINKS = [
+  { href: "/sitemap", label: "Site map" },
   { href: "/rules", label: "Rules" },
   { href: "/how-it-works", label: "How scoring works" },
   { href: "/seasons", label: "Seasons" },

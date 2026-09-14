@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import Link from "next/link";
 import { ButtonLink } from "@/components/ui/Button";
 import { Chip, LiveBadge } from "@/components/ui/Chip";
@@ -7,10 +7,7 @@ import { CLAIMED_ENTRY_STATUSES } from "@/lib/competition/season";
 import { prisma } from "@/lib/db";
 import { formatDate, formatMoney } from "@/lib/format";
 
-export const metadata: Metadata = {
-  title: "Seasons",
-  description: "Every Surviver season, with full standings kept permanently.",
-};
+export const metadata = pageMetadata("/seasons");
 
 export const dynamic = "force-dynamic";
 

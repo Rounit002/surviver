@@ -16,6 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  verification: { google: "8iN_AsYMOxUsABcU4cnGBQnuFxc1Jfj-XBCjLyLMgFE" },
   // Social metadata belongs to the public brand domain, even when APP_URL
   // still points at the deployment provider's internal/default hostname.
   metadataBase: new URL("https://surviver.lol"),
@@ -61,7 +62,17 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${poppins.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="bg-background text-foreground flex min-h-full flex-col">{children}</body>
+      <body className="bg-background text-foreground flex min-h-full flex-col">
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          name: "Surviver.lol",
+          url: "https://surviver.lol",
+          description: "A performance-based promotional tournament for SaaS products.",
+          inLanguage: "en",
+        }).replace(/</g, "\\u003c") }} />
+        {children}
+      </body>
     </html>
   );
 }

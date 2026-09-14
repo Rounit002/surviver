@@ -1,6 +1,7 @@
+import { pageMetadata } from "@/lib/seo";
 import Link from "next/link";
 import { DEFAULT_BRACKET } from "@/lib/competition/constants";
-export const metadata = { title: "How scoring works" };
+export const metadata = pageMetadata("/how-it-works");
 export default function HowItWorksPage() {
   return <article className="mx-auto w-full max-w-2xl px-4 py-10"><p className="label">Behind the standings</p><h1 className="mt-3 text-3xl font-semibold">Curiosity is the score.</h1><p className="text-subtle mt-4 text-sm leading-7">The board favors underexposed products. Every visit that follows a qualified view updates a product’s Interest Rate — position cannot be bought.</p>
     <div className="bg-primary-soft my-8 rounded-3xl p-6"><p className="text-primary text-lg font-semibold">Interest Rate = verified visits ÷ qualified views</p><p className="text-subtle mt-3 text-sm leading-6">Example only, not live activity: 10 visits from 250 qualified views is 4%.</p></div>
