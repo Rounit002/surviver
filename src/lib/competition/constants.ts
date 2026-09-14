@@ -1,4 +1,4 @@
-import type { CompetitiveStatus, EntryStatus, ProductCategory } from "@/generated/prisma";
+import type { CompetitiveStatus, EntryStatus, ProductCategory, SeasonStatus } from "@/generated/prisma";
 
 /**
  * The categories Season 0 accepts. Deliberately narrow: Surviver's early
@@ -138,3 +138,23 @@ export const AUTH_COOKIE = "sv_auth";
 export const RALLY_COOKIE = "sv_rally";
 /// Proves this browser started a checkout, so paying needs no account.
 export const PENDING_PAYMENT_COOKIE = "sv_pay";
+/// Holds the private campaign capability while the founder is away at the
+/// payment provider, so the capability never travels in a provider return URL.
+export const CAMPAIGN_TOKEN_COOKIE = "sv_campaign";
+
+/**
+ * Which seasons the public site is allowed to show. A draft season is
+ * unfinished planning and a cancelled one never happened; neither belongs on
+ * the public listings or in the sitemap. Every public surface shares this one
+ * predicate so the listings, the detail pages and the sitemap cannot drift.
+ */
+export const PUBLIC_SEASON_STATUSES: SeasonStatus[] = ["REGISTRATION_OPEN", "REGISTRATION_CLOSED", "RUNNING", "COMPLETED"];
+
+export const publicSeasonFilter = { status: { in: PUBLIC_SEASON_STATUSES } };
+
+/** Postgres `Int` bounds: a larger value is a bad request, not a server error. */
+export function parseSeasonNumber(raw: string): number | null {
+  if (!/^\d{1,10}$/.test(raw)) return null;
+  const parsed = Number(raw);
+  return Number.isInteger(parsed) && parsed >= 0 && parsed <= 2_147_483_647 ? parsed : null;
+}

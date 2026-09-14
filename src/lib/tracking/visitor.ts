@@ -6,6 +6,8 @@ import {
   SESSION_COOKIE,
   VISITOR_COOKIE,
 } from "@/lib/competition/constants";
+import { hashIp, requestIp } from "@/lib/security/request";
+import { verifySignedValue } from "@/lib/security/tokens";
 
 export type VisitorContext = {
   visitorId: string;
@@ -13,6 +15,7 @@ export type VisitorContext = {
   /** Rally code the visitor arrived through, if any. */
   rallyCode: string | null;
   userAgent: string | null;
+  ipHash: string | null;
 };
 
 /**
@@ -25,10 +28,11 @@ export async function getVisitorContext(): Promise<VisitorContext> {
   const h = await headers();
 
   return {
-    visitorId: store.get(VISITOR_COOKIE)?.value ?? "anonymous",
-    sessionId: store.get(SESSION_COOKIE)?.value ?? "anonymous",
-    rallyCode: store.get(RALLY_COOKIE)?.value ?? null,
+    visitorId: verifySignedValue(store.get(VISITOR_COOKIE)?.value, /^[a-f0-9]{32}$/) ?? "anonymous",
+    sessionId: verifySignedValue(store.get(SESSION_COOKIE)?.value, /^[a-f0-9]{32}$/) ?? "anonymous",
+    rallyCode: verifySignedValue(store.get(RALLY_COOKIE)?.value, /^[a-z0-9-]{1,40}$/i),
     userAgent: h.get("user-agent"),
+    ipHash: hashIp(await requestIp()),
   };
 }
 

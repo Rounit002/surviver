@@ -2,6 +2,8 @@ import "server-only";
 
 import { lookup } from "node:dns/promises";
 import { isIP } from "node:net";
+import ipaddr from "ipaddr.js";
+import { Pool, fetch as pinnedFetch } from "undici";
 
 /**
  * Fetches a submitted product URL so the entry form can prefill itself.
@@ -50,48 +52,41 @@ export function normalizeUrl(raw: string): string {
   if (url.username || url.password) {
     throw new UnsafeUrlError("Remove the credentials from the URL.");
   }
+  if (url.port && url.port !== "80" && url.port !== "443") {
+    throw new UnsafeUrlError("Only standard web ports are allowed.");
+  }
 
   url.hash = "";
   return url.toString();
 }
 
-function isPrivateAddress(address: string, family: number): boolean {
-  if (family === 4) {
-    const parts = address.split(".").map(Number);
-    const [a, b] = parts as [number, number];
-    if (a === 10 || a === 127 || a === 0) return true;
-    if (a === 172 && b >= 16 && b <= 31) return true;
-    if (a === 192 && b === 168) return true;
-    if (a === 169 && b === 254) return true; // link-local, cloud metadata
-    if (a === 100 && b >= 64 && b <= 127) return true; // carrier NAT
-    if (a === 198 && (b === 18 || b === 19)) return true; // benchmarking
-    if (a === 192 && b === 0) return true;
-    if (a >= 224) return true; // multicast and reserved
-    return false;
+export function isPrivateAddress(address: string): boolean {
+  try {
+    let parsed = ipaddr.parse(address);
+    if (parsed.kind() === "ipv6" && (parsed as ipaddr.IPv6).isIPv4MappedAddress()) {
+      parsed = (parsed as ipaddr.IPv6).toIPv4Address();
+    }
+    return parsed.range() !== "unicast";
+  } catch {
+    return true;
   }
-
-  const lower = address.toLowerCase();
-  if (lower === "::1" || lower === "::") return true;
-  if (lower.startsWith("fc") || lower.startsWith("fd")) return true; // unique local
-  if (lower.startsWith("fe80")) return true; // link-local
-  // IPv4-mapped IPv6, e.g. ::ffff:169.254.169.254
-  const mapped = lower.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
-  if (mapped) return isPrivateAddress(mapped[1]!, 4);
-  return false;
 }
 
 /** Rejects hosts that resolve anywhere inside the private network. */
-async function assertPublicHost(hostname: string): Promise<void> {
+async function assertPublicHost(hostname: string, timeoutMs: number): Promise<{ address: string; family: 4 | 6 }> {
   if (isIP(hostname)) {
-    if (isPrivateAddress(hostname, isIP(hostname))) {
+    if (isPrivateAddress(hostname)) {
       throw new UnsafeUrlError("That address is not reachable from the public internet.");
     }
-    return;
+    return { address: hostname, family: isIP(hostname) as 4 | 6 };
   }
 
   let addresses: { address: string; family: number }[];
   try {
-    addresses = await lookup(hostname, { all: true });
+    addresses = await Promise.race([
+      lookup(hostname, { all: true }),
+      new Promise<never>((_, reject) => setTimeout(() => reject(new Error("DNS timeout")), timeoutMs)),
+    ]);
   } catch {
     throw new UnsafeUrlError("We could not resolve that domain.");
   }
@@ -100,30 +95,38 @@ async function assertPublicHost(hostname: string): Promise<void> {
     throw new UnsafeUrlError("We could not resolve that domain.");
   }
   for (const entry of addresses) {
-    if (isPrivateAddress(entry.address, entry.family)) {
+    if (isPrivateAddress(entry.address)) {
       throw new UnsafeUrlError("That address is not reachable from the public internet.");
     }
   }
+  const selected = addresses[0]!;
+  return { address: selected.address, family: selected.family as 4 | 6 };
 }
 
-/** Reads at most MAX_BYTES of the body, so a huge response cannot exhaust memory. */
-async function readCapped(response: Response): Promise<string> {
+/**
+ * Reads at most MAX_BYTES of the body, so a huge response cannot exhaust
+ * memory. Copying is bounded per chunk: a hostile server that answers with one
+ * enormous chunk must not get that whole chunk buffered before it is sliced.
+ */
+async function readCapped(response: Awaited<ReturnType<typeof pinnedFetch>>): Promise<string> {
   const reader = response.body?.getReader();
   if (!reader) return "";
 
-  const chunks: Uint8Array[] = [];
+  const buffer = new Uint8Array(MAX_BYTES);
   let total = 0;
-  while (total < MAX_BYTES) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    chunks.push(value);
-    total += value.length;
+  try {
+    while (total < MAX_BYTES) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const take = Math.min(value.length, MAX_BYTES - total);
+      buffer.set(value.subarray(0, take), total);
+      total += take;
+    }
+  } finally {
+    await reader.cancel().catch(() => undefined);
   }
-  await reader.cancel().catch(() => undefined);
 
-  return new TextDecoder("utf-8", { fatal: false }).decode(
-    Uint8Array.from(chunks.flatMap((c) => Array.from(c))).slice(0, MAX_BYTES),
-  );
+  return new TextDecoder("utf-8", { fatal: false }).decode(buffer.subarray(0, total));
 }
 
 function decodeEntities(value: string): string {
@@ -155,19 +158,26 @@ function metaContent(html: string, patterns: RegExp[]): string | null {
 export async function fetchSiteMetadata(inputUrl: string): Promise<SiteMetadata> {
   let current = normalizeUrl(inputUrl);
   let html = "";
+  const deadline = Date.now() + FETCH_TIMEOUT_MS;
 
   for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
     const url = new URL(current);
-    await assertPublicHost(url.hostname);
+    const remaining = deadline - Date.now();
+    if (remaining <= 0) throw new UnsafeUrlError("The site took too long to respond.");
+    const address = await assertPublicHost(url.hostname, remaining);
 
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+    const timer = setTimeout(() => controller.abort(), Math.max(1, deadline - Date.now()));
+    const pool = new Pool(url.origin, { connections: 1, pipelining: 0, connect: {
+      lookup(_hostname, _options, callback) { callback(null, address.address, address.family); },
+    } });
 
-    let response: Response;
+    let response: Awaited<ReturnType<typeof pinnedFetch>>;
     try {
-      response = await fetch(url, {
+      response = await pinnedFetch(url, {
         redirect: "manual",
         signal: controller.signal,
+        dispatcher: pool,
         headers: {
           // Identify honestly; some sites choose to block us, which is fine.
           "user-agent": "SurviverBot/1.0 (+https://surviver.lol)",
@@ -175,23 +185,35 @@ export async function fetchSiteMetadata(inputUrl: string): Promise<SiteMetadata>
         },
       });
     } catch {
-      return { url: current, title: null, description: null, imageUrl: null, faviconUrl: null };
-    } finally {
       clearTimeout(timer);
+      await pool.close().catch(() => undefined);
+      return { url: current, title: null, description: null, imageUrl: null, faviconUrl: null };
     }
 
     // Follow redirects by hand so each new host is validated too.
     if (response.status >= 300 && response.status < 400) {
       const location = response.headers.get("location");
+      await response.body?.cancel().catch(() => undefined);
+      clearTimeout(timer);
+      await pool.close();
       if (!location) break;
-      current = new URL(location, current).toString();
+      current = normalizeUrl(new URL(location, current).toString());
       continue;
     }
 
-    if (!response.ok) break;
-    if (!(response.headers.get("content-type") ?? "").includes("html")) break;
+    if (!response.ok || !(response.headers.get("content-type") ?? "").includes("html")) {
+      await response.body?.cancel().catch(() => undefined);
+      clearTimeout(timer);
+      await pool.close();
+      break;
+    }
 
-    html = await readCapped(response);
+    try {
+      html = await readCapped(response);
+    } finally {
+      clearTimeout(timer);
+      await pool.close().catch(() => undefined);
+    }
     break;
   }
 

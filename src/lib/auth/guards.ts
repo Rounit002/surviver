@@ -24,5 +24,11 @@ export async function requireAdmin(): Promise<SessionUser> {
   return user;
 }
 
+export async function requireVerifiedUser(returnTo?: string): Promise<SessionUser> {
+  const user = await requireUser(returnTo);
+  if (!user.emailVerifiedAt) redirect(`/verify-email?next=${encodeURIComponent(returnTo ?? "/dashboard")}`);
+  return user;
+}
+
 export { getSessionUser };
 export type { SessionUser };

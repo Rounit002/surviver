@@ -190,7 +190,8 @@ Serializes scoring writes on the season, rejects obvious bot/headless agents, de
 ### `src/lib/payments/*`
 
 - `types.ts`: provider-neutral checkout and webhook result types.
-- `index.ts`: provider registry with only the `dev` provider. Dev checkout points at `/enter/checkout/[paymentId]`; its webhook parser accepts JSON success/failure/refund payloads without real signature verification.
+- `index.ts`: provider registry holding `dodo` and `dev`. Dev checkout points at `/enter/checkout/[paymentId]`; its webhook parser accepts JSON success/failure/refund payloads without real signature verification, so `getPaymentProvider()` throws rather than returning it whenever `NODE_ENV=production`.
+- `access.ts`: constant-time check of the hashed, expiring checkout capability that authorizes the checkout page and action. Knowing a payment id is never sufficient.
 - `fulfill.ts`: provider-scoped, idempotent payment fulfillment with durable event history, valid state transitions, settlement-time capacity checks, and refund validation.
 
 ### `src/lib/format.ts` and `src/lib/cn.ts`

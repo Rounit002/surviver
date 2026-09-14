@@ -8,7 +8,7 @@ import { Panel, PanelHeader } from "@/components/ui/Panel";
 import { Stat } from "@/components/ui/Stat";
 import { cn } from "@/lib/cn";
 import { CATEGORY_LABELS } from "@/lib/competition/constants";
-import { getActiveRound } from "@/lib/competition/season";
+import { getActiveRound, parseSeasonNumber, publicSeasonFilter } from "@/lib/competition/season";
 import { getStandings } from "@/lib/competition/standings";
 import { prisma } from "@/lib/db";
 import { displayHost, formatCount, formatDate, formatInterestRate, formatMoney } from "@/lib/format";
@@ -25,11 +25,11 @@ export async function generateMetadata(
   props: PageProps<"/seasons/[number]">,
 ): Promise<Metadata> {
   const { number } = await props.params;
-  const parsed = Number(number);
-  if (!Number.isInteger(parsed) || parsed < 0) notFound();
+  const parsed = parseSeasonNumber(number);
+  if (parsed === null) notFound();
 
-  const season = await prisma.season.findUnique({
-    where: { number: parsed },
+  const season = await prisma.season.findFirst({
+    where: { number: parsed, ...publicSeasonFilter },
     select: { name: true },
   });
   if (!season) notFound();
@@ -39,10 +39,10 @@ export async function generateMetadata(
 
 export default async function SeasonPage(props: PageProps<"/seasons/[number]">) {
   const { number } = await props.params;
-  const parsed = Number(number);
-  if (!Number.isInteger(parsed) || parsed < 0) notFound();
+  const parsed = parseSeasonNumber(number);
+  if (parsed === null) notFound();
 
-  const season = await prisma.season.findUnique({ where: { number: parsed } });
+  const season = await prisma.season.findFirst({ where: { number: parsed, ...publicSeasonFilter } });
   if (!season) notFound();
 
   // A finished season shows its final round; a live one shows the active round.

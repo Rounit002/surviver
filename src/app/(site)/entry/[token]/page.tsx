@@ -11,6 +11,7 @@ import { Panel } from "@/components/ui/Panel";
 import { prisma } from "@/lib/db";
 import { env } from "@/lib/env";
 import { isDevPayments } from "@/lib/payments";
+import { hashCapability } from "@/lib/security/tokens";
 
 export const dynamic = "force-dynamic";
 
@@ -28,13 +29,19 @@ export const metadata: Metadata = {
  */
 export default async function EntryPage(props: PageProps<"/entry/[token]">) {
   const { token } = await props.params;
-  const paid = (await props.searchParams).paid === "1";
 
-  if (token.length < 20) notFound();
+  if (token.length < 20 || token.length > 128) notFound();
 
-  const entry = await prisma.seasonEntry.findUnique({
-    where: { manageToken: token },
+  const now = new Date();
+  const tokenHash = hashCapability(token);
+  const entry = await prisma.seasonEntry.findFirst({
+    where: { AND: [
+      { OR: [{ manageToken: tokenHash }, { manageToken: token }] },
+      { manageTokenRevokedAt: null },
+      { OR: [{ manageTokenExpiresAt: null }, { manageTokenExpiresAt: { gt: now } }] },
+    ] },
     include: {
+      payment: { select: { status: true } },
       product: { select: { name: true, url: true, category: true } },
       season: { select: { name: true, minSampleImpressions: true } },
       roundStats: {
@@ -44,8 +51,13 @@ export default async function EntryPage(props: PageProps<"/entry/[token]">) {
     },
   });
 
+  if (entry?.manageToken === token) await prisma.seasonEntry.update({ where: { id: entry.id }, data: { manageToken: tokenHash } });
+
   if (!entry) notFound();
 
+  // Derived from what was actually settled, never from a query parameter a
+  // visitor can add to the URL.
+  const paid = entry.payment?.status === "SUCCEEDED" && entry.status === "AWAITING_APPROVAL";
   const serverNow = new Date().toISOString();
   const hasStats = entry.roundStats.length > 0;
   const testMode = isDevPayments();

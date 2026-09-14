@@ -3,12 +3,19 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
+import { randomBytes } from "node:crypto";
 import { createSession, destroySession } from "@/lib/auth/session";
-import { fakeVerify, hashPassword, verifyPassword } from "@/lib/auth/password";
+import { fakeVerify, hashPassword, passwordFitsBcrypt, verifyPassword } from "@/lib/auth/password";
+import { verifyAdminMfa } from "@/lib/auth/mfa";
+import { sendVerificationEmail } from "@/lib/email";
+import { env } from "@/lib/env";
+import { consumeRateLimit, requestIp } from "@/lib/security/request";
+import { hashCapability } from "@/lib/security/tokens";
+import { safeNextPath } from "@/lib/auth/redirects";
 
 export type AuthFormState = {
   error?: string;
-  fieldErrors?: Partial<Record<"email" | "password" | "name", string>>;
+  fieldErrors?: Partial<Record<"email" | "password" | "name" | "mfaCode", string>>;
 };
 
 const emailSchema = z
@@ -21,7 +28,7 @@ const emailSchema = z
 const passwordSchema = z
   .string()
   .min(10, "Use at least 10 characters.")
-  .max(200, "That password is too long.");
+  .refine(passwordFitsBcrypt, "Use a password no longer than 72 UTF-8 bytes.");
 
 const signUpSchema = z.object({
   name: z.string().trim().min(1, "Your name is required.").max(80),
@@ -31,21 +38,15 @@ const signUpSchema = z.object({
 
 const signInSchema = z.object({
   email: emailSchema,
-  password: z.string().min(1, "Enter your password."),
+  password: z.string().min(1, "Enter your password.").refine(passwordFitsBcrypt, "Email or password is incorrect."),
+  mfaCode: z.string().trim().max(12).optional(),
 });
-
-/** Only allow internal paths, so `next` cannot be used as an open redirect. */
-function safeNext(value: FormDataEntryValue | null): string {
-  const raw = typeof value === "string" ? value : "";
-  if (!raw.startsWith("/") || raw.startsWith("//")) return "/dashboard";
-  return raw;
-}
 
 function fieldErrorsFrom(error: z.ZodError): AuthFormState["fieldErrors"] {
   const out: AuthFormState["fieldErrors"] = {};
   for (const issue of error.issues) {
     const key = issue.path[0];
-    if (key === "email" || key === "password" || key === "name") {
+    if (key === "email" || key === "password" || key === "name" || key === "mfaCode") {
       out[key] ??= issue.message;
     }
   }
@@ -67,19 +68,34 @@ export async function signUpAction(
   }
 
   const { name, email, password } = parsed.data;
+  const ip = await requestIp();
+  if (!(await consumeRateLimit("signup-ip", ip, 5, 60 * 60_000)) || !(await consumeRateLimit("signup-email", email, 3, 60 * 60_000))) {
+    return { error: "Too many attempts. Please try again later." };
+  }
 
   const existing = await prisma.user.findUnique({ where: { email }, select: { id: true } });
   if (existing) {
-    return { fieldErrors: { email: "An account with that email already exists." } };
+    return { error: "We could not create that account. Try signing in or request a new verification email." };
   }
 
+  const verificationToken = randomBytes(32).toString("base64url");
   const user = await prisma.user.create({
-    data: { name, email, passwordHash: await hashPassword(password) },
+    data: {
+      name, email, passwordHash: await hashPassword(password),
+      ...(env.isProduction ? {
+        emailVerificationTokenHash: hashCapability(verificationToken),
+        emailVerificationExpiresAt: new Date(Date.now() + 60 * 60_000),
+      } : { emailVerifiedAt: new Date() }),
+    },
     select: { id: true },
   });
 
+  if (env.isProduction) {
+    await sendVerificationEmail(email, verificationToken);
+    redirect("/verify-email?sent=1");
+  }
   await createSession(user.id);
-  redirect(safeNext(formData.get("next")));
+  redirect(safeNextPath(formData.get("next")));
 }
 
 export async function signInAction(
@@ -89,6 +105,7 @@ export async function signInAction(
   const parsed = signInSchema.safeParse({
     email: formData.get("email"),
     password: formData.get("password"),
+    mfaCode: formData.get("mfaCode") ?? undefined,
   });
 
   if (!parsed.success) {
@@ -96,9 +113,13 @@ export async function signInAction(
   }
 
   const { email, password } = parsed.data;
+  const ip = await requestIp();
+  if (!(await consumeRateLimit("signin-ip", ip, 12, 15 * 60_000)) || !(await consumeRateLimit("signin-email", email, 8, 15 * 60_000))) {
+    return { error: "Too many attempts. Please try again later." };
+  }
   const user = await prisma.user.findUnique({
     where: { email },
-    select: { id: true, passwordHash: true },
+    select: { id: true, passwordHash: true, emailVerifiedAt: true, role: true },
   });
 
   // Same message and comparable timing either way, so this cannot be used to
@@ -114,8 +135,13 @@ export async function signInAction(
     return { error: "Email or password is incorrect." };
   }
 
+  if (!user.emailVerifiedAt) return { error: "Verify your email before signing in." };
+  if (user.role === "ADMIN" && !(await verifyAdminMfa(parsed.data.mfaCode ?? ""))) {
+    return { fieldErrors: { mfaCode: "Enter a valid administrator verification code." } };
+  }
+
   await createSession(user.id);
-  redirect(safeNext(formData.get("next")));
+  redirect(safeNextPath(formData.get("next")));
 }
 
 export async function signOutAction(): Promise<void> {

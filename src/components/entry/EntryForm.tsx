@@ -21,10 +21,14 @@ export function EntryForm({
   priceLabel,
   initialUrl = "",
   initialCategory = "",
+  initialEmail,
+  testMode,
 }: {
   priceLabel: string;
   initialUrl?: string;
   initialCategory?: ProductCategory | "";
+  initialEmail: string;
+  testMode: boolean;
 }) {
   const [state, formAction, submitting] = useActionState(
     createEntryAction,
@@ -237,6 +241,8 @@ export function EntryForm({
               autoComplete="email"
               required
               placeholder="you@company.com"
+              value={initialEmail}
+              readOnly
               aria-invalid={Boolean(state.fieldErrors?.email)}
             />
           </Field>
@@ -270,7 +276,7 @@ export function EntryForm({
                 Taking you to checkout…
               </>
             ) : (
-              `Continue to test checkout · ${priceLabel}`
+              `Continue to ${testMode ? "test " : ""}checkout · ${priceLabel}`
             )}
           </Button>
 

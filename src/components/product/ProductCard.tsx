@@ -5,6 +5,7 @@ import { CATEGORY_COLORS, CATEGORY_LABELS } from "@/lib/competition/constants";
 import type { StandingRow } from "@/lib/competition/standings";
 import { displayHost, formatCount, formatInterestRate } from "@/lib/format";
 import type { ProductCategory } from "@/generated/prisma";
+import { createInteractionProof, type InteractionIdentity } from "@/lib/security/tokens";
 
 /**
  * A contestant on the discovery board.
@@ -17,13 +18,16 @@ export function ProductCard({
   row,
   roundName,
   className,
+  visitor,
 }: {
   row: StandingRow;
   roundName?: string;
   className?: string;
+  visitor: InteractionIdentity;
 }) {
   const { product } = row;
   const host = displayHost(product.url);
+  const interactionProof = createInteractionProof(row.entryId, visitor);
 
   return (
     <article
@@ -33,7 +37,7 @@ export function ProductCard({
       )}
       data-entry-id={row.entryId}
     >
-      <ImpressionTracker entryId={row.entryId} />
+      <ImpressionTracker entryId={row.entryId} proof={interactionProof} />
       <div className="grid grid-cols-[2.5rem_minmax(0,1fr)] items-start gap-3 sm:flex">
         <Monogram
           name={product.name}
@@ -102,7 +106,7 @@ export function ProductCard({
 
       <div className="border-border mt-4 flex flex-wrap items-center justify-between gap-3 border-t pt-3">
         <a
-          href={`/go/${product.slug}`}
+          href={`/go/${product.slug}?proof=${encodeURIComponent(interactionProof)}`}
           target="_blank"
           // Paid placement: never pass ranking signal to the destination.
           rel="noopener noreferrer nofollow sponsored"

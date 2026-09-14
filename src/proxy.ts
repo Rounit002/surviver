@@ -18,8 +18,56 @@ function newId() {
   return crypto.randomUUID().replaceAll("-", "");
 }
 
-export function proxy(request: NextRequest) {
-  const response = NextResponse.next();
+async function signature(value: string): Promise<string> {
+  const secret = process.env.SECURITY_SECRET ?? "surviver-development-security-secret-only";
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  return Buffer.from(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(value))).toString("base64url");
+}
+
+async function signed(value: string): Promise<string> { return `${value}.${await signature(value)}`; }
+
+/** Constant-time string compare; the Edge runtime has no timingSafeEqual. */
+function constantTimeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
+async function verified(raw: string | undefined, pattern: RegExp): Promise<string | null> {
+  if (!raw || raw.length > 256) return null;
+  const split = raw.lastIndexOf(".");
+  const value = raw.slice(0, split);
+  if (split <= 0 || !pattern.test(value)) return null;
+  return constantTimeEqual(await signature(value), raw.slice(split + 1)) ? value : null;
+}
+
+export async function proxy(request: NextRequest) {
+  const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
+  const csp = [
+    "default-src 'self'",
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}`,
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: https:",
+    "font-src 'self' data:",
+    "connect-src 'self'",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+    "upgrade-insecure-requests",
+  ].join("; ");
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-nonce", nonce);
+  requestHeaders.set("Content-Security-Policy", csp);
+  const response = NextResponse.next({ request: { headers: requestHeaders } });
+  response.headers.set("Content-Security-Policy", csp);
+  response.headers.set("X-Content-Type-Options", "nosniff");
+  response.headers.set("X-Frame-Options", "DENY");
+  response.headers.set("Referrer-Policy", "no-referrer");
+  response.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=(), usb=(), browsing-topics=()");
+  if (process.env.NODE_ENV === "production") response.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+  if (request.nextUrl.pathname.startsWith("/entry/") || request.nextUrl.pathname.startsWith("/enter/checkout/")) response.headers.set("Cache-Control", "private, no-store, max-age=0");
 
   const isSecure = request.nextUrl.protocol === "https:";
   const base = {
@@ -29,21 +77,20 @@ export function proxy(request: NextRequest) {
     path: "/",
   } as const;
 
-  if (!request.cookies.get(VISITOR_COOKIE)) {
-    response.cookies.set(VISITOR_COOKIE, newId(), { ...base, maxAge: VISITOR_MAX_AGE });
-  }
+  const visitor = await verified(request.cookies.get(VISITOR_COOKIE)?.value, /^[a-f0-9]{32}$/);
+  if (!visitor) response.cookies.set(VISITOR_COOKIE, await signed(newId()), { ...base, maxAge: VISITOR_MAX_AGE });
 
   // Refreshed on every request so an active browse stays one session.
   response.cookies.set(
     SESSION_COOKIE,
-    request.cookies.get(SESSION_COOKIE)?.value ?? newId(),
+    await signed((await verified(request.cookies.get(SESSION_COOKIE)?.value, /^[a-f0-9]{32}$/)) ?? newId()),
     { ...base, maxAge: SESSION_MAX_AGE },
   );
 
   // A Rally landing stamps the referring entry for the rest of the visit.
   const rally = request.nextUrl.searchParams.get("rally");
   if (rally && /^[a-z0-9-]{1,40}$/i.test(rally)) {
-    response.cookies.set(RALLY_COOKIE, rally, { ...base, maxAge: SESSION_MAX_AGE });
+    response.cookies.set(RALLY_COOKIE, await signed(rally), { ...base, maxAge: SESSION_MAX_AGE });
   }
 
   return response;

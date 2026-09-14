@@ -115,6 +115,9 @@ model User {
   avatarUrl    String?
   xHandle      String?
   role         Role     @default(FOUNDER)
+  emailVerifiedAt DateTime?
+  emailVerificationTokenHash String? @unique
+  emailVerificationExpiresAt DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -131,6 +134,7 @@ model Session {
   id        String   @id
   userId    String
   expiresAt DateTime
+  absoluteExpiresAt DateTime
   userAgent String?
   ipHash    String?
   createdAt DateTime @default(now())
@@ -225,6 +229,8 @@ model SeasonEntry {
   /// Secret capability link that lets a founder manage this entry without an
   /// account. Long and random, never guessable, never listed anywhere public.
   manageToken String? @unique
+  manageTokenExpiresAt DateTime?
+  manageTokenRevokedAt DateTime?
 
   finalRank         Int?
   eliminatedRoundId String?
@@ -389,6 +395,10 @@ model Payment {
   seasonEntryId     String?       @unique
   provider          String
   providerPaymentId String?
+  providerCheckoutId String?
+  checkoutTokenHash String? @unique
+  checkoutTokenExpiresAt DateTime?
+  refundRequestedAt DateTime?
   amountCents       Int
   currency          String        @default("usd")
   status            PaymentStatus @default(PENDING)
@@ -408,6 +418,33 @@ model Payment {
   @@index([userId])
   @@index([status])
   @@map("payments")
+}
+
+/// Atomic, shared rate-limit counters used by all application instances.
+model RateLimitBucket {
+  key         String   @id
+  windowStart DateTime
+  count       Int      @default(0)
+  expiresAt   DateTime
+
+  @@index([expiresAt])
+  @@map("rate_limit_buckets")
+}
+
+/// Durable inbox for authenticated provider messages and their processing state.
+model WebhookEvent {
+  id            String   @id
+  provider      String
+  type          String
+  payload       Json
+  status        String   @default("RECEIVED")
+  failureReason String?
+  receivedAt    DateTime @default(now())
+  processedAt   DateTime?
+
+  @@index([provider, status])
+  @@index([receivedAt])
+  @@map("webhook_events")
 }
 
 /// Every manual intervention leaves a trail (PRD sections 21 and 30).

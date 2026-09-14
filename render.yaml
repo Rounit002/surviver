@@ -45,5 +45,26 @@ services:
       - key: CRON_SECRET
         generateValue: true
 
+      - key: SECURITY_SECRET
+        generateValue: true
+
       - key: PAYMENT_PROVIDER
-        value: dev
+        value: dodo
+
+      - key: DODO_PAYMENTS_ENVIRONMENT
+        value: live_mode
+
+      - key: DODO_PAYMENTS_API_KEY
+        sync: false
+      - key: DODO_PAYMENTS_WEBHOOK_KEY
+        sync: false
+      - key: DODO_PAYMENTS_PRODUCT_ID
+        sync: false
+      - key: DODO_PAYMENTS_BUSINESS_ID
+        sync: false
+      - key: ADMIN_TOTP_SECRET
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        sync: false

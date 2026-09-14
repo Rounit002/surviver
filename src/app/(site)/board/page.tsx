@@ -71,7 +71,7 @@ export default async function BoardPage(props: PageProps<"/board">) {
         <div className="mt-6 grid grid-cols-1 gap-3">
           <h2 className="sr-only">Competing products</h2>
           {visible.map((row) => (
-            <ProductCard key={row.entryId} row={row} roundName={round?.name} />
+            <ProductCard key={row.entryId} row={row} roundName={round?.name} visitor={visitor} />
           ))}
         </div>
       )}

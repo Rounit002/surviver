@@ -1,12 +1,19 @@
 import bcrypt from "bcryptjs";
 
 const ROUNDS = 12;
+export const BCRYPT_MAX_BYTES = 72;
+
+export function passwordFitsBcrypt(plain: string): boolean {
+  return Buffer.byteLength(plain, "utf8") <= BCRYPT_MAX_BYTES;
+}
 
 export async function hashPassword(plain: string): Promise<string> {
+  if (!passwordFitsBcrypt(plain)) throw new Error("Password exceeds bcrypt's byte limit.");
   return bcrypt.hash(plain, ROUNDS);
 }
 
 export async function verifyPassword(plain: string, hash: string): Promise<boolean> {
+  if (!passwordFitsBcrypt(plain)) return false;
   return bcrypt.compare(plain, hash);
 }
 

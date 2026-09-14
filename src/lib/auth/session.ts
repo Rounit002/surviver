@@ -5,12 +5,31 @@ import { cookies, headers } from "next/headers";
 import { prisma } from "@/lib/db";
 import { env } from "@/lib/env";
 import { AUTH_COOKIE } from "@/lib/competition/constants";
+import { hashIp, requestIp } from "@/lib/security/request";
 import type { Role, User } from "@/generated/prisma";
 
-const SESSION_TTL_DAYS = 30;
-const SESSION_TTL_MS = SESSION_TTL_DAYS * 24 * 60 * 60 * 1000;
-/** Refresh the expiry when a session is more than a quarter used up. */
-const REFRESH_THRESHOLD_MS = SESSION_TTL_MS * 0.75;
+/**
+ * Two independent limits (audit F15):
+ *
+ * - absolute: a session dies this long after sign-in no matter how active it
+ *   is, so a copied token cannot be kept alive indefinitely.
+ * - idle: a session dies this long after its last use, and slides forward
+ *   while it is being used — but never past the absolute limit.
+ *
+ * Privileged sessions get much shorter windows than ordinary ones.
+ */
+const FOUNDER_SESSION_MS = 7 * 24 * 60 * 60 * 1000;
+const ADMIN_SESSION_MS = 12 * 60 * 60 * 1000;
+const FOUNDER_IDLE_MS = 24 * 60 * 60 * 1000;
+const ADMIN_IDLE_MS = 2 * 60 * 60 * 1000;
+/** Only rewrite the idle deadline when it moves by more than this. */
+const SLIDE_WRITE_THRESHOLD_MS = 5 * 60 * 1000;
+
+function lifetimesFor(role: Role): { absoluteMs: number; idleMs: number } {
+  return role === "ADMIN"
+    ? { absoluteMs: ADMIN_SESSION_MS, idleMs: ADMIN_IDLE_MS }
+    : { absoluteMs: FOUNDER_SESSION_MS, idleMs: FOUNDER_IDLE_MS };
+}
 
 /**
  * The cookie holds a random token; the database stores only its SHA-256. A
@@ -20,45 +39,39 @@ function tokenToId(token: string): string {
   return createHash("sha256").update(token).digest("hex");
 }
 
-export function hashIp(ip: string | null | undefined): string | null {
-  if (!ip) return null;
-  return createHash("sha256").update(`${env.ipHashSalt}:${ip}`).digest("hex").slice(0, 32);
-}
-
-/** Best-effort client address behind a proxy. Only ever stored hashed. */
-export async function clientIp(): Promise<string | null> {
-  const h = await headers();
-  const forwarded = h.get("x-forwarded-for");
-  if (forwarded) return forwarded.split(",")[0]!.trim();
-  return h.get("x-real-ip");
-}
-
 export async function createSession(userId: string): Promise<void> {
   const token = randomBytes(32).toString("base64url");
   const h = await headers();
-  const expiresAt = new Date(Date.now() + SESSION_TTL_MS);
+  const user = await prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { role: true } });
+  const { absoluteMs, idleMs } = lifetimesFor(user.role);
+  const now = Date.now();
+  const absoluteExpiresAt = new Date(now + absoluteMs);
+  const expiresAt = new Date(Math.min(now + idleMs, absoluteExpiresAt.getTime()));
 
   await prisma.session.create({
     data: {
       id: tokenToId(token),
       userId,
       expiresAt,
+      absoluteExpiresAt,
       userAgent: h.get("user-agent")?.slice(0, 512) ?? null,
-      ipHash: hashIp(await clientIp()),
+      ipHash: hashIp(await requestIp()),
     },
   });
 
   const store = await cookies();
+  // The cookie may live until the absolute limit; the idle limit is enforced
+  // server side, where a stolen cookie cannot influence it.
   store.set(AUTH_COOKIE, token, {
     httpOnly: true,
     sameSite: "lax",
     secure: env.isProduction,
     path: "/",
-    expires: expiresAt,
+    expires: absoluteExpiresAt,
   });
 }
 
-export type SessionUser = Pick<User, "id" | "email" | "name" | "role" | "avatarUrl" | "xHandle">;
+export type SessionUser = Pick<User, "id" | "email" | "emailVerifiedAt" | "name" | "role" | "avatarUrl" | "xHandle">;
 
 /**
  * Resolves the signed-in user, or null. Expired rows are deleted on sight so
@@ -67,29 +80,33 @@ export type SessionUser = Pick<User, "id" | "email" | "name" | "role" | "avatarU
 export async function getSessionUser(): Promise<SessionUser | null> {
   const store = await cookies();
   const token = store.get(AUTH_COOKIE)?.value;
-  if (!token) return null;
+  if (!token || token.length > 128) return null;
 
   const id = tokenToId(token);
   const session = await prisma.session.findUnique({
     where: { id },
     include: {
       user: {
-        select: { id: true, email: true, name: true, role: true, avatarUrl: true, xHandle: true },
+        select: { id: true, email: true, emailVerifiedAt: true, name: true, role: true, avatarUrl: true, xHandle: true },
       },
     },
   });
 
   if (!session) return null;
 
-  if (session.expiresAt.getTime() <= Date.now()) {
+  const now = Date.now();
+  if (session.expiresAt.getTime() <= now || session.absoluteExpiresAt.getTime() <= now) {
     await prisma.session.delete({ where: { id } }).catch(() => undefined);
     return null;
   }
 
-  // Sliding expiry, so an active founder is not logged out mid-season.
-  if (session.expiresAt.getTime() - Date.now() < REFRESH_THRESHOLD_MS) {
+  // Slide the idle deadline forward, never past the absolute one. Written only
+  // when it actually moves, so ordinary browsing is not one write per request.
+  const { idleMs } = lifetimesFor(session.user.role);
+  const slid = Math.min(now + idleMs, session.absoluteExpiresAt.getTime());
+  if (slid - session.expiresAt.getTime() > SLIDE_WRITE_THRESHOLD_MS) {
     await prisma.session
-      .update({ where: { id }, data: { expiresAt: new Date(Date.now() + SESSION_TTL_MS) } })
+      .update({ where: { id }, data: { expiresAt: new Date(slid) } })
       .catch(() => undefined);
   }
 

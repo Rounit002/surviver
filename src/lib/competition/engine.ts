@@ -32,17 +32,21 @@ export async function startSeason(seasonId: string, adminUserId: string) {
     await tx.adminAction.create({ data: { adminUserId, actionType: "season.start", targetType: "season", targetId: seasonId } });
   });
 }
-export async function advanceSeason(seasonId: string) {
+export async function advanceSeason(seasonId: string, adminUserId?: string) {
   return prisma.$transaction(async tx => {
     await lockSeason(tx, seasonId);
     const season = await tx.season.findUniqueOrThrow({ where: { id: seasonId } });
     const round = await tx.round.findFirst({ where: { seasonId, status: "ACTIVE" } });
     const now = new Date();
-    if (season.status !== "RUNNING" || !round || round.endAt > now) return "not due";
+    if (season.status !== "RUNNING" || !round || round.endAt > now) {
+      if (adminUserId) await tx.adminAction.create({ data: { adminUserId, actionType: "season.advance", targetType: "season", targetId: seasonId, metadata: { outcome: "not due" } } });
+      return "not due";
+    }
     const ranked = await refreshRanks(tx, round.id, season.minSampleImpressions, round.eliminationCount);
     if (ranked.length < 2 || ranked.some(s => s.rank === null)) {
       await tx.round.update({ where: { id: round.id }, data: { endAt: new Date(now.getTime() + 3600000) } });
       await tx.activityEvent.create({ data: { roundId: round.id, type: "round.extended", message: `${round.name} extended by one hour so every product can reach the minimum sample.` } });
+      if (adminUserId) await tx.adminAction.create({ data: { adminUserId, actionType: "season.advance", targetType: "season", targetId: seasonId, metadata: { outcome: "extended" } } });
       return "extended";
     }
     const survivors = ranked.slice(0, ranked.length - round.eliminationCount);
@@ -56,10 +60,12 @@ export async function advanceSeason(seasonId: string) {
     await tx.activityEvent.create({ data: { roundId: round.id, type: "round.completed", message: `${round.name} complete. ${survivors.length} ${survivors.length === 1 ? "survivor remains" : "products advance"}.` } });
     if (survivors.length === 1) {
       await tx.season.update({ where: { id: seasonId }, data: { status: "COMPLETED", seasonEnd: now } });
+      if (adminUserId) await tx.adminAction.create({ data: { adminUserId, actionType: "season.advance", targetType: "season", targetId: seasonId, metadata: { outcome: "completed" } } });
       return "completed";
     }
     const next = await tx.round.create({ data: { seasonId, roundNumber: round.roundNumber + 1, name: survivors.length === 2 ? "Final" : `Round ${round.roundNumber + 1}`, status: "ACTIVE", startAt: now, endAt: new Date(now.getTime() + (survivors.length === 2 ? season.finalRoundHours : season.defaultRoundHours) * 3600000), eliminationCount: eliminationFor(survivors.length) } });
     await tx.productRoundStats.createMany({ data: survivors.map(s => ({ roundId: next.id, seasonEntryId: s.seasonEntryId })) });
+    if (adminUserId) await tx.adminAction.create({ data: { adminUserId, actionType: "season.advance", targetType: "season", targetId: seasonId, metadata: { outcome: "advanced" } } });
     return "advanced";
   }, { timeout: 20000 });
 }

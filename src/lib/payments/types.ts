@@ -21,14 +21,15 @@ export type CheckoutSession = {
   /** Where to send the founder to complete payment. */
   url: string;
   /** The provider's own identifier, stored for reconciliation. */
-  providerPaymentId: string | null;
+  providerCheckoutId: string;
 };
 
 export type WebhookResult =
-  | { kind: "succeeded"; providerPaymentId: string; eventId: string }
-  | { kind: "failed"; providerPaymentId: string; eventId: string }
-  | { kind: "refunded"; providerPaymentId: string; eventId: string; amountCents: number }
-  | { kind: "ignored" };
+  | { kind: "succeeded" | "failed"; localPaymentId?: string; providerPaymentId: string; eventId: string; amountCents?: number; currency?: string; businessId?: string }
+  | { kind: "refunded"; localPaymentId?: string; providerPaymentId: string; eventId: string; amountCents: number; currency?: string; businessId?: string }
+  | { kind: "ignored"; reason?: string };
+
+export type WebhookContext = { eventId: string };
 
 export interface PaymentProvider {
   readonly name: string;
@@ -37,5 +38,6 @@ export interface PaymentProvider {
    * Verifies the signature and returns what happened. Never trust a client
    * redirect as proof of payment (PRD 33).
    */
-  parseWebhook(rawBody: string, signature: string | null): Promise<WebhookResult>;
+  parseWebhook(rawBody: string, context: WebhookContext): Promise<WebhookResult>;
+  requestRefund(providerPaymentId: string, reason: string): Promise<void>;
 }

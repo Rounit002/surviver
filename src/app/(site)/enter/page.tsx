@@ -8,12 +8,15 @@ import { CATEGORY_VALUES } from "@/lib/competition/constants";
 import type { ProductCategory } from "@/generated/prisma";
 import { prisma } from "@/lib/db";
 import { formatCount, formatMoney } from "@/lib/format";
+import { requireVerifiedUser } from "@/lib/auth/guards";
+import { isDevPayments } from "@/lib/payments";
 
 export const metadata = pageMetadata("/enter");
 
 export const dynamic = "force-dynamic";
 
 export default async function EnterPage(props: PageProps<"/enter">) {
+  const user = await requireVerifiedUser("/enter");
   const params = await props.searchParams;
   const initialUrl = typeof params.url === "string" ? params.url.slice(0, 2048) : "";
   const initialCategory = typeof params.category === "string" && CATEGORY_VALUES.includes(params.category as ProductCategory) ? params.category as ProductCategory : "";
@@ -35,7 +38,7 @@ export default async function EnterPage(props: PageProps<"/enter">) {
       <header className="text-center">
         <h1 className="text-3xl font-semibold sm:text-4xl">Enter {season.name}</h1>
         <p className="text-subtle mx-auto mt-3 max-w-lg text-[15px] leading-relaxed text-pretty">
-          Paste your link, pick a category, pay the flat fee. No account needed.
+          Paste your link, pick a category, and pay the flat fee using your verified account.
         </p>
       </header>
 
@@ -69,12 +72,10 @@ export default async function EnterPage(props: PageProps<"/enter">) {
         </div>
       </div>
 
-      <p className="border-primary/20 bg-primary-soft text-primary mx-auto mt-4 w-fit rounded-full border px-3.5 py-1.5 text-center text-[12px]">
-        Test mode &mdash; checkout is simulated, no money is charged.
-      </p>
+      {isDevPayments() ? <p className="border-primary/20 bg-primary-soft text-primary mx-auto mt-4 w-fit rounded-full border px-3.5 py-1.5 text-center text-[12px]">Local test mode &mdash; checkout is simulated, no money is charged.</p> : null}
 
       <div className="mt-6">
-        <EntryForm priceLabel={price} initialUrl={initialUrl} initialCategory={initialCategory} />
+        <EntryForm priceLabel={price} initialUrl={initialUrl} initialCategory={initialCategory} initialEmail={user.email} testMode={isDevPayments()} />
       </div>
 
       <p className="text-faint mt-6 text-center text-[12px] leading-relaxed">

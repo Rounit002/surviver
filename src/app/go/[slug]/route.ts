@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getVisitorContext } from "@/lib/tracking/visitor";
 import { recordInteraction } from "@/lib/tracking/events";
+import { consumeRateLimit, requestIp } from "@/lib/security/request";
+import { verifyInteractionProof } from "@/lib/security/tokens";
 
 /**
  * Outbound tracking redirect (PRD 9).
@@ -24,6 +26,7 @@ function isSafeDestination(raw: string): boolean {
 
 export async function GET(request: Request, ctx: RouteContext<"/go/[slug]">) {
   const { slug } = await ctx.params;
+  if (!/^[a-z0-9-]{1,80}$/.test(slug)) return NextResponse.redirect(new URL("/board", request.url), 302);
 
   const product = await prisma.product.findUnique({
     where: { slug },
@@ -55,7 +58,11 @@ export async function GET(request: Request, ctx: RouteContext<"/go/[slug]">) {
   // from reaching the destination they asked for.
   if (entry) {
     try {
-      await recordInteraction(entry.id, await getVisitorContext(), "visit");
+      const visitor = await getVisitorContext();
+      const proof = new URL(request.url).searchParams.get("proof") ?? undefined;
+      if (verifyInteractionProof(proof, entry.id, visitor) && await consumeRateLimit("visit-ip", await requestIp(), 60, 60_000)) {
+        await recordInteraction(entry.id, visitor, "visit");
+      }
     } catch (error) {
       console.error("[surviver] failed to record outbound visit", error);
     }

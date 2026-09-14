@@ -46,7 +46,7 @@ export default async function HomePage() {
       </div>
       <div className="mt-5 grid gap-6 lg:grid-cols-[minmax(0,1fr)_260px]">
         <div>
-          {rows.length ? <div className="space-y-3">{rows.map(row => <ProductCard key={row.entryId} row={row} roundName={round?.name} />)}</div> :
+          {rows.length ? <div className="space-y-3">{rows.map(row => <ProductCard key={row.entryId} row={row} roundName={round?.name} visitor={visitor} />)}</div> :
           <div className="border-border flex min-h-80 flex-col items-center justify-center rounded-3xl border border-dashed bg-surface/60 px-6 py-12 text-center">
             <span className="bg-primary-soft text-primary flex size-14 items-center justify-center rounded-2xl"><Icon name="spark" width="28" height="28" /></span>
             <h3 className="mt-5 text-xl font-semibold">The board is yours to begin.</h3>

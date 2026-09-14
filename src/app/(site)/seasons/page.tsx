@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ButtonLink } from "@/components/ui/Button";
 import { Chip, LiveBadge } from "@/components/ui/Chip";
 import { Panel } from "@/components/ui/Panel";
-import { CLAIMED_ENTRY_STATUSES } from "@/lib/competition/season";
+import { CLAIMED_ENTRY_STATUSES, publicSeasonFilter } from "@/lib/competition/season";
 import { prisma } from "@/lib/db";
 import { formatDate, formatMoney } from "@/lib/format";
 
@@ -13,6 +13,7 @@ export const dynamic = "force-dynamic";
 
 export default async function SeasonsPage() {
   const seasons = await prisma.season.findMany({
+    where: publicSeasonFilter,
     orderBy: { number: "desc" },
     include: {
       entries: {

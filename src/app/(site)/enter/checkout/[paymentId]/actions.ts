@@ -8,6 +8,8 @@ import { PENDING_PAYMENT_COOKIE } from "@/lib/competition/constants";
 import { prisma } from "@/lib/db";
 import { isDevPayments } from "@/lib/payments";
 import { applyPaymentResult } from "@/lib/payments/fulfill";
+import { hasCheckoutCapability } from "@/lib/payments/access";
+import { consumeRateLimit, requestIp } from "@/lib/security/request";
 
 /**
  * Drives the dev checkout. Guarded so it can never run once a real provider is
@@ -17,6 +19,7 @@ export async function simulatePaymentAction(formData: FormData): Promise<void> {
   if (!isDevPayments()) throw new Error("Simulated payments are disabled.");
 
   const paymentId = String(formData.get("paymentId") ?? "");
+  if (!/^[a-zA-Z0-9_-]{10,100}$/.test(paymentId)) redirect("/enter");
   const outcome = String(formData.get("outcome") ?? "");
   if (outcome !== "succeeded" && outcome !== "failed") {
     throw new Error("Unknown outcome.");
@@ -27,23 +30,29 @@ export async function simulatePaymentAction(formData: FormData): Promise<void> {
     select: {
       id: true,
       userId: true,
-      providerPaymentId: true,
-      entry: { select: { manageToken: true } },
+      amountCents: true,
+      currency: true,
+      checkoutTokenHash: true,
+      checkoutTokenExpiresAt: true,
     },
   });
-  if (!payment?.providerPaymentId) redirect("/enter");
+  if (!payment) redirect("/enter");
 
   const store = await cookies();
-  const holdsCookie = store.get(PENDING_PAYMENT_COOKIE)?.value === payment.id;
+  const holdsCookie = hasCheckoutCapability(store.get(PENDING_PAYMENT_COOKIE)?.value, payment);
   const user = await getSessionUser();
   if (!holdsCookie && user?.id !== payment.userId && user?.role !== "ADMIN") {
     redirect("/enter");
   }
+  if (!(await consumeRateLimit("dev-payment", await requestIp(), 10, 60 * 60_000))) throw new Error("Too many payment attempts.");
 
   const result = await applyPaymentResult({
     kind: outcome,
-    providerPaymentId: payment.providerPaymentId,
+    localPaymentId: payment.id,
+    providerPaymentId: `dev_payment_${payment.id}`,
     eventId: `dev_evt_${randomBytes(8).toString("hex")}`,
+    amountCents: payment.amountCents,
+    currency: payment.currency.toLowerCase(),
   });
 
   if (!result.applied && result.reason !== "already settled") {
@@ -56,7 +65,5 @@ export async function simulatePaymentAction(formData: FormData): Promise<void> {
 
   // Paid: the capability cookie has done its job.
   store.delete(PENDING_PAYMENT_COOKIE);
-  redirect(
-    payment.entry?.manageToken ? `/entry/${payment.entry.manageToken}?paid=1` : "/board",
-  );
+  redirect("/dashboard?entered=1");
 }

@@ -9,6 +9,7 @@ import { PENDING_PAYMENT_COOKIE } from "@/lib/competition/constants";
 import { prisma } from "@/lib/db";
 import { isDevPayments } from "@/lib/payments";
 import { formatMoney } from "@/lib/format";
+import { hasCheckoutCapability } from "@/lib/payments/access";
 import { simulatePaymentAction } from "./actions";
 
 export const metadata: Metadata = { title: "Checkout" };
@@ -24,27 +25,26 @@ export const dynamic = "force-dynamic";
  */
 export default async function CheckoutPage(props: PageProps<"/enter/checkout/[paymentId]">) {
   const { paymentId } = await props.params;
+  if (!isDevPayments()) notFound();
+  if (!/^[a-zA-Z0-9_-]{10,100}$/.test(paymentId)) notFound();
 
   const payment = await prisma.payment.findUnique({
     where: { id: paymentId },
     include: {
       season: { select: { name: true } },
-      entry: { select: { manageToken: true, product: { select: { name: true } } } },
+      entry: { select: { product: { select: { name: true } } } },
       user: { select: { id: true, email: true } },
     },
   });
   if (!payment) notFound();
 
   const store = await cookies();
-  const holdsCookie = store.get(PENDING_PAYMENT_COOKIE)?.value === payment.id;
+  const holdsCookie = hasCheckoutCapability(store.get(PENDING_PAYMENT_COOKIE)?.value, payment);
   const user = await getSessionUser();
   const isOwner = user?.id === payment.userId || user?.role === "ADMIN";
   if (!holdsCookie && !isOwner) notFound();
 
-  if (payment.status === "SUCCEEDED" && payment.entry?.manageToken) {
-    redirect(`/entry/${payment.entry.manageToken}?paid=1`);
-  }
-  if (!isDevPayments()) notFound();
+  if (payment.status === "SUCCEEDED") redirect("/dashboard?entered=1");
 
   const params = await props.searchParams;
   const failed = params.failed === "1";

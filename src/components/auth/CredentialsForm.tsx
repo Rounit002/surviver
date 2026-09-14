@@ -68,6 +68,12 @@ export function CredentialsForm({
         />
       </Field>
 
+      {!includeName ? (
+        <Field label="Admin verification code" htmlFor="mfaCode" error={state.fieldErrors?.mfaCode} hint="Required only for administrator accounts.">
+          <Input id="mfaCode" name="mfaCode" inputMode="numeric" autoComplete="one-time-code" maxLength={6} pattern="[0-9]{6}" aria-invalid={Boolean(state.fieldErrors?.mfaCode)} />
+        </Field>
+      ) : null}
+
       <Button type="submit" variant="primary" size="md" className="w-full" disabled={pending}>
         {pending ? (
           <>

@@ -19,7 +19,14 @@ export async function recordInteraction(entryId: string, visitor: VisitorContext
     if (!stats || stats.finalized) return false;
     const sourceType: SourceType = visitor.rallyCode === entry.rallyCode ? "RALLY_SELF" : visitor.rallyCode ? "RALLY" : "DISCOVERY";
     if (sourceType === "RALLY_SELF") return false;
-    const common = { seasonEntryId: entryId, roundId: round.id, visitorId: visitor.visitorId, sessionId: visitor.sessionId, sourceType, userAgent: visitor.userAgent?.slice(0, 512) };
+    const common = { seasonEntryId: entryId, roundId: round.id, visitorId: visitor.visitorId, sessionId: visitor.sessionId, sourceType, userAgent: visitor.userAgent?.slice(0, 512), ipHash: visitor.ipHash };
+    if (visitor.ipHash) {
+      const recentIdentities = await tx.impressionEvent.findMany({ where: { roundId: round.id, ipHash: visitor.ipHash, createdAt: { gte: new Date(now.getTime() - 60 * 60_000) } }, distinct: ["visitorId"], take: 11, select: { visitorId: true } });
+      if (recentIdentities.length >= 10) {
+        await tx.productRoundStats.update({ where: { id: stats.id }, data: { suspiciousEvents: { increment: 1 } } });
+        return false;
+      }
+    }
     if (kind === "impression") {
       if (dwellMs < 1000 || !Number.isFinite(dwellMs)) return false;
       const previous = await tx.impressionEvent.findFirst({ where: { roundId: round.id, seasonEntryId: entryId, visitorId: visitor.visitorId, qualified: true, createdAt: { gte: new Date(now.getTime() - entry.season.impressionDedupSec * 1000) } } });

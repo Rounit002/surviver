@@ -13,18 +13,25 @@ const dodoProvider: PaymentProvider = {
     if (!response.ok) throw new Error(`Dodo checkout failed (${response.status}).`);
     const data = (await response.json()) as { session_id?: string; checkout_url?: string };
     if (!data.checkout_url || !data.session_id) throw new Error("Dodo returned an incomplete checkout session.");
-    return { url: data.checkout_url, providerPaymentId: data.session_id };
+    return { url: data.checkout_url, providerCheckoutId: data.session_id };
   },
-  async parseWebhook(rawBody, signature) {
-    if (!env.dodoWebhookKey || !signature) return { kind: "ignored" };
-    // Signature verification is performed in the route with Standard Webhooks.
-    const payload = JSON.parse(rawBody) as { type?: string; id?: string; data?: { payment_id?: string; paymentId?: string; amount?: number; amount_cents?: number } };
-    const providerPaymentId = payload.data?.payment_id ?? payload.data?.paymentId;
-    if (!providerPaymentId || !payload.id) return { kind: "ignored" };
-    if (payload.type === "payment.succeeded") return { kind: "succeeded", providerPaymentId, eventId: payload.id };
-    if (payload.type === "payment.failed" || payload.type === "payment.cancelled") return { kind: "failed", providerPaymentId, eventId: payload.id };
-    if (payload.type === "refund.succeeded") return { kind: "refunded", providerPaymentId, eventId: payload.id, amountCents: payload.data?.amount_cents ?? payload.data?.amount ?? 0 };
-    return { kind: "ignored" };
+  async parseWebhook(rawBody, context) {
+    const payload = JSON.parse(rawBody) as { type?: string; business_id?: string; data?: { payment_id?: string; total_amount?: number; amount?: number; currency?: string; business_id?: string; metadata?: Record<string, unknown> } };
+    const providerPaymentId = payload.data?.payment_id;
+    if (!providerPaymentId) return { kind: "ignored", reason: "missing payment id" };
+    const businessId = payload.data?.business_id ?? payload.business_id;
+    if (env.dodoBusinessId && businessId !== env.dodoBusinessId) return { kind: "ignored", reason: "wrong business" };
+    const localPaymentId = typeof payload.data?.metadata?.payment_id === "string" ? payload.data.metadata.payment_id : undefined;
+    const common = { providerPaymentId, localPaymentId, eventId: context.eventId, businessId, currency: payload.data?.currency?.toLowerCase() };
+    if (payload.type === "payment.succeeded") return { kind: "succeeded", ...common, amountCents: payload.data?.total_amount ?? payload.data?.amount };
+    if (payload.type === "payment.failed" || payload.type === "payment.cancelled") return { kind: "failed", ...common };
+    if (payload.type === "refund.succeeded") return { kind: "refunded", ...common, amountCents: payload.data?.amount ?? 0 };
+    return { kind: "ignored", reason: "unsupported event" };
+  },
+  async requestRefund(providerPaymentId, reason) {
+    const base = env.dodoEnvironment === "test_mode" ? "https://test.dodopayments.com" : "https://live.dodopayments.com";
+    const response = await fetch(`${base}/refunds`, { method: "POST", headers: { Authorization: `Bearer ${env.dodoApiKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ payment_id: providerPaymentId, reason: reason.slice(0, 3000) }), signal: AbortSignal.timeout(10_000) });
+    if (!response.ok) throw new Error(`Dodo refund request failed (${response.status}).`);
   },
 };
 
@@ -40,34 +47,35 @@ const devProvider: PaymentProvider = {
   async createCheckout(input: CheckoutInput): Promise<CheckoutSession> {
     return {
       url: `/enter/checkout/${input.paymentId}`,
-      providerPaymentId: `dev_${randomBytes(10).toString("hex")}`,
+      providerCheckoutId: `dev_checkout_${randomBytes(10).toString("hex")}`,
     };
   },
 
-  async parseWebhook(rawBody: string): Promise<WebhookResult> {
+  async parseWebhook(rawBody: string, context): Promise<WebhookResult> {
     try {
       const parsed = JSON.parse(rawBody) as {
         type?: string;
         paymentId?: string;
-        eventId?: string;
-        amountCents?: number;
+          amountCents?: number;
       };
-      if (!parsed.paymentId || !parsed.eventId) return { kind: "ignored" };
+      if (!parsed.paymentId) return { kind: "ignored" };
 
       switch (parsed.type) {
         case "succeeded":
           return {
             kind: "succeeded",
-            providerPaymentId: parsed.paymentId,
-            eventId: parsed.eventId,
+            localPaymentId: parsed.paymentId,
+            providerPaymentId: `dev_payment_${parsed.paymentId}`,
+            eventId: context.eventId,
           };
         case "failed":
-          return { kind: "failed", providerPaymentId: parsed.paymentId, eventId: parsed.eventId };
+          return { kind: "failed", localPaymentId: parsed.paymentId, providerPaymentId: `dev_payment_${parsed.paymentId}`, eventId: context.eventId };
         case "refunded":
           return {
             kind: "refunded",
-            providerPaymentId: parsed.paymentId,
-            eventId: parsed.eventId,
+            localPaymentId: parsed.paymentId,
+            providerPaymentId: `dev_payment_${parsed.paymentId}`,
+            eventId: context.eventId,
             amountCents: parsed.amountCents ?? 0,
           };
         default:
@@ -77,6 +85,7 @@ const devProvider: PaymentProvider = {
       return { kind: "ignored" };
     }
   },
+  async requestRefund() {},
 };
 
 const providers: Record<string, PaymentProvider> = {
@@ -85,6 +94,7 @@ const providers: Record<string, PaymentProvider> = {
 };
 
 export function getPaymentProvider(): PaymentProvider {
+  if (env.isProduction && env.paymentProvider === "dev") throw new Error("Simulated payments are disabled in production.");
   const provider = providers[env.paymentProvider];
   if (!provider) {
     throw new Error(
@@ -95,5 +105,5 @@ export function getPaymentProvider(): PaymentProvider {
 }
 
 export function isDevPayments(): boolean {
-  return env.paymentProvider === "dev";
+  return !env.isProduction && env.paymentProvider === "dev";
 }

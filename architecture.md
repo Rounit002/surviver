@@ -129,7 +129,7 @@ Important state transitions:
 3. Admin approval: `Product.APPROVED`; entry becomes `UPCOMING` unless the season is already running, in which case it becomes `ACTIVE`.
 4. Admin rejection: `Product.REJECTED`, `SeasonEntry.REJECTED`, and an audit record marking that a refund is owed.
 
-The payment abstraction is ready for a provider implementation, but the only registered provider is `dev`. No real provider webhook route exists yet.
+Two providers are registered: `dodo` (live) and `dev` (a local simulator). The simulator is refused outright when `NODE_ENV=production`, so a production deployment left on `PAYMENT_PROVIDER=dev` fails closed rather than minting free entries; `scripts/security-preflight.mjs` also blocks startup on that configuration. Signed Dodo events arrive at `POST /api/webhooks/dodo`, are recorded in a durable `webhook_events` inbox keyed on the verified `webhook-id` header, and are settled through the same `applyPaymentResult` path as the simulator, which validates amount, currency and provider identity before it changes anything.
 
 ### Public discovery and outbound tracking
 
