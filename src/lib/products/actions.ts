@@ -11,7 +11,6 @@ import { getOpenSeason, CLAIMED_ENTRY_STATUSES } from "@/lib/competition/season"
 import { lockSeason } from "@/lib/competition/engine";
 import { getPaymentProvider } from "@/lib/payments";
 import { fetchSiteMetadata, normalizeUrl, UnsafeUrlError } from "@/lib/products/site-metadata";
-import { requireVerifiedUser } from "@/lib/auth/guards";
 import { consumeRateLimit, requestIp } from "@/lib/security/request";
 import { hashCapability } from "@/lib/security/tokens";
 import type { ProductCategory } from "@/generated/prisma";
@@ -124,9 +123,8 @@ export async function createEntryAction(
   _prev: EntryFormState,
   formData: FormData,
 ): Promise<EntryFormState> {
-  const user = await requireVerifiedUser("/enter");
   const ip = await requestIp();
-  if (!(await consumeRateLimit("entry-ip", ip, 5, 24 * 60 * 60_000)) || !(await consumeRateLimit("entry-user", user.id, 5, 24 * 60 * 60_000))) {
+  if (!(await consumeRateLimit("entry-ip", ip, 5, 24 * 60 * 60_000))) {
     return { error: "Too many entry attempts. Please try again later." };
   }
   if (formData.get("rules") !== "on") {
@@ -166,7 +164,12 @@ export async function createEntryAction(
   const season = await getOpenSeason();
   if (!season) return { error: "No season is taking entries right now." };
   const { name, tagline, description, category, email } = parsed.data;
-  if (email !== user.email) return { fieldErrors: { email: "Use the verified email on your account." } };
+  // Entering needs no account, so the email is the only handle on the entry.
+  // Rate limit it the way a user id would have been, or one address could fill
+  // the field on its own.
+  if (!(await consumeRateLimit("entry-email", email, 5, 24 * 60 * 60_000))) {
+    return { error: "Too many entry attempts. Please try again later." };
+  }
   const slug = `${slugify(name) || "product"}-${randomBytes(6).toString("hex")}`;
   const manageToken = randomBytes(32).toString("base64url");
   const checkoutToken = randomBytes(32).toString("base64url");
@@ -182,9 +185,13 @@ export async function createEntryAction(
       { status: "AWAITING_PAYMENT", createdAt: { gte: new Date(now.getTime() - 2 * 60 * 60_000) } },
     ] } });
     if (duplicate) return { error: "That URL already has an entry. Use your original checkout or private campaign link." };
-    const product = await tx.product.create({ data: { ownerId: user.id, name, slug, url, tagline, description, category, logoUrl: asOptionalUrl(formData.get("faviconUrl")), coverUrl: asOptionalUrl(formData.get("imageUrl")), approvalStatus: "DRAFT" } });
+    // Guest founder record (User.passwordHash stays null): entering requires
+    // no account, and the campaign is reached by manageToken, not by login. An
+    // address that enters twice reuses the same row.
+    const owner = await tx.user.upsert({ where: { email }, update: {}, create: { email, name: email.split("@")[0]?.slice(0, 60) || "Founder" } });
+    const product = await tx.product.create({ data: { ownerId: owner.id, name, slug, url, tagline, description, category, logoUrl: asOptionalUrl(formData.get("faviconUrl")), coverUrl: asOptionalUrl(formData.get("imageUrl")), approvalStatus: "DRAFT" } });
     const entry = await tx.seasonEntry.create({ data: { seasonId: season.id, productId: product.id, status: "AWAITING_PAYMENT", rallyCode: `${slugify(name).slice(0, 12) || "entry"}-${randomBytes(6).toString("hex")}`, manageToken: hashCapability(manageToken), manageTokenExpiresAt: new Date(now.getTime() + 90 * 24 * 60 * 60_000) } });
-    const payment = await tx.payment.create({ data: { userId: user.id, seasonId: season.id, seasonEntryId: entry.id, provider: provider.name, amountCents: current.entryPriceCents, currency: current.currency, status: "PENDING", checkoutTokenHash: hashCapability(checkoutToken), checkoutTokenExpiresAt: new Date(now.getTime() + 2 * 60 * 60_000) } });
+    const payment = await tx.payment.create({ data: { userId: owner.id, seasonId: season.id, seasonEntryId: entry.id, provider: provider.name, amountCents: current.entryPriceCents, currency: current.currency, status: "PENDING", checkoutTokenHash: hashCapability(checkoutToken), checkoutTokenExpiresAt: new Date(now.getTime() + 2 * 60 * 60_000) } });
     return { entry, payment };
   });
   if ("error" in result) return { error: result.error };

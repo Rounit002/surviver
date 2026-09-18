@@ -21,13 +21,11 @@ export function EntryForm({
   priceLabel,
   initialUrl = "",
   initialCategory = "",
-  initialEmail,
   testMode,
 }: {
   priceLabel: string;
   initialUrl?: string;
   initialCategory?: ProductCategory | "";
-  initialEmail: string;
   testMode: boolean;
 }) {
   const [state, formAction, submitting] = useActionState(
@@ -241,8 +239,6 @@ export function EntryForm({
               autoComplete="email"
               required
               placeholder="you@company.com"
-              value={initialEmail}
-              readOnly
               aria-invalid={Boolean(state.fieldErrors?.email)}
             />
           </Field>

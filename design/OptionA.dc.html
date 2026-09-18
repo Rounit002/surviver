@@ -1,0 +1,77 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700&display=swap">
+  <style>
+    body { margin: 0; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; }
+    a { color: #7E8F84; } a:hover { color: #5F6E64; }
+  </style>
+</helmet>
+
+<div style="width: 460px; height: 340px; background: #1E1D22; box-sizing: border-box; padding: 26px; display: flex; align-items: flex-start;">
+
+  <div style="width: 272px; background: #F4F1EA; border: 1px solid rgba(31, 28, 22, 0.07); border-radius: 12px; box-sizing: border-box; padding: 12px 13px 11px; display: flex; flex-direction: column; gap: 9px;">
+
+    <div style="display: flex; align-items: center; gap: 7px;">
+      <div style="width: 6px; height: 6px; border-radius: 50%; background: {{accent}}; flex: none;"></div>
+      <div style="font-size: 9.5px; font-weight: 700; letter-spacing: 0.15em; color: #A0988B;">TODAY</div>
+      <div style="margin-left: auto; font-size: 9.5px; font-weight: 600; letter-spacing: 0.04em; color: #A0988B;">2 / 5</div>
+    </div>
+
+    <div style="height: 3px; border-radius: 2px; background: #E5E0D5; overflow: hidden;">
+      <div style="width: 40%; height: 100%; border-radius: 2px; background: {{accent}};"></div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 6px;">
+
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <div style="width: 14px; height: 14px; flex: none; border-radius: 4px; background: {{accent}}; display: flex; align-items: center; justify-content: center;">
+          <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5 L9.5 18 L20 6.5"></path></svg>
+        </div>
+        <div style="font-size: 12.5px; font-weight: 500; color: #B0A89B; text-decoration: line-through; text-decoration-thickness: 1px; text-decoration-color: #CCC4B5;">Stream intro + chat</div>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <div style="width: 14px; height: 14px; flex: none; border-radius: 4px; background: {{accent}}; display: flex; align-items: center; justify-content: center;">
+          <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5 L9.5 18 L20 6.5"></path></svg>
+        </div>
+        <div style="font-size: 12.5px; font-weight: 500; color: #B0A89B; text-decoration: line-through; text-decoration-thickness: 1px; text-decoration-color: #CCC4B5;">Warm-up games</div>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <div style="width: 14px; height: 14px; flex: none; border-radius: 4px; border: 1.5px solid #C6BDAD; box-sizing: border-box;"></div>
+        <div style="font-size: 12.5px; font-weight: 600; color: #3F3A33;">Build the to-do overlay</div>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <div style="width: 14px; height: 14px; flex: none; border-radius: 4px; border: 1.5px solid #D5CDBF; box-sizing: border-box;"></div>
+        <div style="font-size: 12.5px; font-weight: 500; color: #6E675D;">Viewer submissions</div>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <div style="width: 14px; height: 14px; flex: none; border-radius: 4px; border: 1.5px solid #D5CDBF; box-sizing: border-box;"></div>
+        <div style="font-size: 12.5px; font-weight: 500; color: #6E675D;">Q&amp;A + outro</div>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"accent":{"editor":"color","default":"#8FAE97","options":["#8FAE97","#B3A8D6","#DFA88F","#9FB6CE"],"section":"Colour"},"$preview":{"width":460,"height":340}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { accent: this.props.accent ?? '#8FAE97' };
+  }
+}
+</script>
+</body>
+</html>

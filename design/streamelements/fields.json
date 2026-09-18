@@ -1,0 +1,228 @@
+{
+  "headerText": {
+    "type": "text",
+    "label": "Header text",
+    "value": "TODAY",
+    "group": "Layout"
+  },
+  "showHeader": {
+    "type": "dropdown",
+    "label": "Show header",
+    "value": "on",
+    "options": { "on": "Show", "off": "Hide" },
+    "group": "Layout"
+  },
+  "showCounter": {
+    "type": "dropdown",
+    "label": "Show 2 / 5 counter",
+    "value": "on",
+    "options": { "on": "Show", "off": "Hide" },
+    "group": "Layout"
+  },
+  "showNumbers": {
+    "type": "dropdown",
+    "label": "Number the tasks",
+    "value": "off",
+    "options": { "on": "Show 1. 2. 3.", "off": "Hide" },
+    "group": "Layout"
+  },
+  "width": {
+    "type": "number",
+    "label": "Width (px)",
+    "value": 262,
+    "min": 160,
+    "max": 600,
+    "step": 2,
+    "group": "Layout"
+  },
+  "fontSize": {
+    "type": "number",
+    "label": "Font size (px)",
+    "value": 13,
+    "min": 9,
+    "max": 28,
+    "step": 1,
+    "group": "Layout"
+  },
+  "fontFamily": {
+    "type": "googleFont",
+    "label": "Font",
+    "value": "Plus Jakarta Sans",
+    "group": "Layout"
+  },
+  "rowGap": {
+    "type": "number",
+    "label": "Gap between rows (px)",
+    "value": 5,
+    "min": 0,
+    "max": 20,
+    "step": 1,
+    "group": "Layout"
+  },
+  "cornerRadius": {
+    "type": "number",
+    "label": "Corner radius (px)",
+    "value": 8,
+    "min": 0,
+    "max": 24,
+    "step": 1,
+    "group": "Layout"
+  },
+  "rowPaddingY": {
+    "type": "number",
+    "label": "Row padding — vertical (px)",
+    "value": 7,
+    "min": 0,
+    "max": 24,
+    "step": 1,
+    "group": "Layout"
+  },
+  "rowPaddingX": {
+    "type": "number",
+    "label": "Row padding — horizontal (px)",
+    "value": 10,
+    "min": 0,
+    "max": 32,
+    "step": 1,
+    "group": "Layout"
+  },
+
+  "headColor": {
+    "type": "colorpicker",
+    "label": "Header text",
+    "value": "#DCD6CA",
+    "group": "Colours"
+  },
+  "countColor": {
+    "type": "colorpicker",
+    "label": "Counter text",
+    "value": "#9E988C",
+    "group": "Colours"
+  },
+  "todoBg": {
+    "type": "colorpicker",
+    "label": "To-do row — background",
+    "value": "#EDE9E0",
+    "group": "Colours"
+  },
+  "todoText": {
+    "type": "colorpicker",
+    "label": "To-do row — text",
+    "value": "#6E675D",
+    "group": "Colours"
+  },
+  "todoBox": {
+    "type": "colorpicker",
+    "label": "To-do row — checkbox",
+    "value": "#C6BDAD",
+    "group": "Colours"
+  },
+  "currentBg": {
+    "type": "colorpicker",
+    "label": "Current task — background",
+    "value": "#F7F4ED",
+    "group": "Colours"
+  },
+  "currentText": {
+    "type": "colorpicker",
+    "label": "Current task — text",
+    "value": "#3F3A33",
+    "group": "Colours"
+  },
+  "currentBox": {
+    "type": "colorpicker",
+    "label": "Current task — checkbox",
+    "value": "#B9AF9E",
+    "group": "Colours"
+  },
+  "doneBg": {
+    "type": "colorpicker",
+    "label": "Done row — background",
+    "value": "#E7EDE6",
+    "group": "Colours"
+  },
+  "doneText": {
+    "type": "colorpicker",
+    "label": "Done row — text and tick",
+    "value": "#93AB97",
+    "group": "Colours"
+  },
+  "doneStrike": {
+    "type": "colorpicker",
+    "label": "Done row — strikethrough",
+    "value": "#B6C8B8",
+    "group": "Colours"
+  },
+
+  "command": {
+    "type": "text",
+    "label": "Command prefix",
+    "value": "!task",
+    "group": "Commands"
+  },
+  "permission": {
+    "type": "dropdown",
+    "label": "Who can use it",
+    "value": "mods",
+    "options": {
+      "broadcaster": "Broadcaster only",
+      "mods": "Broadcaster + mods",
+      "everyone": "Everyone"
+    },
+    "group": "Commands"
+  },
+  "maxTasks": {
+    "type": "number",
+    "label": "Maximum tasks",
+    "value": 8,
+    "min": 1,
+    "max": 20,
+    "step": 1,
+    "group": "Commands"
+  },
+  "maxLength": {
+    "type": "number",
+    "label": "Maximum characters per task",
+    "value": 80,
+    "min": 10,
+    "max": 200,
+    "step": 5,
+    "group": "Commands"
+  },
+  "starterTasks": {
+    "type": "text",
+    "label": "Starter tasks (separate with | )",
+    "value": "",
+    "group": "Commands"
+  },
+
+  "animations": {
+    "type": "dropdown",
+    "label": "Animations",
+    "value": "on",
+    "options": { "on": "On", "off": "Off" },
+    "group": "Behaviour"
+  },
+  "animSpeed": {
+    "type": "number",
+    "label": "Animation speed (ms)",
+    "value": 320,
+    "min": 80,
+    "max": 900,
+    "step": 20,
+    "group": "Behaviour"
+  },
+  "hideWhenEmpty": {
+    "type": "dropdown",
+    "label": "Hide the whole widget when there are no tasks",
+    "value": "on",
+    "options": { "on": "Hide", "off": "Keep showing" },
+    "group": "Behaviour"
+  },
+  "emptyText": {
+    "type": "text",
+    "label": "Empty-state text",
+    "value": "No tasks yet",
+    "group": "Behaviour"
+  }
+}

@@ -24,17 +24,20 @@ export default async function HomePage() {
   const rows = season ? balanceForVisitor(standings?.rows ?? [], `${visitor.visitorId}:${round?.id ?? ""}`, season) : [];
   const activity = await prisma.activityEvent.findMany({ where: { round: { seasonId: season?.id ?? "none" } }, orderBy: { createdAt: "desc" }, take: 4 });
   const available = summary?.acceptingEntries ?? false;
+  // A full season is the point of the format, not a failure to sell: the hero
+  // says the field is complete rather than showing "0 spots available".
+  const full = summary?.isFull ?? false;
   return <div className="mx-auto w-full max-w-5xl px-4 pt-8 pb-6 sm:pt-10">
     <section className="text-center">
       <div className="border-border inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs text-subtle">
         <span className={`size-1.5 rounded-full ${round ? "bg-safe" : "bg-primary"}`} />
-        {round ? `${season?.name} · ${round.name}` : open ? `${open.name} · Registration open` : "The next season is on its way"}
+        {round ? `${season?.name} · ${round.name}` : open ? `${open.name} · ${full ? "All spots filled" : "Registration open"}` : "The next season is on its way"}
       </div>
       <h1 className="mt-5 text-[clamp(1.875rem,8vw,2.5rem)] leading-[1.15] font-semibold tracking-tight sm:text-[52px]">Good products deserve<br className="sm:hidden" /> <span className="text-primary">a fighting chance.</span></h1>
       <p className="text-subtle mx-auto mt-4 max-w-xl text-sm leading-7 sm:text-base">A tournament for the next great SaaS products.<br />One flat fee. Real interest. One survivor.</p>
-      <QuickEntry available={available} />
+      <QuickEntry available={available} full={full} />
       <div className="text-subtle mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs">
-        {summary ? <><span><strong className="text-foreground">{formatMoney(open!.entryPriceCents, open!.currency)}</strong> per entry</span><span><strong className="text-foreground">{summary.remaining}/{open!.capacity}</strong> spots available</span></> : <span>Entry details appear when registration opens.</span>}
+        {summary ? <><span><strong className="text-foreground">{formatMoney(open!.entryPriceCents, open!.currency)}</strong> per entry</span><span>{full ? <><strong className="text-foreground">All {open!.capacity}</strong> spots filled &middot; season starting soon</> : <><strong className="text-foreground">{summary.remaining}/{open!.capacity}</strong> spots available</>}</span></> : <span>Entry details appear when registration opens.</span>}
         <Link href="/how-it-works" className="underline decoration-border-strong underline-offset-4 hover:text-primary">How it works ↗</Link>
       </div>
     </section>
@@ -61,7 +64,7 @@ export default async function HomePage() {
             <h3 className="mt-4 text-2xl font-semibold">{open ? `${open.capacity} enter.` : "Made to be discovered."}<br />{open && "One survives."}</h3>
             <p className="text-subtle mt-3 text-xs leading-6">One price for everyone. The strongest interest rates advance.</p>
             {round && <div className="mt-4"><p className="label mb-2">Round ends in</p><Countdown endsAt={round.endAt.toISOString()} serverNow={new Date().toISOString()} size="sm" /></div>}
-            {summary && <><div className="mt-5 flex justify-between text-xs"><span>{summary.claimed} entered</span><span>{summary.remaining} spots left</span></div><progress className="mt-2 h-1.5 w-full accent-primary" value={summary.claimed} max={open!.capacity} aria-label="Claimed season spots" /></>}
+            {summary && <><div className="mt-5 flex justify-between text-xs"><span>{summary.claimed} entered</span><span>{full ? "Field complete" : `${summary.remaining} spots left`}</span></div><progress className="mt-2 h-1.5 w-full accent-primary" value={summary.claimed} max={open!.capacity} aria-label="Claimed season spots" /></>}
             <Link href="/rules" className="text-primary mt-5 inline-flex items-center gap-2 text-xs font-semibold">Read the competition rules<Icon name="arrow" width="14" /></Link>
           </div>
           <div className="border-border rounded-3xl border p-5"><h3 className="text-sm font-semibold">Latest activity</h3>{activity.length ? <ul className="mt-3 space-y-4">{activity.map(event => <li key={event.id} className="text-subtle text-xs leading-5">{event.message}<time className="mt-1 block text-[11px]" dateTime={event.createdAt.toISOString()}>{formatRelative(event.createdAt)}</time></li>)}</ul> : <p className="text-subtle mt-3 text-xs leading-6">Season milestones show up here as they happen.</p>}</div>

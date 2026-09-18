@@ -41,7 +41,7 @@ export async function simulatePaymentAction(formData: FormData): Promise<void> {
   const store = await cookies();
   const holdsCookie = hasCheckoutCapability(store.get(PENDING_PAYMENT_COOKIE)?.value, payment);
   const user = await getSessionUser();
-  if (!holdsCookie && user?.id !== payment.userId && user?.role !== "ADMIN") {
+  if (!holdsCookie && user?.id !== payment.userId) {
     redirect("/enter");
   }
   if (!(await consumeRateLimit("dev-payment", await requestIp(), 10, 60 * 60_000))) throw new Error("Too many payment attempts.");
@@ -65,5 +65,7 @@ export async function simulatePaymentAction(formData: FormData): Promise<void> {
 
   // Paid: the capability cookie has done its job.
   store.delete(PENDING_PAYMENT_COOKIE);
-  redirect("/dashboard?entered=1");
+  // Same landing as the real provider: /enter/complete turns the campaign
+  // cookie back into the private entry URL on our own origin.
+  redirect("/enter/complete");
 }

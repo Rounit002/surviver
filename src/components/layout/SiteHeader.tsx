@@ -6,6 +6,7 @@ import { LiveDot } from "@/components/ui/Chip";
 import { getActiveRound, getCurrentSeason } from "@/lib/competition/season";
 import { prisma } from "@/lib/db";
 import { formatCount } from "@/lib/format";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { MobileNavigation } from "./MobileNavigation";
 
 /**
@@ -27,23 +28,26 @@ export async function SiteHeader() {
             </div>
           </div>
 
-          <MobileNavigation />
-          <nav aria-label="Main navigation" className="hidden items-center gap-4 text-sm sm:flex lg:gap-6">
-            {[
-              { href: "/board", label: "Board" },
-              { href: "/leaderboard", label: "Leaderboard" },
-              { href: "/seasons", label: "Seasons" },
-              { href: "/survivors", label: "Survivors" },
-            ].map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="text-subtle hover:text-foreground inline-flex min-h-11 items-center font-medium transition-colors"
-              >
-                {link.label}
-              </Link>
-            ))}
-          </nav>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <ThemeToggle />
+            <MobileNavigation />
+            <nav aria-label="Main navigation" className="hidden items-center gap-4 text-sm sm:flex lg:gap-6">
+              {[
+                { href: "/board", label: "Board" },
+                { href: "/leaderboard", label: "Leaderboard" },
+                { href: "/seasons", label: "Seasons" },
+                { href: "/survivors", label: "Survivors" },
+              ].map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="text-subtle hover:text-foreground inline-flex min-h-11 items-center font-medium transition-colors"
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </nav>
+          </div>
         </div>
 
         <Suspense fallback={<div className="bg-muted h-10 rounded-full" />}>
@@ -106,7 +110,13 @@ async function SeasonTicker() {
         <span className="text-foreground font-medium">{season.name}</span>
         <span aria-hidden>&middot;</span>
         <span>
-          <span className="num">{formatCount(season.capacity - claimed)}</span> slots left
+          {claimed >= season.capacity ? (
+            "all slots filled"
+          ) : (
+            <>
+              <span className="num">{formatCount(season.capacity - claimed)}</span> slots left
+            </>
+          )}
         </span>
         <span className="text-primary">&rarr;</span>
       </Link>

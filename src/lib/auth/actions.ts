@@ -6,7 +6,6 @@ import { prisma } from "@/lib/db";
 import { randomBytes } from "node:crypto";
 import { createSession, destroySession } from "@/lib/auth/session";
 import { fakeVerify, hashPassword, passwordFitsBcrypt, verifyPassword } from "@/lib/auth/password";
-import { verifyAdminMfa } from "@/lib/auth/mfa";
 import { sendVerificationEmail } from "@/lib/email";
 import { env } from "@/lib/env";
 import { consumeRateLimit, requestIp } from "@/lib/security/request";
@@ -15,7 +14,7 @@ import { safeNextPath } from "@/lib/auth/redirects";
 
 export type AuthFormState = {
   error?: string;
-  fieldErrors?: Partial<Record<"email" | "password" | "name" | "mfaCode", string>>;
+  fieldErrors?: Partial<Record<"email" | "password" | "name", string>>;
 };
 
 const emailSchema = z
@@ -39,14 +38,13 @@ const signUpSchema = z.object({
 const signInSchema = z.object({
   email: emailSchema,
   password: z.string().min(1, "Enter your password.").refine(passwordFitsBcrypt, "Email or password is incorrect."),
-  mfaCode: z.string().trim().max(12).optional(),
 });
 
 function fieldErrorsFrom(error: z.ZodError): AuthFormState["fieldErrors"] {
   const out: AuthFormState["fieldErrors"] = {};
   for (const issue of error.issues) {
     const key = issue.path[0];
-    if (key === "email" || key === "password" || key === "name" || key === "mfaCode") {
+    if (key === "email" || key === "password" || key === "name") {
       out[key] ??= issue.message;
     }
   }
@@ -105,7 +103,6 @@ export async function signInAction(
   const parsed = signInSchema.safeParse({
     email: formData.get("email"),
     password: formData.get("password"),
-    mfaCode: formData.get("mfaCode") ?? undefined,
   });
 
   if (!parsed.success) {
@@ -119,7 +116,7 @@ export async function signInAction(
   }
   const user = await prisma.user.findUnique({
     where: { email },
-    select: { id: true, passwordHash: true, emailVerifiedAt: true, role: true },
+    select: { id: true, passwordHash: true, emailVerifiedAt: true },
   });
 
   // Same message and comparable timing either way, so this cannot be used to
@@ -136,9 +133,6 @@ export async function signInAction(
   }
 
   if (!user.emailVerifiedAt) return { error: "Verify your email before signing in." };
-  if (user.role === "ADMIN" && !(await verifyAdminMfa(parsed.data.mfaCode ?? ""))) {
-    return { fieldErrors: { mfaCode: "Enter a valid administrator verification code." } };
-  }
 
   await createSession(user.id);
   redirect(safeNextPath(formData.get("next")));

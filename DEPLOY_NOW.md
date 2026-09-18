@@ -41,11 +41,33 @@ except `NODE_VERSION` and `PAYMENT_PROVIDER`.
 | `CRON_SECRET` | generate a new 32-byte random value | yes |
 | `SECURITY_SECRET` | generate a separate 32-byte random value | yes |
 | `DODO_PAYMENTS_*` | configure live API, webhook, product, business, and environment values | yes |
-| `ADMIN_TOTP_SECRET` | enroll the administrator and store its TOTP secret | yes |
 | `RESEND_API_KEY`, `EMAIL_FROM` | configure verified email delivery | yes |
 
 > Rotate the database and cron credentials that were previously written in this
 > document before deploying. Do not paste credentials into repository files.
+
+### 2a. Dodo Payments setup
+
+Do this in the Dodo dashboard before the first real entry.
+
+1. **Product** — create a *one-time* product priced **exactly $29.00 USD**, to
+   match the season's `entryPriceCents` (2900) and `currency` (`usd`). Copy its
+   `pdt_...` id into `DODO_PAYMENTS_PRODUCT_ID`.
+2. **API key** — Developer → API Keys. Use a *live* key and set
+   `DODO_PAYMENTS_ENVIRONMENT=live_mode` (the preflight refuses to start
+   otherwise in production).
+3. **Webhook** — point a new endpoint at
+   `https://surviver.lol/api/webhooks/dodo` and subscribe to
+   `payment.succeeded`, `payment.failed`, `payment.cancelled` and
+   `refund.succeeded`. Copy the signing secret (`whsec_...`) verbatim into
+   `DODO_PAYMENTS_WEBHOOK_KEY`.
+4. **Business id** — copy it into `DODO_PAYMENTS_BUSINESS_ID`; webhooks from any
+   other business are ignored.
+
+> The product price must track the season price. Payment is only fulfilled when
+> the webhook's `total_amount` and `currency` equal the local payment exactly;
+> a mismatch parks the event in `NEEDS_REVIEW` **after the founder has been
+> charged**. Change both together, or not at all.
 
 ## 3. First deploy
 

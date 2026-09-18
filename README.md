@@ -95,12 +95,16 @@ percent-encode it (for example `@` becomes `%40`).
 
 ### Scheduled rounds
 
-Rounds close on a timer. Add a Render **Cron Job** (or any scheduler) that
-calls the transition endpoint with the shared secret:
+This endpoint is the only thing that drives the competition forward: it starts a
+season once all its spots are filled, and closes each round when it is due. The
+site has no administrator surface, so **without this scheduler nothing ever
+starts or advances.** Add a Render **Cron Job** (or any scheduler) that calls it
+with the shared secret:
 
 ```bash
 curl -fsS -X POST https://<your-app>/api/cron/rounds \
   -H "Authorization: Bearer $CRON_SECRET"
 ```
 
-Without it, rounds stay open until an administrator processes them from `/admin`.
+Run it at least hourly. A season begins on the first tick after its final spot is
+paid for; a round closes on the first tick after its deadline passes.

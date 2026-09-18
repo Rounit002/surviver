@@ -8,7 +8,6 @@ import { CATEGORY_VALUES } from "@/lib/competition/constants";
 import type { ProductCategory } from "@/generated/prisma";
 import { prisma } from "@/lib/db";
 import { formatCount, formatMoney } from "@/lib/format";
-import { requireVerifiedUser } from "@/lib/auth/guards";
 import { isDevPayments } from "@/lib/payments";
 
 export const metadata = pageMetadata("/enter");
@@ -16,7 +15,6 @@ export const metadata = pageMetadata("/enter");
 export const dynamic = "force-dynamic";
 
 export default async function EnterPage(props: PageProps<"/enter">) {
-  const user = await requireVerifiedUser("/enter");
   const params = await props.searchParams;
   const initialUrl = typeof params.url === "string" ? params.url.slice(0, 2048) : "";
   const initialCategory = typeof params.category === "string" && CATEGORY_VALUES.includes(params.category as ProductCategory) ? params.category as ProductCategory : "";
@@ -29,7 +27,7 @@ export default async function EnterPage(props: PageProps<"/enter">) {
   });
   const remaining = Math.max(0, season.capacity - claimed);
 
-  if (remaining === 0) return <ClosedState full seasonName={season.name} />;
+  if (remaining === 0) return <ClosedState full seasonName={season.name} capacity={season.capacity} />;
 
   const price = formatMoney(season.entryPriceCents, season.currency);
 
@@ -38,7 +36,7 @@ export default async function EnterPage(props: PageProps<"/enter">) {
       <header className="text-center">
         <h1 className="text-3xl font-semibold sm:text-4xl">Enter {season.name}</h1>
         <p className="text-subtle mx-auto mt-3 max-w-lg text-[15px] leading-relaxed text-pretty">
-          Paste your link, pick a category, and pay the flat fee using your verified account.
+          Paste your link, pick a category, and pay the flat fee. No account needed.
         </p>
       </header>
 
@@ -75,7 +73,7 @@ export default async function EnterPage(props: PageProps<"/enter">) {
       {isDevPayments() ? <p className="border-primary/20 bg-primary-soft text-primary mx-auto mt-4 w-fit rounded-full border px-3.5 py-1.5 text-center text-[12px]">Local test mode &mdash; checkout is simulated, no money is charged.</p> : null}
 
       <div className="mt-6">
-        <EntryForm priceLabel={price} initialUrl={initialUrl} initialCategory={initialCategory} initialEmail={user.email} testMode={isDevPayments()} />
+        <EntryForm priceLabel={price} initialUrl={initialUrl} initialCategory={initialCategory} testMode={isDevPayments()} />
       </div>
 
       <p className="text-faint mt-6 text-center text-[12px] leading-relaxed">
@@ -93,23 +91,28 @@ export default async function EnterPage(props: PageProps<"/enter">) {
   );
 }
 
-function ClosedState({ full = false, seasonName }: { full?: boolean; seasonName?: string }) {
+/**
+ * Two different dead ends. "Full" is good news that happens to block this
+ * founder: the field is complete and the season is about to run, so the page
+ * says when to come back rather than implying the door has shut for good.
+ */
+function ClosedState({ full = false, seasonName, capacity }: { full?: boolean; seasonName?: string; capacity?: number }) {
   return (
     <div className="mx-auto w-full max-w-2xl px-4 pt-8 pb-4">
       <header className="text-center">
         <h1 className="text-3xl font-semibold sm:text-4xl">
-          {full ? `${seasonName} is full` : "Registration is closed"}
+          {full ? `All ${capacity} spots are filled` : "Registration is closed"}
         </h1>
       </header>
       <Panel className="mt-8 px-6 py-14 text-center">
         <p className="text-subtle mx-auto max-w-sm text-sm leading-relaxed">
           {full
-            ? "Every slot in this season has been claimed. The next season opens once this one is under way."
+            ? `Every spot in ${seasonName} is taken, so the season starts as soon as it is under way. If a spot frees up it reopens here — worth checking back in a day or two.`
             : "No season is taking entries right now. The next one opens shortly."}
         </p>
         <div className="mt-6 flex flex-col justify-center gap-2 sm:flex-row">
           <ButtonLink href="/board" variant="primary" size="sm">
-            Watch the current season
+            {full ? "Watch the lineup" : "Watch the current season"}
           </ButtonLink>
           <ButtonLink href="/leaderboard" variant="secondary" size="sm">
             Standings

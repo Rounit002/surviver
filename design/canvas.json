@@ -1,0 +1,19 @@
+{
+  "pages": [
+    { "id": "page-1", "name": "Final" },
+    { "id": "page-2", "name": "Directions" }
+  ],
+  "artboards": [
+    { "file": "Main.dc.html", "x": 0, "y": 0, "w": 460, "h": 340, "title": "Pastel Rows - final", "page": "page-1" },
+    { "file": "OptionA.dc.html", "x": 0, "y": 0, "w": 460, "h": 340, "title": "Option A - Soft Paper", "page": "page-2" },
+    { "file": "OptionB.dc.html", "x": 560, "y": 0, "w": 460, "h": 340, "title": "Option B - Muted Dark", "page": "page-2" },
+    { "file": "OptionC.dc.html", "x": 1120, "y": 0, "w": 460, "h": 340, "title": "Option C - No Card", "page": "page-2" }
+  ],
+  "annotations": [
+    { "id": "note-final", "x": 0, "y": 360, "w": 440, "text": "Built as a StreamElements widget.\n262px wide, 13px type, Plus Jakarta Sans. Rows are flat pastel fills - no gradients, no glow, no blur.\nDone rows turn sage and the tick draws itself; the strikethrough fades in rather than sweeping, so it still works when a task wraps to two lines. Rows slide open when added and collapse when removed.\nEvery colour, size and gap is a field in the widget settings, so none of it needs a code edit.", "page": "page-1" },
+    { "id": "note-a", "x": 0, "y": 360, "w": 440, "text": "Option A - Soft Paper (not chosen)\nA warm off-white card, flat sage tick, one hairline progress line. Calmest of the set.\nTradeoff: a light block on a dark stream takes up attention as well as space.", "page": "page-2" },
+    { "id": "note-b", "x": 560, "y": 360, "w": 440, "text": "Option B - Muted Dark (not chosen)\nSame layout, flat charcoal card, pastel lavender tick.\nTradeoff: sinks into dark gameplay and can disappear over a dark scene.", "page": "page-2" },
+    { "id": "note-c", "x": 1120, "y": 360, "w": 440, "text": "Option C - No Card (not chosen)\nNo container at all - just text on the stream. Smallest possible footprint.\nTradeoff: legibility depends entirely on what is behind it.", "page": "page-2" }
+  ],
+  "launch": { "view": "canvas", "page": "page-1" }
+}

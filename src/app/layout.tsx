@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist_Mono, Poppins } from "next/font/google";
 import "./globals.css";
 import { headers } from "next/headers";
+import { DoodleField } from "@/components/layout/DoodleField";
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -53,7 +54,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#f4f2f5",
+  themeColor: "#ffffff",
   colorScheme: "light",
 };
 
@@ -62,9 +63,36 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
+      // Light is the default, and it is the server that says so. The script
+      // below is the only thing that moves off it.
+      data-theme="light"
+      // That script runs before hydration, so on a reader who chose dark the
+      // attribute React finds is not the one it rendered. React reports that as
+      // a mismatch and then leaves the DOM alone, which is both noisy and
+      // exactly the behaviour we want — the alternative is rendering the wrong
+      // theme first and correcting it in view. Scoped to this element only:
+      // it does not cover any descendant.
+      suppressHydrationWarning
       className={`${poppins.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="bg-background text-foreground flex min-h-full flex-col">
+      {/* No background on `body`: the root paints the canvas so the doodle
+          wallpaper, which sits below the flow at `z-index: -1`, is not
+          painted over. See the `html` rule in `globals.css`. */}
+      <body className="text-foreground flex min-h-full flex-col">
+        {/* Applies a remembered dark theme before the page paints.
+
+            It has to be inline and synchronous: anything deferred, imported or
+            hydrated runs after first paint, and the reader would watch a white
+            page turn dark on every single navigation. Only "dark" is handled,
+            because "light" is already what the server rendered. The nonce is
+            what gets it past the CSP in `proxy.ts`. */}
+        <script
+          nonce={nonce}
+          dangerouslySetInnerHTML={{
+            __html: `try{if(localStorage.getItem("theme")==="dark"){document.documentElement.dataset.theme="dark";document.querySelector('meta[name="theme-color"]').content="#121016"}}catch(e){}`,
+          }}
+        />
+        <DoodleField />
         <script nonce={nonce} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
           "@context": "https://schema.org",
           "@type": "WebSite",

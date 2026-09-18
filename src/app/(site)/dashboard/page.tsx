@@ -13,7 +13,7 @@ import { requireUser } from "@/lib/auth/guards";
 import { prisma } from "@/lib/db";
 import { env } from "@/lib/env";
 
-export const metadata: Metadata = { title: "Founder dashboard" };
+export const metadata: Metadata = { title: "Founder dashboard", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage(props: PageProps<"/dashboard">) {

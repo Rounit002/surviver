@@ -22,7 +22,7 @@ export async function GET(request: Request) {
   // The checkout is over either way, so the capability cookie has done its job.
   const response = /^[A-Za-z0-9_-]{20,128}$/.test(token ?? "")
     ? NextResponse.redirect(new URL(`/entry/${token}`, request.url))
-    : NextResponse.redirect(new URL("/dashboard?entered=1", request.url));
+    : NextResponse.redirect(new URL("/board", request.url));
 
   response.cookies.delete(CAMPAIGN_TOKEN_COOKIE);
   response.cookies.delete(PENDING_PAYMENT_COOKIE);

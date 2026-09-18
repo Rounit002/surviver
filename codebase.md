@@ -13,9 +13,9 @@ The repository is a functional vertical slice with:
 - public landing, board, leaderboard, season archive, and survivor pages;
 - founder entry, metadata prefill, guest campaign links, signup/login, and dashboard views;
 - explicit development-only checkout simulation;
-- admin review and season controls with an audit log;
+- automatic entry approval on payment, with no administrator surface anywhere in the application;
 - qualified-impression, click, Rally, ranking, and exposure-balancing logic;
-- transactional round advancement and a protected scheduler endpoint;
+- transactional season start and round advancement, both driven solely by a protected scheduler endpoint;
 - Prisma schema and migrations for the competition and payment event model.
 
 The tournament engine is executable end to end with the simulated payment provider. A real Dodo Payments adapter, signed webhook route, and refund execution remain future integration work.
@@ -78,15 +78,14 @@ Next.js route tree and route-local actions.
 | `/enter` | `enter/page.tsx` | Finds the earliest open season, computes remaining capacity, renders `EntryForm`, and shows a closed/full state otherwise. Dynamic. |
 | `/entry/[token]` | `entry/[token]/page.tsx` | Secret capability-link campaign page. No indexing/referrer metadata. Shows pending, live, or eliminated campaign state. Dynamic. |
 | `/dashboard` | `dashboard/page.tsx` | `requireUser`, then loads all entries owned by the user with payments and round stats. Dynamic. |
-| `/admin` | `admin/page.tsx` | `requireAdmin`, then loads pending reviews, recent seasons, payment aggregates, and audit actions. Dynamic. |
 
 ### Route handlers
 
 - `src/app/go/[slug]/route.ts`: reads an approved product, records an eligible `ClickEvent`, increments current non-finalized stats, and 302 redirects to the stored product URL.
 - `src/app/api/impressions/route.ts`: validates same-origin qualified-view events and records eligible impressions.
-- `src/app/api/cron/rounds/route.ts`: authenticates with `CRON_SECRET` and transactionally advances a due round.
+- `src/app/api/cron/rounds/route.ts`: authenticates with `CRON_SECRET`, starts any season whose field is full, and transactionally advances a due round. Nothing else in the application can start or advance a season.
 - `src/app/rally/[code]/route.ts`: validates a Rally code and redirects to `/board?rally=<code>` so `proxy.ts` can persist attribution.
-- `src/app/(site)/enter/checkout/[paymentId]/page.tsx`: development-only hosted-checkout stand-in. It permits access to the browser holding the pending-payment cookie, the payment owner, or an admin.
+- `src/app/(site)/enter/checkout/[paymentId]/page.tsx`: development-only hosted-checkout stand-in. It permits access to the browser holding the pending-payment cookie or the payment owner.
 - `src/app/(site)/enter/checkout/[paymentId]/actions.ts`: development-only success/failure action that routes through `applyPaymentResult`.
 
 There is no real payment webhook route yet. The `PaymentProvider.parseWebhook` interface and durable `PaymentEvent` records provide the integration seam for Dodo Payments.
@@ -178,8 +177,8 @@ Serializes scoring writes on the season, rejects obvious bot/headless agents, de
 ### `src/lib/auth/*`
 
 - `password.ts`: bcrypt hash/compare at 12 rounds plus dummy compare.
-- `session.ts`: random token creation, SHA-256 database ID, 30-day sliding sessions, cookie management, salted IP hashing, role helper.
-- `guards.ts`: `requireUser` and `requireAdmin` server redirects.
+- `session.ts`: random token creation, SHA-256 database ID, sliding idle expiry under a hard absolute limit, cookie management, salted IP hashing.
+- `guards.ts`: `requireUser` and `requireVerifiedUser` server redirects. There is no role guard.
 - `actions.ts`: Zod-validated signup/signin/signout server actions with safe internal redirect handling.
 
 ### `src/lib/products/*`
@@ -203,7 +202,6 @@ Serializes scoring writes on the season, rejects obvious bot/headless agents, de
 The Prisma schema contains these enums:
 
 ```text
-Role: FOUNDER | ADMIN
 ProductCategory: AI | DEV_TOOLS | PRODUCTIVITY | MARKETING | DESIGN |
                  FOUNDER_TOOLS | AUTOMATION | NO_CODE | ANALYTICS | CREATOR
 ApprovalStatus: DRAFT | PENDING | APPROVED | REJECTED | CHANGES_REQUESTED
@@ -230,9 +228,10 @@ Round 1─* ProductRoundStats *─1 SeasonEntry
 SeasonEntry 1─* ImpressionEvent *─1 Round
 SeasonEntry 1─* ClickEvent *─1 Round
 SeasonEntry 1─* RallyVisitor
-User 1─* AdminAction
 SeasonEntry/Round 1─* ActivityEvent (optional foreign keys)
 ```
+
+`ApprovalStatus.PENDING`/`CHANGES_REQUESTED` and `EntryStatus.AWAITING_APPROVAL`/`REJECTED` survive in the schema but no code path writes them any more: payment moves an entry straight to `UPCOMING` and its product to `APPROVED`.
 
 Indexes and uniqueness constraints protect common lookup paths: user email, product slug, season number, one entry per product per season, one stats row per entry per round, Rally code, one Rally visitor per referring entry/visitor, one payment per entry, provider/payment ID, and event query dimensions.
 
@@ -254,7 +253,7 @@ Current integrity note: these product/entry/payment creates are not wrapped in o
 
 `applyPaymentResult` looks up the internal payment by provider payment ID and no-ops duplicate event IDs. Success updates payment status and, when linked, atomically moves the entry/product into review. Failure updates payment to `FAILED`. Refunds accumulate a capped refunded amount and select `REFUNDED` vs `PARTIALLY_REFUNDED`.
 
-Admin rejection currently records `refundOwed: true` in `AdminAction`; it does not itself call a provider or update the payment status. That is an explicit follow-up seam for production refund processing.
+There is no in-application refund path. `PaymentProvider.requestRefund` is implemented for Dodo but nothing calls it, so a refund is issued from the provider dashboard; the resulting `refund.succeeded` webhook settles through `applyPaymentResult`, which marks the payment `REFUNDED`, withdraws the entry and frees its slot.
 
 ### Board and leaderboard
 
@@ -265,15 +264,15 @@ Both pages use `getStandings`, but they present the rows differently:
 
 Rows with fewer than `season.minSampleImpressions` qualified impressions display “Collecting Data” and no interest rate. The current code reads `qualifiedImpressions` from stats; it does not produce those impression totals.
 
-### Admin review
+### Season start
 
-`requireAdmin` runs on the server. `approveEntryAction` and `rejectEntryAction` re-check the entry state, use a transaction for product/entry state changes, write an `AdminAction`, and revalidate relevant paths. Approval revalidates `/admin` and `/board`; rejection revalidates `/admin` only.
+`startSeason` is reached only from the scheduled job. Under the season row lock it calls `getStartReadiness`, refuses unless every slot is claimed and every entry is approved and paid, and otherwise opens Round 1 and flips the season to `RUNNING`. A short field waits rather than playing a smaller bracket.
 
 ## 8. Seed data and local operation
 
 ### Baseline seed: `prisma/seed.ts`
 
-Creates/promotes one admin and upserts Season 0 as registration-open with a 32-slot, `$29` default. It prints a generated admin password only when creating a new admin. It is designed to be safer against an existing real-entry database.
+Upserts Season 0 as registration-open with a 32-slot, `$29` default. It creates no user accounts. It is designed to be safe against an existing real-entry database.
 
 ### Demo seed: `prisma/seed-demo.ts`
 
@@ -309,7 +308,7 @@ PAYMENT_PROVIDER=dev
 - URL lookup rejects private/reserved IP ranges, credentials, unsupported protocols, unsafe redirects, oversized responses, and long-running requests.
 - Outbound redirects allow only stored HTTP(S) destinations and fall back to `/board` for invalid/unapproved products.
 - `safeNext` prevents external or protocol-relative redirects after login/signup.
-- Admin permissions are checked on the server for every mutation.
+- There are no privileged accounts or roles; ownership is the only authorization boundary, and it is re-checked on the server for every mutation.
 - Paid placements are disclosed in the UI and outbound links use `nofollow sponsored`.
 
 ## 10. Known gaps and likely next implementation tasks

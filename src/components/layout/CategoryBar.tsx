@@ -51,7 +51,7 @@ export function CategoryBar() {
               className={cn(
                 chip,
                 isBoard && !active
-                  ? "bg-primary text-white font-medium"
+                  ? "bg-primary text-primary-foreground font-medium"
                   : "text-subtle hover:text-foreground",
               )}
             >
@@ -72,7 +72,7 @@ export function CategoryBar() {
                   className={cn(
                     chip,
                     "font-medium",
-                    current ? "bg-primary text-white" : "text-subtle hover:bg-surface hover:text-foreground",
+                    current ? "bg-primary text-primary-foreground" : "text-subtle hover:bg-surface hover:text-foreground",
                   )}
                 >
                   {/* The mark carries the category's own ink, the same colour

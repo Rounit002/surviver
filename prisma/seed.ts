@@ -1,12 +1,11 @@
 /**
- * Baseline seed: one administrator and Season 0 open for registration.
+ * Baseline seed: Season 0, open for registration.
  *
  * Run with:  npm run db:seed
  * Demo contestants live in prisma/seed-demo.ts so this stays safe to run
  * against an environment that already has real entries.
  */
 
-import bcrypt from "bcryptjs";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client.js";
 
@@ -26,31 +25,9 @@ const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString }) })
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 async function main() {
-  const email = process.env.SEED_ADMIN_EMAIL;
-  const password = process.env.SEED_ADMIN_PASSWORD;
-  if (!email || !password || Buffer.byteLength(password, "utf8") < 12 || Buffer.byteLength(password, "utf8") > 72) {
-    throw new Error("Set SEED_ADMIN_EMAIL and a 12-72 byte SEED_ADMIN_PASSWORD explicitly.");
-  }
-
-  const existing = await prisma.user.findUnique({ where: { email } });
-
-  if (existing && existing.role !== "ADMIN") {
-    throw new Error("Refusing to promote an existing public account. Provision the administrator through a controlled process.");
-  }
-  const admin = existing
-    ? existing
-    : await prisma.user.create({
-        data: {
-          email,
-          name: "Surviver Admin",
-          role: "ADMIN",
-          emailVerifiedAt: new Date(),
-          passwordHash: await bcrypt.hash(password, 12),
-        },
-      });
-
-  console.log(`Admin: ${admin.email}`);
-  console.log(existing ? "  (verified existing administrator; password unchanged)" : "  administrator created; password was not printed");
+  // The site has no administrator surface, so this seed provisions no
+  // privileged account. The ADMIN role survives in the schema for the existing
+  // audit rows; nothing in the application reads it.
 
   const season = await prisma.season.upsert({
     where: { number: 0 },

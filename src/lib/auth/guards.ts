@@ -17,13 +17,6 @@ export async function requireUser(returnTo?: string): Promise<SessionUser> {
   return user;
 }
 
-export async function requireAdmin(): Promise<SessionUser> {
-  const user = await getSessionUser();
-  if (!user) redirect("/login?next=%2Fadmin");
-  if (user.role !== "ADMIN") redirect("/");
-  return user;
-}
-
 export async function requireVerifiedUser(returnTo?: string): Promise<SessionUser> {
   const user = await requireUser(returnTo);
   if (!user.emailVerifiedAt) redirect(`/verify-email?next=${encodeURIComponent(returnTo ?? "/dashboard")}`);

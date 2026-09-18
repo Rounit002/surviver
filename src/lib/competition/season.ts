@@ -2,7 +2,10 @@ import "server-only";
 
 import { prisma } from "@/lib/db";
 export { PUBLIC_SEASON_STATUSES, publicSeasonFilter, parseSeasonNumber } from "@/lib/competition/constants";
-import type { EntryStatus, Season } from "@/generated/prisma";
+import type { EntryStatus, Prisma, Season } from "@/generated/prisma";
+import { evaluateStartReadiness, type StartReadiness } from "@/lib/competition/readiness";
+export { evaluateStartReadiness, STARTABLE_SEASON_STATUSES } from "@/lib/competition/readiness";
+export type { StartReadiness } from "@/lib/competition/readiness";
 
 /**
  * A slot counts as claimed once money has been taken, whether or not the
@@ -80,6 +83,36 @@ export async function getSeasonSummary(season: Season): Promise<SeasonSummary> {
     remaining,
     isFull: remaining === 0,
     acceptingEntries: season.status === "REGISTRATION_OPEN" && remaining > 0 && (!season.registrationStart || season.registrationStart <= new Date()) && (!season.registrationEnd || season.registrationEnd > new Date()),
+  };
+}
+
+/**
+ * How close a season is to fielding a full bracket.
+ *
+ * Takes a client rather than reaching for the global one so the engine can ask
+ * the same question inside the season lock, where the answer is authoritative.
+ */
+export async function getStartReadiness(
+  client: Prisma.TransactionClient,
+  season: Pick<Season, "id" | "status" | "capacity">,
+): Promise<StartReadiness> {
+  // Sequential rather than concurrent: an interactive transaction holds one
+  // connection, and these are cheap indexed counts.
+  const claimed = await client.seasonEntry.count({
+    where: { seasonId: season.id, status: { in: CLAIMED_ENTRY_STATUSES } },
+  });
+  const ready = await client.seasonEntry.count({ where: startableEntryFilter(season.id) });
+
+  return evaluateStartReadiness({ status: season.status, capacity: season.capacity, claimed, ready });
+}
+
+/** The entries that actually take the field: paid, approved and not yet playing. */
+export function startableEntryFilter(seasonId: string): Prisma.SeasonEntryWhereInput {
+  return {
+    seasonId,
+    status: "UPCOMING",
+    product: { approvalStatus: "APPROVED" },
+    payment: { status: "SUCCEEDED" },
   };
 }
 

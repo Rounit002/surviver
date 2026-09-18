@@ -62,8 +62,6 @@ services:
         sync: false
       - key: DODO_PAYMENTS_BUSINESS_ID
         sync: false
-      - key: ADMIN_TOTP_SECRET
-        sync: false
       - key: RESEND_API_KEY
         sync: false
       - key: EMAIL_FROM

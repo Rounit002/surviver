@@ -12,7 +12,7 @@ import { formatMoney } from "@/lib/format";
 import { hasCheckoutCapability } from "@/lib/payments/access";
 import { simulatePaymentAction } from "./actions";
 
-export const metadata: Metadata = { title: "Checkout" };
+export const metadata: Metadata = { title: "Checkout", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
 /**
@@ -41,7 +41,7 @@ export default async function CheckoutPage(props: PageProps<"/enter/checkout/[pa
   const store = await cookies();
   const holdsCookie = hasCheckoutCapability(store.get(PENDING_PAYMENT_COOKIE)?.value, payment);
   const user = await getSessionUser();
-  const isOwner = user?.id === payment.userId || user?.role === "ADMIN";
+  const isOwner = user?.id === payment.userId;
   if (!holdsCookie && !isOwner) notFound();
 
   if (payment.status === "SUCCEEDED") redirect("/dashboard?entered=1");

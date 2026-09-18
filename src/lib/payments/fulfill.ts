@@ -33,10 +33,12 @@ export async function applyPaymentResult(input: WebhookResult): Promise<{ applie
       const claimed = await tx.seasonEntry.count({ where: { seasonId: season.id, status: { in: CLAIMED_ENTRY_STATUSES } } });
       if (claimed >= season.capacity) return { applied: false, reason: "season full" };
       await tx.payment.update({ where: { id: payment.id }, data: { status: "SUCCEEDED", providerPaymentId: result.providerPaymentId, lastWebhookEventId: result.eventId, checkoutTokenHash: null, checkoutTokenExpiresAt: null } });
-      // Keep paid entries private until an administrator publishes them. The
-      // owner can still use the private campaign link immediately after payment.
-      await tx.seasonEntry.update({ where: { id: payment.entry.id }, data: { status: "AWAITING_APPROVAL" } });
-      await tx.product.update({ where: { id: payment.entry.productId }, data: { approvalStatus: "PENDING" } });
+      // There is no review stage: the site has no administrator surface, so a
+      // confirmed payment puts the entry straight onto the field. It holds its
+      // slot from this moment, and the season starts itself once all of them
+      // are taken.
+      await tx.seasonEntry.update({ where: { id: payment.entry.id }, data: { status: "UPCOMING" } });
+      await tx.product.update({ where: { id: payment.entry.productId }, data: { approvalStatus: "APPROVED" } });
     } else if (result.kind === "failed") {
       if (payment.providerPaymentId && payment.providerPaymentId !== result.providerPaymentId) return { applied: false, reason: "provider id mismatch" };
       if (!["PENDING", "FAILED"].includes(payment.status)) return { applied: false, reason: "already settled" };

@@ -16,11 +16,6 @@ datasource db {
 // Enums
 // ---------------------------------------------------------------------------
 
-enum Role {
-  FOUNDER
-  ADMIN
-}
-
 enum ProductCategory {
   AI
   DEV_TOOLS
@@ -114,7 +109,6 @@ model User {
   name         String
   avatarUrl    String?
   xHandle      String?
-  role         Role     @default(FOUNDER)
   emailVerifiedAt DateTime?
   emailVerificationTokenHash String? @unique
   emailVerificationExpiresAt DateTime?
@@ -124,7 +118,6 @@ model User {
   products     Product[]
   sessions     Session[]
   payments     Payment[]
-  adminActions AdminAction[] @relation("AdminActor")
 
   @@map("users")
 }
@@ -191,7 +184,7 @@ model Season {
   seasonStart       DateTime?
   seasonEnd         DateTime?
 
-  // --- Tunable competition rules (PRD 7, 11, 14: admin-configurable) ---
+  // --- Tunable competition rules (PRD 7, 11, 14: set per season) ---
   /// Minimum qualified impressions before a product gets a stable public rank.
   minSampleImpressions Int   @default(250)
   /// Default length of a normal round, in hours.
@@ -445,23 +438,6 @@ model WebhookEvent {
   @@index([provider, status])
   @@index([receivedAt])
   @@map("webhook_events")
-}
-
-/// Every manual intervention leaves a trail (PRD sections 21 and 30).
-model AdminAction {
-  id          String   @id @default(cuid())
-  adminUserId String
-  actionType  String
-  targetType  String
-  targetId    String
-  metadata    Json?
-  createdAt   DateTime @default(now())
-
-  admin User @relation("AdminActor", fields: [adminUserId], references: [id])
-
-  @@index([targetType, targetId])
-  @@index([createdAt])
-  @@map("admin_actions")
 }
 
 /// Live activity feed (PRD section 19). Only ever written from real platform events.

@@ -57,7 +57,9 @@ export default async function EntryPage(props: PageProps<"/entry/[token]">) {
 
   // Derived from what was actually settled, never from a query parameter a
   // visitor can add to the URL.
-  const paid = entry.payment?.status === "SUCCEEDED" && entry.status === "AWAITING_APPROVAL";
+  // There is no review stage: a settled payment puts the entry straight onto
+  // the field, so the receipt shows until the season actually starts running it.
+  const paid = entry.payment?.status === "SUCCEEDED" && entry.status === "UPCOMING";
   const serverNow = new Date().toISOString();
   const hasStats = entry.roundStats.length > 0;
   const testMode = isDevPayments();
@@ -66,8 +68,8 @@ export default async function EntryPage(props: PageProps<"/entry/[token]">) {
     <div className="mx-auto w-full max-w-2xl px-4 pt-8 pb-4">
       {paid ? (
         <div className="border-safe/25 bg-safe/8 text-safe mb-6 rounded-lg border px-4 py-3 text-[13px] leading-relaxed">
-          <strong className="font-semibold">{testMode ? "Test checkout completed." : "Payment received."}</strong>{" "}
-          Your entry goes live once approved.
+          <strong className="font-semibold">{testMode ? "Test checkout completed." : "Payment succeeded."}</strong>{" "}
+          Your entry is confirmed and goes on the board when the season starts.
         </div>
       ) : null}
 

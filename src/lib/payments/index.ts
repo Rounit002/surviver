@@ -9,8 +9,13 @@ const dodoProvider: PaymentProvider = {
   async createCheckout(input) {
     if (!env.dodoApiKey || !env.dodoProductId) throw new Error("Dodo Payments is not configured. Set DODO_PAYMENTS_API_KEY and DODO_PAYMENTS_PRODUCT_ID.");
     const base = env.dodoEnvironment === "test_mode" ? "https://test.dodopayments.com" : "https://live.dodopayments.com";
-    const response = await fetch(`${base}/checkouts`, { method: "POST", headers: { Authorization: `Bearer ${env.dodoApiKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ product_cart: [{ product_id: env.dodoProductId, quantity: 1 }], customer: { email: input.customerEmail }, return_url: input.successUrl, metadata: { payment_id: input.paymentId } }) });
-    if (!response.ok) throw new Error(`Dodo checkout failed (${response.status}).`);
+    const response = await fetch(`${base}/checkouts`, { method: "POST", headers: { Authorization: `Bearer ${env.dodoApiKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ product_cart: [{ product_id: env.dodoProductId, quantity: 1 }], customer: { email: input.customerEmail }, return_url: input.successUrl, metadata: { payment_id: input.paymentId } }), signal: AbortSignal.timeout(15_000) });
+    if (!response.ok) {
+      // Dodo explains rejections (bad key, unknown product, wrong mode) in the
+      // body. Log it server-side: the founder never sees provider internals.
+      console.error("[surviver] dodo checkout rejected", response.status, (await response.text().catch(() => "")).slice(0, 500));
+      throw new Error(`Dodo checkout failed (${response.status}).`);
+    }
     const data = (await response.json()) as { session_id?: string; checkout_url?: string };
     if (!data.checkout_url || !data.session_id) throw new Error("Dodo returned an incomplete checkout session.");
     return { url: data.checkout_url, providerCheckoutId: data.session_id };

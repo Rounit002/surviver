@@ -172,9 +172,9 @@ export function PendingState({ status, showFinish, testMode = false }: { status:
   const copy: Partial<Record<EntryStatus, string>> = {
     AWAITING_PAYMENT: "Saved but not paid for, so the slot is not held yet.",
     AWAITING_APPROVAL: testMode
-      ? "Test checkout completed and queued for review. No money was charged."
-      : "Paid and queued. Every entry is reviewed by hand before it goes live.",
-    UPCOMING: "Approved. Your product goes on the board when the season starts.",
+      ? "Test checkout completed. No money was charged."
+      : "Paid. Finalising your entry.",
+    UPCOMING: "Confirmed. Your product goes on the board when the season starts.",
     REJECTED: "This entry did not pass review. The payment status holds the refund record.",
     DISQUALIFIED: "This entry was disqualified. See the rules for details.",
   };

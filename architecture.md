@@ -1,10 +1,10 @@
 # Surviver.lol Architecture
 
-Status: implementation map verified against the repository on 2026-09-08.
+Status: implementation map verified against the repository on 2026-09-18.
 
 ## System at a glance
 
-Surviver.lol is a Next.js App Router application backed by PostgreSQL through Prisma. It runs a paid, promotion-oriented SaaS tournament: founders submit a product, payment is recorded, an administrator reviews the submission, and approved entries appear on a public discovery board. Public interaction is intended to produce competition data; founders can view campaign statistics through either an authenticated dashboard or a secret entry-management URL.
+Surviver.lol is a Next.js App Router application backed by PostgreSQL through Prisma. It runs a paid, promotion-oriented SaaS tournament: founders submit a product, payment is recorded, and the entry joins a public discovery board as soon as that payment settles. There is no administrator surface and no review step; the scheduled job at `/api/cron/rounds` is the only thing that starts a season and closes its rounds. Public interaction is intended to produce competition data; founders can view campaign statistics through either an authenticated dashboard or a secret entry-management URL.
 
 ```mermaid
 flowchart TD
@@ -12,7 +12,7 @@ flowchart TD
     Proxy[src/proxy.ts\nvisitor/session/rally cookies]
     Pages[Next.js App Router pages]
     Client[Client components\nforms, filters, countdown]
-    Actions[Server actions\nauth, entry, admin, checkout]
+    Actions[Server actions\nauth, entry, checkout]
     Redirects[Route handlers\n/go, /rally, /api/impressions, /api/cron]
     Domain[Domain helpers\nseason, standings, tracking, payments]
     Prisma[Prisma client\nsrc/lib/db.ts]
@@ -38,7 +38,7 @@ flowchart TD
 
 - App Router pages are Server Components by default and query Prisma directly.
 - `src/lib/db.ts`, `src/lib/auth/*`, `src/lib/competition/*`, `src/lib/payments/*`, `src/lib/products/site-metadata.ts`, and `src/lib/tracking/visitor.ts` are server-side domain code. Several use `server-only` to prevent accidental client imports.
-- Server actions are the mutation boundary for signup, signin, signout, entry creation, admin review, and the development checkout.
+- Server actions are the mutation boundary for signup, signin, signout, entry creation, and the development checkout.
 - `src/proxy.ts` runs before matched requests and assigns opaque visitor/session cookies. It also captures a Rally code from the query string.
 
 ### Client
@@ -74,8 +74,6 @@ src/
     │   ├── enter/checkout/[paymentId]/ development checkout simulator
     │   ├── entry/[token]/page.tsx     secret campaign-management page
     │   ├── dashboard/page.tsx         authenticated founder dashboard
-    │   ├── admin/page.tsx             admin review and audit summary
-    │   ├── admin/actions.ts           admin approval/rejection actions
     │   ├── loading.tsx                public loading UI
     │   └── error.tsx                  public route error boundary
     ├── (auth)/
@@ -85,14 +83,14 @@ src/
     ├── go/[slug]/route.ts             tracked outbound redirect
     ├── rally/[code]/route.ts          Rally landing redirect
     ├── api/impressions/route.ts       qualified impression ingestion
-    ├── api/cron/rounds/route.ts       protected round advancement
+    ├── api/cron/rounds/route.ts       protected season start and round advancement
     ├── not-found.tsx                  404 UI
     └── global-error.tsx               root failure UI
 ```
 
 Route groups `(site)` and `(auth)` do not appear in URLs. The current build reports these public paths:
 
-`/`, `/admin`, `/board`, `/dashboard`, `/enter`, `/enter/checkout/[paymentId]`, `/entry/[token]`, `/go/[slug]`, `/how-it-works`, `/leaderboard`, `/login`, `/rally/[code]`, `/rules`, `/seasons`, `/seasons/[number]`, `/signup`, and `/survivors`.
+`/`, `/board`, `/dashboard`, `/enter`, `/enter/checkout/[paymentId]`, `/entry/[token]`, `/go/[slug]`, `/how-it-works`, `/leaderboard`, `/login`, `/rally/[code]`, `/rules`, `/seasons`, `/seasons/[number]`, `/signup`, and `/survivors`.
 
 ## Main request flows
 
@@ -125,9 +123,11 @@ sequenceDiagram
 Important state transitions:
 
 1. New entry: `SeasonEntry.AWAITING_PAYMENT`, `Payment.PENDING`, `Product.DRAFT`.
-2. Successful payment: `Payment.SUCCEEDED`, `SeasonEntry.AWAITING_APPROVAL`, `Product.PENDING`.
-3. Admin approval: `Product.APPROVED`; entry becomes `UPCOMING` unless the season is already running, in which case it becomes `ACTIVE`.
-4. Admin rejection: `Product.REJECTED`, `SeasonEntry.REJECTED`, and an audit record marking that a refund is owed.
+2. Successful payment: `Payment.SUCCEEDED`, `SeasonEntry.UPCOMING`, `Product.APPROVED`. There is no review stage — the entry takes its slot immediately.
+3. Full field: once every slot is claimed, the scheduled job starts the season and the entries become `ACTIVE`.
+4. Full refund: `SeasonEntry.WITHDRAWN` and its manage token revoked, which frees the slot for resale.
+
+`EntryStatus.AWAITING_APPROVAL` and `ApprovalStatus.PENDING`/`REJECTED` remain in the schema but are no longer written by any code path. Entries left in `AWAITING_APPROVAL` by an earlier deployment still hold capacity and will block a season start; `evaluateStartReadiness` reports them as entries that are not approved and paid.
 
 Two providers are registered: `dodo` (live) and `dev` (a local simulator). The simulator is refused outright when `NODE_ENV=production`, so a production deployment left on `PAYMENT_PROVIDER=dev` fails closed rather than minting free entries; `scripts/security-preflight.mjs` also blocks startup on that configuration. Signed Dodo events arrive at `POST /api/webhooks/dodo`, are recorded in a durable `webhook_events` inbox keyed on the verified `webhook-id` header, and are settled through the same `applyPaymentResult` path as the simulator, which validates amount, currency and provider identity before it changes anything.
 
@@ -178,16 +178,16 @@ flowchart LR
     Login[/login] -->|signInAction| Verify[bcrypt verify]
     Hash --> Session[Session row + auth cookie]
     Verify --> Session
-    Session --> Guard[requireUser / requireAdmin]
+    Session --> Guard[requireUser / requireVerifiedUser]
     Guard --> Dashboard[/dashboard]
-    Guard --> Admin[/admin]
+    Guard --> Enter[/enter]
 ```
 
 - The browser holds a random auth token; the database stores only its SHA-256 hash.
 - Sessions expire after 30 days and refresh with a sliding expiry.
 - Passwords use bcrypt with 12 rounds. Unknown users use a dummy hash comparison to reduce account-enumeration timing leaks.
-- `requireUser` redirects unauthenticated users to `/login`.
-- `requireAdmin` redirects unauthenticated users to login and non-admin users to `/`.
+- `requireUser` redirects unauthenticated users to `/login`; `requireVerifiedUser` additionally requires a verified email.
+- There are no roles. Every account is a founder account, and no route confers elevated privilege.
 - The entry flow intentionally supports guest founders. A guest `User` may have no password; the `manageToken` on `SeasonEntry` is the capability link for campaign access.
 
 ## Data architecture
@@ -198,8 +198,7 @@ The canonical model is `prisma/schema.prisma`; the generated client in `src/gene
 User
 ├── Product[]
 ├── Session[]
-├── Payment[]
-└── AdminAction[]
+└── Payment[]
 
 Season
 ├── SeasonEntry[] ── Product
@@ -224,8 +223,7 @@ Core aggregates:
 - `ImpressionEvent` and `ClickEvent`: raw event records with visitor/session IDs, source type, suspicion flags, and hashed IP metadata.
 - `RallyVisitor`: intended attribution record for a visitor brought by a founder.
 - `Payment`: internal payment record with provider ID, status, refund totals, and webhook idempotency marker.
-- `AdminAction`: audit trail for manual decisions.
-- `ActivityEvent`: immutable public and administrative timeline records emitted by payment, review, and competition transitions.
+- `ActivityEvent`: immutable public timeline records emitted by payment and competition transitions.
 
 ## Scoring implementation boundary
 
@@ -253,7 +251,7 @@ The remaining payment work is the real Dodo Payments provider, signature verific
 - Auth cookies, visitor cookies, session cookies, Rally cookies, and the pending-payment cookie are httpOnly and use `SameSite=Lax`.
 - Internal `next` redirects accept only single-slash paths, preventing open redirects.
 - Public product links use `nofollow sponsored`; the application does not pass ranking authority to paid destinations.
-- Server-side role checks protect admin operations; visible UI is not treated as authorization.
+- There are no privileged operations to protect: the application has no administrator surface, and the only non-public endpoint is `/api/cron/rounds`, guarded by a constant-time bearer comparison against `CRON_SECRET`.
 
 ## Deployment and extension seams
 

@@ -1,0 +1,11 @@
+{
+  "provider_task_id": "441753813237827",
+  "submitted_model": "MiniMax-H3",
+  "output_file_path": "D:\\SurvierLOL\\videos\\441753813237827.mp4",
+  "submitted_at_ms": 1789402860000,
+  "last_query_at_ms": 1789403544000,
+  "next_query_due_at_ms": 0,
+  "polling_cron_task_id": "",
+  "polling_cron_name": "",
+  "terminal_status": "delivered"
+}

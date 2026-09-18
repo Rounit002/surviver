@@ -32,17 +32,26 @@ export const CATEGORY_VALUES = Object.keys(CATEGORY_LABELS) as ProductCategory[]
  * Values are data rather than design tokens, so they are applied inline; there
  * is no Tailwind class to generate for a colour chosen at runtime.
  */
+/**
+ * The per-category tint/ink pair, as `var()` references rather than hex.
+ *
+ * These are handed straight to JSX inline styles, and an inline style is the
+ * one place a stylesheet cannot reach — so as literals they stayed pastel when
+ * the page went dark, ten bright blocks on near-black. Pointing at variables
+ * lets the same style resolve per theme. The colours themselves, light and
+ * dark, are in `globals.css` next to the rest of the palette.
+ */
 export const CATEGORY_COLORS: Record<ProductCategory, { tint: string; ink: string }> = {
-  AI: { tint: "#E9E4F7", ink: "#544A8C" },
-  DEV_TOOLS: { tint: "#DCE7F7", ink: "#375688" },
-  PRODUCTIVITY: { tint: "#D7EAE6", ink: "#2C6055" },
-  MARKETING: { tint: "#F9E1D7", ink: "#9A4C31" },
-  DESIGN: { tint: "#F7DEEA", ink: "#8E4267" },
-  FOUNDER_TOOLS: { tint: "#F6E7C9", ink: "#84611E" },
-  AUTOMATION: { tint: "#E1E5EF", ink: "#434D6E" },
-  NO_CODE: { tint: "#E5EFD6", ink: "#51652A" },
-  ANALYTICS: { tint: "#D6EAF0", ink: "#2A5F71" },
-  CREATOR: { tint: "#F6DFE0", ink: "#914248" },
+  AI: { tint: "var(--cat-ai-tint)", ink: "var(--cat-ai-ink)" },
+  DEV_TOOLS: { tint: "var(--cat-dev-tools-tint)", ink: "var(--cat-dev-tools-ink)" },
+  PRODUCTIVITY: { tint: "var(--cat-productivity-tint)", ink: "var(--cat-productivity-ink)" },
+  MARKETING: { tint: "var(--cat-marketing-tint)", ink: "var(--cat-marketing-ink)" },
+  DESIGN: { tint: "var(--cat-design-tint)", ink: "var(--cat-design-ink)" },
+  FOUNDER_TOOLS: { tint: "var(--cat-founder-tools-tint)", ink: "var(--cat-founder-tools-ink)" },
+  AUTOMATION: { tint: "var(--cat-automation-tint)", ink: "var(--cat-automation-ink)" },
+  NO_CODE: { tint: "var(--cat-no-code-tint)", ink: "var(--cat-no-code-ink)" },
+  ANALYTICS: { tint: "var(--cat-analytics-tint)", ink: "var(--cat-analytics-ink)" },
+  CREATOR: { tint: "var(--cat-creator-tint)", ink: "var(--cat-creator-ink)" },
 };
 
 type StatusPresentation = {
