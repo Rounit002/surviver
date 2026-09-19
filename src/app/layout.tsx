@@ -21,33 +21,33 @@ export const metadata: Metadata = {
   // still points at the deployment provider's internal/default hostname.
   metadataBase: new URL("https://surviver.lol"),
   title: {
-    default: "outbid.lol — Claim a rank on the public leaderboard",
-    template: "%s — outbid.lol",
+    default: "Surviver.lol — the SaaS survival tournament",
+    template: "%s — Surviver.lol",
   },
   description:
-    "A public pay-to-rank leaderboard. No ads, no API keys, no revenue sharing — just claim the top spot and your brand is the first one customers see.",
+    "A promotional tournament for SaaS products. One flat entry fee, equal exposure for everyone, and measured visitor interest decides which product survives each round.",
   openGraph: {
-    title: "outbid.lol — Claim a rank on the public leaderboard",
+    title: "Surviver.lol — the SaaS survival tournament",
     description:
-      "A public pay-to-rank leaderboard. No ads, no API keys, no revenue sharing.",
-    siteName: "outbid.lol",
+      "35 products enter, one survives. One flat entry fee, equal exposure, and a rank nobody can buy.",
+    siteName: "Surviver.lol",
     type: "website",
     images: [{
       url: "/social-preview.png",
       width: 1200,
       height: 630,
-      alt: "outbid.lol — Claim a rank on the public leaderboard",
+      alt: "Surviver.lol — 35 products enter. One survives.",
     }],
   },
   twitter: {
     card: "summary_large_image",
     images: [{
       url: "/social-preview.png",
-      alt: "outbid.lol — Claim a rank on the public leaderboard",
+      alt: "Surviver.lol — 35 products enter. One survives.",
     }],
-    title: "outbid.lol — Claim a rank on the public leaderboard",
+    title: "Surviver.lol — the SaaS survival tournament",
     description:
-      "A public pay-to-rank leaderboard. Just outbid your competition to get to the top.",
+      "35 products enter, one survives. Equal exposure, a flat entry fee, and a rank nobody can buy.",
   },
 };
 
@@ -99,9 +99,9 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         <script nonce={nonce} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
           "@context": "https://schema.org",
           "@type": "WebSite",
-          name: "outbid.lol",
-          url: "https://outbid.lol",
-          description: "A public pay-to-rank leaderboard. No ads, no API keys, no revenue sharing.",
+          name: "Surviver.lol",
+          url: "https://surviver.lol",
+          description: "A promotional tournament for SaaS products. 35 products enter, one survives.",
           inLanguage: "en",
         }).replace(/</g, "\\u003c") }} />
         {children}

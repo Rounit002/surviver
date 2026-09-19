@@ -13,6 +13,8 @@ import { prisma } from "@/lib/db";
 const SESSION_GRACE_MS = 24 * 60 * 60 * 1000;
 const WEBHOOK_RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
 const FAILED_CHECKOUT_GRACE_MS = 2 * 60 * 60 * 1000;
+/** How long after its capability lapsed an unsettled checkout is written off. */
+const ABANDONED_CHECKOUT_GRACE_MS = 24 * 60 * 60 * 1000;
 
 export type RetentionReport = {
   sessions: number;
@@ -36,13 +38,28 @@ export async function runRetention(now = new Date()): Promise<RetentionReport> {
     }),
   ]);
 
-  // Only explicitly cancelled checkouts may be released. A declined attempt
-  // can later succeed, so FAILED and PENDING must remain recoverable.
+  // A checkout stops holding its product URL once it can no longer be
+  // completed. An explicit cancellation is released after a short grace. A
+  // declined or never-finished attempt may still settle, so it is only written
+  // off a day after the capability that opens its checkout lapsed — and never
+  // while the provider has already named a payment for it, because that one is
+  // part of a live settlement conversation rather than an abandoned tab.
   const abandonedEntries = await prisma.seasonEntry.updateMany({
     where: {
       status: "AWAITING_PAYMENT",
-      createdAt: { lte: new Date(now.getTime() - FAILED_CHECKOUT_GRACE_MS) },
-      payment: { status: "CANCELLED" },
+      OR: [
+        {
+          createdAt: { lte: new Date(now.getTime() - FAILED_CHECKOUT_GRACE_MS) },
+          payment: { status: "CANCELLED" },
+        },
+        {
+          payment: {
+            status: { in: ["PENDING", "FAILED"] },
+            providerPaymentId: null,
+            checkoutTokenExpiresAt: { lte: new Date(now.getTime() - ABANDONED_CHECKOUT_GRACE_MS) },
+          },
+        },
+      ],
     },
     data: { status: "WITHDRAWN", manageTokenRevokedAt: now },
   });

@@ -117,6 +117,26 @@ export function startableEntryFilter(seasonId: string): Prisma.SeasonEntryWhereI
   };
 }
 
+/**
+ * The entries that stop a URL being entered into a season again.
+ *
+ * A live entry blocks its address, and so does a checkout that is still in
+ * flight — but only while that checkout can still be completed. The capability
+ * that opens it lives two hours; once it has lapsed the founder cannot reach
+ * their own checkout any more, and a tab someone closed must not lock their
+ * address out of the season for good.
+ */
+export function blockingEntryFilter(seasonId: string, url: string, now = new Date()): Prisma.SeasonEntryWhereInput {
+  return {
+    seasonId,
+    product: { url },
+    OR: [
+      { status: { notIn: ["REJECTED", "WITHDRAWN", "AWAITING_PAYMENT"] } },
+      { status: "AWAITING_PAYMENT", payment: { status: "PENDING", checkoutTokenExpiresAt: { gt: now } } },
+    ],
+  };
+}
+
 /** Paid, approved entries are public while waiting for the field to fill. */
 export async function getPublicUpcomingEntries(seasonId: string, category?: Prisma.EnumProductCategoryFilter["equals"]) {
   return prisma.seasonEntry.findMany({

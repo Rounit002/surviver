@@ -50,7 +50,9 @@ export async function proxy(request: NextRequest) {
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: https:",
     "font-src 'self' data:",
-    "connect-src 'self'",
+    // The dev server's hot-reload channel is a websocket on this same origin,
+    // which `'self'` does not cover for the ws: scheme.
+    `connect-src 'self'${process.env.NODE_ENV === "development" ? " ws: wss:" : ""}`,
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",

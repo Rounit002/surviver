@@ -7,7 +7,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { env } from "@/lib/env";
 import { CAMPAIGN_TOKEN_COOKIE, PENDING_PAYMENT_COOKIE } from "@/lib/competition/constants";
-import { getOpenSeason, CLAIMED_ENTRY_STATUSES } from "@/lib/competition/season";
+import { getOpenSeason, blockingEntryFilter, CLAIMED_ENTRY_STATUSES } from "@/lib/competition/season";
 import { lockSeason } from "@/lib/competition/engine";
 import { getPaymentProvider } from "@/lib/payments";
 import { fetchSiteMetadata, normalizeUrl, UnsafeUrlError } from "@/lib/products/site-metadata";
@@ -132,10 +132,7 @@ export async function createEntryAction(
     if (current.status !== "REGISTRATION_OPEN" || (current.registrationStart && current.registrationStart > now) || (current.registrationEnd && current.registrationEnd <= now)) return { error: "Registration has closed." };
     const claimed = await tx.seasonEntry.count({ where: { seasonId: season.id, status: { in: CLAIMED_ENTRY_STATUSES } } });
     if (claimed >= current.capacity) return { error: "This season is full." };
-    const duplicate = await tx.seasonEntry.findFirst({ where: { seasonId: season.id, product: { url }, OR: [
-      { status: { notIn: ["REJECTED", "WITHDRAWN", "AWAITING_PAYMENT"] } },
-      { status: "AWAITING_PAYMENT", payment: { status: "PENDING" } },
-    ] } });
+    const duplicate = await tx.seasonEntry.findFirst({ where: blockingEntryFilter(season.id, url, now) });
     if (duplicate) return { error: "That URL already has an entry. Use your original checkout or private campaign link." };
     // Guest founder record (User.passwordHash stays null): entering requires
     // no account, and the campaign is reached by manageToken, not by login. An

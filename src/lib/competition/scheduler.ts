@@ -86,22 +86,24 @@ async function tick(options: { retention?: boolean }): Promise<CompetitionTickRe
   scheduler.surviverCompetitionTicks = ticks;
   const report: CompetitionTickReport = { started: [], results: [] };
   try {
-    // Registration alone must not start any recurring competition work.
-    if (!(await pendingSeasonCount())) {
-      stopTimer();
-      return report;
-    }
     // Order matters: a stranded payment can be the entry that completes the
-    // field, so retries run before the start check reads the counts.
+    // field, so retries run before anything reads the counts. They run while
+    // registration is still open too — that is precisely when a payment the
+    // provider has stopped redelivering would otherwise sit unsettled, with a
+    // founder charged and nothing on the board to show for it.
     report.webhooks = await sweepWebhooks();
-    report.started = await autoStartFullSeasons();
 
-    const seasons = await prisma.season.findMany({ where: { status: "RUNNING" }, select: { id: true } });
-    for (const { id } of seasons) {
-      try {
-        report.results.push({ seasonId: id, outcome: await advanceSeason(id) });
-      } catch (error) {
-        console.error("[surviver] round transition failed", id, error);
+    // Registration alone must not start any recurring competition work.
+    if (await pendingSeasonCount()) {
+      report.started = await autoStartFullSeasons();
+
+      const seasons = await prisma.season.findMany({ where: { status: "RUNNING" }, select: { id: true } });
+      for (const { id } of seasons) {
+        try {
+          report.results.push({ seasonId: id, outcome: await advanceSeason(id) });
+        } catch (error) {
+          console.error("[surviver] round transition failed", id, error);
+        }
       }
     }
 
