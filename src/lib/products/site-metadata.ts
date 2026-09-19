@@ -65,6 +65,14 @@ export function isPrivateAddress(address: string): boolean {
     let parsed = ipaddr.parse(address);
     if (parsed.kind() === "ipv6" && (parsed as ipaddr.IPv6).isIPv4MappedAddress()) {
       parsed = (parsed as ipaddr.IPv6).toIPv4Address();
+    } else if (parsed.kind() === "ipv6" && parsed.range() === "rfc6052") {
+      const translated = parsed as ipaddr.IPv6;
+      // Some networks use DNS64/NAT64 and synthesize public IPv4 destinations
+      // under the well-known /96 prefix. Check the embedded IPv4 address just
+      // like an ordinary A record; reject the local-use translation prefix.
+      if (!translated.match(ipaddr.parse("64:ff9b::"), 96)) return true;
+      const [high, low] = translated.parts.slice(-2);
+      parsed = new ipaddr.IPv4([high! >> 8, high! & 0xff, low! >> 8, low! & 0xff]);
     }
     return parsed.range() !== "unicast";
   } catch {
