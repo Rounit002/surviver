@@ -6,7 +6,7 @@ export const metadata = pageMetadata("/rules");
 export const dynamic = "force-dynamic";
 export default async function RulesPage() {
   const season = await getOpenSeason() ?? await getCurrentSeason();
-  return <article className="mx-auto w-full max-w-2xl px-4 py-10">
+  return <article className="shell max-w-2xl py-10">
     <p className="label">The playing field</p><h1 className="mt-3 text-3xl font-semibold">Simple rules. Earned attention.</h1>
     <p className="text-subtle mt-4 text-sm leading-7">A promotional tournament for SaaS products. Every entry costs the same, and paying more cannot improve a rank.</p>
     <div className="mt-8 space-y-8 text-sm leading-7">

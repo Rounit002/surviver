@@ -3,13 +3,9 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { randomBytes } from "node:crypto";
 import { createSession, destroySession } from "@/lib/auth/session";
 import { fakeVerify, hashPassword, passwordFitsBcrypt, verifyPassword } from "@/lib/auth/password";
-import { sendVerificationEmail } from "@/lib/email";
-import { env } from "@/lib/env";
 import { consumeRateLimit, requestIp } from "@/lib/security/request";
-import { hashCapability } from "@/lib/security/tokens";
 import { safeNextPath } from "@/lib/auth/redirects";
 
 export type AuthFormState = {
@@ -73,25 +69,18 @@ export async function signUpAction(
 
   const existing = await prisma.user.findUnique({ where: { email }, select: { id: true } });
   if (existing) {
-    return { error: "We could not create that account. Try signing in or request a new verification email." };
+    return { error: "We could not create that account. Try signing in instead." };
   }
 
-  const verificationToken = randomBytes(32).toString("base64url");
   const user = await prisma.user.create({
     data: {
       name, email, passwordHash: await hashPassword(password),
-      ...(env.isProduction ? {
-        emailVerificationTokenHash: hashCapability(verificationToken),
-        emailVerificationExpiresAt: new Date(Date.now() + 60 * 60_000),
-      } : { emailVerifiedAt: new Date() }),
+      // Email is the login identifier; signup does not depend on a mail
+      // provider or an out-of-band verification step.
     },
     select: { id: true },
   });
 
-  if (env.isProduction) {
-    await sendVerificationEmail(email, verificationToken);
-    redirect("/verify-email?sent=1");
-  }
   await createSession(user.id);
   redirect(safeNextPath(formData.get("next")));
 }
@@ -116,7 +105,7 @@ export async function signInAction(
   }
   const user = await prisma.user.findUnique({
     where: { email },
-    select: { id: true, passwordHash: true, emailVerifiedAt: true },
+    select: { id: true, passwordHash: true },
   });
 
   // Same message and comparable timing either way, so this cannot be used to
@@ -131,8 +120,6 @@ export async function signInAction(
   if (!(await verifyPassword(password, user.passwordHash))) {
     return { error: "Email or password is incorrect." };
   }
-
-  if (!user.emailVerifiedAt) return { error: "Verify your email before signing in." };
 
   await createSession(user.id);
   redirect(safeNextPath(formData.get("next")));

@@ -32,7 +32,7 @@ export default async function EnterPage(props: PageProps<"/enter">) {
   const price = formatMoney(season.entryPriceCents, season.currency);
 
   return (
-    <div className="mx-auto w-full max-w-2xl px-4 pt-8 pb-4">
+    <div className="shell max-w-2xl pt-8 pb-4">
       <header className="text-center">
         <h1 className="text-3xl font-semibold sm:text-4xl">Enter {season.name}</h1>
         <p className="text-subtle mx-auto mt-3 max-w-lg text-[15px] leading-relaxed text-pretty">
@@ -98,7 +98,7 @@ export default async function EnterPage(props: PageProps<"/enter">) {
  */
 function ClosedState({ full = false, seasonName, capacity }: { full?: boolean; seasonName?: string; capacity?: number }) {
   return (
-    <div className="mx-auto w-full max-w-2xl px-4 pt-8 pb-4">
+    <div className="shell max-w-2xl pt-8 pb-4">
       <header className="text-center">
         <h1 className="text-3xl font-semibold sm:text-4xl">
           {full ? `All ${capacity} spots are filled` : "Registration is closed"}

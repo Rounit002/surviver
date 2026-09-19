@@ -1,5 +1,6 @@
 import { pageMetadata } from "@/lib/seo";
 import Link from "next/link";
+import { CategoryBar } from "@/components/layout/CategoryBar";
 import { RoundBar } from "@/components/competition/RoundBar";
 import { ProductCard } from "@/components/product/ProductCard";
 import { ButtonLink } from "@/components/ui/Button";
@@ -40,16 +41,20 @@ export default async function BoardPage(props: PageProps<"/board">) {
     : shuffled;
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 pt-8 pb-4">
+    <div className="shell section">
       <header className="text-center">
-        <h1 className="text-3xl font-semibold sm:text-4xl">The board</h1>
-        <p className="text-subtle mx-auto mt-3 max-w-xl text-[15px] leading-relaxed text-pretty">
+        <h1 className="text-title font-semibold">The board</h1>
+        <p className="text-subtle text-lead mx-auto mt-4 max-w-xl text-pretty">
           Same entry fee, same starting exposure. The ones you choose to visit are the ones
           that survive.
         </p>
       </header>
 
-      <div className="mt-7">
+      <div className="mt-10">
+        <CategoryBar />
+      </div>
+
+      <div className="mt-6">
         <RoundBar
           season={season}
           round={round}
@@ -88,7 +93,7 @@ export default async function BoardPage(props: PageProps<"/board">) {
 
 function EmptyBoard({ reason }: { reason: string }) {
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 pt-8 pb-4">
+    <div className="shell pt-8 pb-4">
       <header className="text-center">
         <h1 className="text-3xl font-semibold sm:text-4xl">The board</h1>
       </header>

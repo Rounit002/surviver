@@ -48,6 +48,4 @@ export const env = {
   get dodoProductId() { return read("DODO_PAYMENTS_PRODUCT_ID", ""); },
   get dodoEnvironment() { return read("DODO_PAYMENTS_ENVIRONMENT", "test_mode"); },
   get dodoBusinessId() { return read("DODO_PAYMENTS_BUSINESS_ID", ""); },
-  get resendApiKey() { return read("RESEND_API_KEY", ""); },
-  get emailFrom() { return read("EMAIL_FROM", ""); },
 };

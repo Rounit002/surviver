@@ -2,7 +2,7 @@ import { LogoMark } from "@/components/brand/Logo";
 
 export default function SiteLoading() {
   return (
-    <div className="mx-auto max-w-5xl px-4 py-10" aria-busy>
+    <div className="shell py-10" aria-busy>
       {/* The mark carries the wait: its bars trade places until the board
           arrives and one of them is left standing. */}
       <div className="flex items-center gap-2.5" role="status">

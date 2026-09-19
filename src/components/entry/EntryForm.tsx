@@ -229,7 +229,7 @@ export function EntryForm({
             htmlFor="email"
             required
             error={state.fieldErrors?.email}
-            hint="Where your private campaign link is sent."
+            hint="Used for checkout. Your private campaign link appears after payment."
           >
             <Input
               id="email"

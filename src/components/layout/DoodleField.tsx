@@ -23,7 +23,7 @@ import { Icon } from "@/components/ui/Icon";
  * Two properties of that algorithm are load-bearing here:
  *
  *  1. **Every prefix of the list is already well spread.** Marks land in the
- *     emptiest space available, so the first eighteen cover the page on their
+ *     emptiest space available, so the first dozen cover the page on their
  *     own. That is what the responsive tiers are built on: a phone renders a
  *     prefix rather than a random subset, and keeps the same open spacing.
  *  2. **Tries are scored against the page's own layout.** One in the middle
@@ -64,10 +64,17 @@ const MARKS: Array<() => ReactElement> = [
 
 const HUES = ["blue", "coral", "violet", "teal", "amber", "pink"];
 
-/** Total marks, and the counts a phone and a tablet stop at. */
-const COUNT = 54;
-const PHONE = 18;
-const TABLET = 34;
+/**
+ * Total marks, and the counts a phone and a tablet stop at.
+ *
+ * Lowering these is the whole knob for density. Because the scatter is placed
+ * in order and each point is drawn before the next, the first N of a 54-run
+ * and the whole of an N-run are the same N marks — so thinning the wallpaper
+ * removes marks without rearranging the ones that stay.
+ */
+const COUNT = 34;
+const PHONE = 12;
+const TABLET = 22;
 
 /** Tries per mark. More tries means more even spacing and less randomness. */
 const TRIES = 14;

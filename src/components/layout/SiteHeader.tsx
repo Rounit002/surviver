@@ -1,64 +1,37 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { Wordmark } from "@/components/brand/Wordmark";
-import { CategoryBar } from "@/components/layout/CategoryBar";
+import { NavBar } from "@/components/layout/NavBar";
 import { LiveDot } from "@/components/ui/Chip";
 import { getActiveRound, getCurrentSeason } from "@/lib/competition/season";
 import { prisma } from "@/lib/db";
 import { formatCount } from "@/lib/format";
-import { ThemeToggle } from "@/components/ui/ThemeToggle";
-import { MobileNavigation } from "./MobileNavigation";
 
 /**
- * Two rows, after outbid.lol: identity plus a live status pill on the first,
- * and a full-width category rail on the second. Not sticky — the board is long
- * and a pinned two-row header would eat the screen on a phone.
+ * The server half of the navigation: it does the data fetching and hands the
+ * result to `NavBar`, which has to be a client component because it knows
+ * about scroll position and an open menu.
+ *
+ * The ticker is passed as a prop rather than fetched on the client, so the
+ * season's state is in the first HTML response and never pops in. It has its
+ * own `Suspense` boundary, so a slow standings query delays the ticker rather
+ * than the whole navigation.
  */
 export async function SiteHeader() {
   return (
-    <header className="w-full">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-3 px-4 pt-5 pb-3.5 md:pb-4">
-        <div className="relative flex w-full items-center justify-between gap-4">
-          <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
-            <Wordmark />
-            <div className="hidden min-w-0 lg:block">
-              <Suspense fallback={null}>
-                <SeasonTicker />
-              </Suspense>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 sm:gap-3">
-            <ThemeToggle />
-            <MobileNavigation />
-            <nav aria-label="Main navigation" className="hidden items-center gap-4 text-sm sm:flex lg:gap-6">
-              {[
-                { href: "/board", label: "Board" },
-                { href: "/leaderboard", label: "Leaderboard" },
-                { href: "/seasons", label: "Seasons" },
-                { href: "/survivors", label: "Survivors" },
-              ].map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="text-subtle hover:text-foreground inline-flex min-h-11 items-center font-medium transition-colors"
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </nav>
-          </div>
-        </div>
-
-        <Suspense fallback={<div className="bg-muted h-10 rounded-full" />}>
-          <CategoryBar />
+    <NavBar
+      ticker={
+        <Suspense fallback={null}>
+          <SeasonTicker />
         </Suspense>
-      </div>
-    </header>
+      }
+    />
   );
 }
 
-/** Live state of the competition, in the slot outbid uses for its stats pill. */
+/**
+ * Live state of the competition, in the quietest form that still says
+ * something: the season, and the one number actually moving.
+ */
 async function SeasonTicker() {
   const season = await getCurrentSeason();
   if (!season) return null;
@@ -72,21 +45,20 @@ async function SeasonTicker() {
     return (
       <Link
         href="/leaderboard"
-        className="border-border text-subtle hover:text-foreground inline-flex max-w-full items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs whitespace-nowrap transition-colors"
+        className="text-subtle hover:text-foreground inline-flex max-w-full items-center gap-2 text-[13px] whitespace-nowrap transition-colors duration-[var(--dur-fast)]"
       >
         <LiveDot />
         <span className="text-foreground font-medium">{season.name}</span>
-        <span aria-hidden>&middot;</span>
+        <span className="text-border-strong" aria-hidden>
+          |
+        </span>
         <span>
           <span className="num">{formatCount(competing)}</span> competing
         </span>
         {round ? (
-          <>
-            <span aria-hidden>&middot;</span>
-            <span className="text-danger">
-              <span className="num">{formatCount(round.eliminationCount)}</span> go out
-            </span>
-          </>
+          <span className="text-danger">
+            <span className="num">{formatCount(round.eliminationCount)}</span> go out
+          </span>
         ) : null}
       </Link>
     );
@@ -105,20 +77,21 @@ async function SeasonTicker() {
     return (
       <Link
         href="/enter"
-        className="border-border text-subtle hover:text-foreground inline-flex max-w-full items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs whitespace-nowrap transition-colors"
+        className="text-subtle hover:text-foreground inline-flex max-w-full items-center gap-2 text-[13px] whitespace-nowrap transition-colors duration-[var(--dur-fast)]"
       >
         <span className="text-foreground font-medium">{season.name}</span>
-        <span aria-hidden>&middot;</span>
+        <span className="text-border-strong" aria-hidden>
+          |
+        </span>
         <span>
           {claimed >= season.capacity ? (
-            "all slots filled"
+            "all spots filled"
           ) : (
             <>
-              <span className="num">{formatCount(season.capacity - claimed)}</span> slots left
+              <span className="num">{formatCount(season.capacity - claimed)}</span> spots left
             </>
           )}
         </span>
-        <span className="text-primary">&rarr;</span>
       </Link>
     );
   }

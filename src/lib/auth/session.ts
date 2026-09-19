@@ -61,7 +61,7 @@ export async function createSession(userId: string): Promise<void> {
   });
 }
 
-export type SessionUser = Pick<User, "id" | "email" | "emailVerifiedAt" | "name" | "avatarUrl" | "xHandle">;
+export type SessionUser = Pick<User, "id" | "email" | "name" | "avatarUrl" | "xHandle">;
 
 /**
  * Resolves the signed-in user, or null. Expired rows are deleted on sight so
@@ -77,7 +77,7 @@ export async function getSessionUser(): Promise<SessionUser | null> {
     where: { id },
     include: {
       user: {
-        select: { id: true, email: true, emailVerifiedAt: true, name: true, avatarUrl: true, xHandle: true },
+        select: { id: true, email: true, name: true, avatarUrl: true, xHandle: true },
       },
     },
   });

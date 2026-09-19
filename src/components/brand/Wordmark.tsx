@@ -42,9 +42,7 @@ export function Wordmark({
       <LogoMark className={markSizes[size]} />
       <span className={cn("font-medium tracking-[-0.04em] whitespace-nowrap", sizes[size])}>
         <span className="text-foreground">surviver</span>
-        {/* Coral, as in the design canvas: the stop is the one place the accent
-            appears in the chrome, so it does not compete with the blue actions. */}
-        <span className="text-danger">.lol</span>
+        <span className="text-primary">.lol</span>
       </span>
     </span>
   );

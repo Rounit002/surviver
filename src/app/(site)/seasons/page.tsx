@@ -36,7 +36,7 @@ export default async function SeasonsPage() {
   );
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 pt-8 pb-4">
+    <div className="shell pt-8 pb-4">
       <header className="text-center">
         <h1 className="text-3xl font-semibold sm:text-4xl">Seasons</h1>
         <p className="text-subtle mx-auto mt-3 max-w-xl text-[15px] leading-relaxed text-pretty">

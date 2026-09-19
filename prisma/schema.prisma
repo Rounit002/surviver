@@ -109,9 +109,6 @@ model User {
   name         String
   avatarUrl    String?
   xHandle      String?
-  emailVerifiedAt DateTime?
-  emailVerificationTokenHash String? @unique
-  emailVerificationExpiresAt DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -466,4 +463,26 @@ model PaymentEvent {
   payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
   @@index([paymentId])
   @@map("payment_events")
+}
+
+/// One row per anonymous visitor cookie: the site's own presence counter.
+///
+/// Deliberately separate from ImpressionEvent. That table only records while a
+/// round is active and only for product cards, so it cannot see someone reading
+/// the rules during registration — and it is scoring data, which must not be
+/// reshaped to feed a counter in the hero.
+///
+/// The id is the signed visitor cookie's value: opaque, random, and carrying no
+/// personal data. There is one row per visitor rather than one per view, so the
+/// table grows with distinct people rather than with traffic, and "how many
+/// visited" is a row count rather than a sum.
+model SiteVisitor {
+  visitorId   String   @id
+  firstSeenAt DateTime @default(now())
+  /// Bumped by the heartbeat. "Online now" is a count of rows newer than the
+  /// presence window, which is why this needs its own index.
+  lastSeenAt  DateTime @default(now())
+
+  @@index([lastSeenAt])
+  @@map("site_visitors")
 }

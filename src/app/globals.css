@@ -1,173 +1,262 @@
 @import "tailwindcss";
 
 /* `dark:` follows the theme the reader chose, not the one their OS is in.
- * Without this Tailwind's own default would resolve `dark:` against
- * `prefers-color-scheme`, so a `dark:` utility and a themed token could end up
- * disagreeing on the same element — the page in light with one widget in dark.
+ * Without this Tailwind would resolve `dark:` against `prefers-color-scheme`,
+ * so a `dark:` utility and a themed token could disagree on the same element.
  * Almost nothing needs the variant, because the tokens below re-point
- * themselves per theme and the utilities follow; it is here so that the one
- * place that eventually does need it behaves. */
+ * themselves per theme and the utilities follow. */
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
-/* Colours lifted from the Claude Design canvas: structural blue, coral for
- * the cut. The ground under them is plain white, with the doodle wallpaper
- * in `.doodle-field` printed faintly into it — barely-there decoration that
- * needs a neutral sheet to sit in.
+/* ===================================================================== *
+ * THE DESIGN SYSTEM
  *
- * The canvas carries two signal colours, not four. Blue means above the line
- * and climbing; coral means at risk and cut; the survivor takes the ink. No
- * gradients anywhere — flat fills and hairlines only.
+ * One scale for type, one for space, one for radius, one for elevation, one
+ * for motion. Sections are built from these and nothing else — a value that
+ * does not appear here does not belong in a component.
  *
- * **This block is the light theme, and light is the default** — the server
- * renders `data-theme="light"` and only a stored choice moves off it. The dark
- * theme further down redefines these same names rather than introducing its
- * own, which is why almost no component knows a second theme exists: a
- * `bg-surface` resolves to whichever surface is current. Anything that hard-codes
- * a colour instead of taking a token is a thing that will not follow. */
+ * The palette is deliberately small: a warm neutral ramp, one accent, one
+ * alarm. Colour is how the board says "advancing" and "cut", so spending it
+ * on decoration would blunt the only thing it is really for.
+ *
+ * This block is the light theme, and light is the default. The dark theme
+ * further down redefines these same names rather than introducing its own,
+ * which is why almost no component knows a second theme exists.
+ * ===================================================================== */
 
 @theme {
-  /* --- Ground and surfaces ------------------------------------------- */
-  /* Page and card are the same white. A panel still reads as paper because of
-     its hairline and its shadow, and because the wallpaper runs behind it and
-     stops under it. */
-  --color-background: #ffffff;
+  /* ===================================================================== *
+   * outbid.lol palette — preserved verbatim from the source.
+   * A warm off-white ground, a coral accent, and a green reserved for the
+   * live-status pulse. Border hairlines are the structure; shadow is used
+   * sparingly on showcase surfaces only.
+   * ===================================================================== */
+
+  /* --- Ground and surfaces -------------------------------------------- */
+  --color-background: #fffdfa;
   --color-surface: #ffffff;
-  --color-muted: #efedf1;
-  --color-muted-strong: #e7e2ea;
+  /* For a section that should read as a different plane from the one above
+     it, without a border or a card. */
+  --color-elevated: #f6f3ef;
+  --color-muted: #f6f3ef;
+  --color-muted-strong: #ebe6df;
 
-  /* --- Hairlines ------------------------------------------------------ */
-  --color-border: #dfdae3;
-  --color-border-strong: #cfc9d4;
+  /* --- Hairlines ------------------------------------------------------- */
+  --color-border: #e6e0da;
+  --color-border-strong: #d6d1c9;
 
-  /* --- Ink ------------------------------------------------------------ */
-  --color-foreground: #221d26;
-  --color-subtle: #5d5566;
+  /* --- Ink ------------------------------------------------------------- */
+  --color-foreground: #282624;
+  --color-subtle: #67625d;
   /* Decorative only. Too light to carry small text on its own. */
-  --color-faint: #8d8593;
+  --color-faint: #8b8781;
 
-  /* --- Brand ---------------------------------------------------------- */
-  --color-primary: #2f52c8;
+  /* --- The one accent --------------------------------------------------
+     Pastel blue. The primary action, a link, and highlighted words in a headline. */
+  --color-primary: #3b76e1;
   --color-primary-foreground: #ffffff;
-  --color-primary-soft: #e9edfa;
+  --color-primary-soft: #edf3fe;
 
-  /* --- Competitive state ---------------------------------------------- */
-  /* Two states, as the canvas draws them: blue is safe and rising, coral is
-     at risk and eliminated. The survivor takes the ink, the one colour left
-     that reads as final rather than in-progress. */
-  --color-safe: #2f52c8;
-  --color-rising: #2f52c8;
+  /* --- Live state ------------------------------------------------------
+     The pulsing "online" and "live activity" indicator. Reserved. */
+  --color-live: #009f31;
+
+  /* --- Competitive state -----------------------------------------------
+     Pastel blue for safe/rising, coral/red for danger. */
+  --color-safe: #3b76e1;
+  --color-rising: #3b76e1;
   --color-danger: #e0603f;
-  --color-gold: #221d26;
+  --color-gold: #f59e0b;
+  --color-silver: #94a3b8;
+  --color-bronze: #d97706;
 
-  /* --- Type ----------------------------------------------------------- */
-  --font-sans: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
+  /* --- Type ------------------------------------------------------------
+     DM Sans for everything read as language — outbid.lol uses it too. Geist
+     Mono for the figures (a rank that changes should not reflow the row it
+     sits in). */
+  --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", Menlo, monospace;
 
-  /* --- Geometry ------------------------------------------------------- */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 20px;
+  /* Display sizes are fluid, so the hero is large on a desktop without
+     overflowing a 390px phone. Body sizes are fixed, because copy that
+     changes size as the window moves is unsettling to read. Each size carries
+     its own tracking: at 76px the default reads gappy, and the same negative
+     tracking at 30px would read as cramped. */
+  --text-display: clamp(2.5rem, 1.2rem + 5.2vw, 4.75rem);
+  --text-display--line-height: 1.04;
+  --text-display--letter-spacing: -0.035em;
 
-  /* One breakpoint below Tailwind's `sm`, so the header CTA can shorten
-     rather than overflow at 320px. */
+  --text-title: clamp(1.875rem, 1.2rem + 2.4vw, 2.75rem);
+  --text-title--line-height: 1.1;
+  --text-title--letter-spacing: -0.028em;
+
+  --text-heading: clamp(1.375rem, 1.1rem + 1vw, 1.75rem);
+  --text-heading--line-height: 1.2;
+  --text-heading--letter-spacing: -0.022em;
+
+  --text-lead: 1.0625rem;
+  --text-lead--line-height: 1.65;
+
+  --tracking-label: 0.09em;
+
+  /* --- Radius ----------------------------------------------------------
+     outbid.lol's radius: .875rem (14px). Almost everything — cards, inputs,
+     buttons — sits on this same gentle corner. The exception is the
+     leaderboard rows, which round further to feel like cards. */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 0.875rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1rem;
+
+  /* --- Elevation -------------------------------------------------------
+     Four steps, all barely there. Anything heavier reads as a web page from
+     2014. Tokens rather than literals because lift is theme-specific: on a
+     light ground a soft dark shadow does the work, and on a dark ground a
+     shadow is invisible and a hairline of light has to do it instead. */
+  --shadow-xs: 0 1px 2px rgb(26 25 23 / 0.04);
+  --shadow-sm:
+    0 1px 3px rgb(26 25 23 / 0.05),
+    0 1px 2px rgb(26 25 23 / 0.03);
+  --shadow-md: 0 4px 16px rgb(26 25 23 / 0.06);
+  --shadow-lg: 0 16px 48px rgb(26 25 23 / 0.08);
+  /* The showcase sits on the page rather than floating above it: a wide, very
+     soft pool plus a hairline to keep its edge honest. */
+  --shadow-showcase:
+    0 1px 0 rgb(26 25 23 / 0.04),
+    0 24px 70px -20px rgb(26 25 23 / 0.16);
+
+  /* --- Motion ----------------------------------------------------------
+     One easing for anything entering, one for anything answering a pointer.
+     Expensive motion starts slowly and settles quickly, which is this curve. */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-soft: cubic-bezier(0.32, 0.72, 0, 1);
+  --dur-fast: 140ms;
+  --dur-base: 240ms;
+  --dur-slow: 620ms;
+
+  /* One breakpoint below Tailwind's `sm`, so a header CTA can shorten rather
+     than overflow at 320px. */
   --breakpoint-xs: 25rem;
 
-  --tracking-label: 0.08em;
-
-  /* --- Elevation ------------------------------------------------------ */
-  /* Tokens rather than literals in the class, because lift is theme-specific:
-     on white a soft dark shadow does the work, and on a dark ground a shadow
-     is invisible and a hairline of light has to do it instead. */
-  --shadow-card: 0 12px 50px rgba(34, 29, 38, 0.08);
-  --shadow-tile:
-    0 0 0 1px rgba(34, 29, 38, 0.06),
-    0 10px 24px rgba(34, 29, 38, 0.06);
-  --shadow-raised:
-    0 0 0 1px rgba(34, 29, 38, 0.05),
-    0 2px 4px rgba(34, 29, 38, 0.04);
+  /* And one above `xl`, for the point where the page has grown a real margin
+     either side of `.shell`. Nothing is laid out against it — it exists so the
+     hero's picture can spend that margin. `2xl` at 1536px would leave it
+     unused on the width most desktops actually are. */
+  --breakpoint-wide: 90rem;
 }
 
-/* The doodle wallpaper's palette.
+/* --- The dark theme ---------------------------------------------------- *
  *
- * Plain custom properties rather than `@theme` tokens, for two reasons. They
- * generate no utilities — nothing should ever be able to write
- * `text-doodle-violet` — and Tailwind emits a `@theme` variable only where it
- * can see one referenced, which it cannot here: `DoodleField` builds the
- * `var()` name at render time from a hue and a slot index.
+ * Opt-in only. The reader picks it, it is remembered, and the OS is not
+ * consulted: `prefers-color-scheme` would hand a dark-desktop visitor a dark
+ * page on their first visit, and light is meant to be what the site opens in.
  *
- * Decoration only, and deliberately wider than the rest of the palette, since
- * the background is the one surface on the site allowed to be playful. Laid on
- * this faintly they read as a tint rather than a colour, which is the point.
+ * Every name here already exists above. Nothing is added, so no component has
+ * to branch. Kept off pure black on purpose — a near-black with a little
+ * warmth reads as paper in low light rather than a switched-off screen.
+ * -------------------------------------------------------------------- */
+:root[data-theme="dark"] {
+  --color-background: #1a1512;
+  --color-surface: #231e1b;
+  --color-elevated: #2d2824;
+  --color-muted: #2d2824;
+  --color-muted-strong: #383230;
+
+  --color-border: #383230;
+  --color-border-strong: #4a4340;
+
+  --color-foreground: #f7f5f1;
+  --color-subtle: #a8a39d;
+  --color-faint: #6e6e76;
+
+  /* Pastel blue primary in dark theme. */
+  --color-primary: #7ea5fc;
+  --color-primary-foreground: #121526;
+  --color-primary-soft: #1a233d;
+
+  /* The live indicator: a brighter, slightly desaturated green that holds
+     its identity on a dark ground. */
+  --color-live: #50c05f;
+
+  --color-safe: #7ea5fc;
+  --color-rising: #7ea5fc;
+  --color-danger: #ff6b6b;
+  --color-gold: #fbbf24;
+  --color-silver: #cbd5e1;
+  --color-bronze: #f59e0b;
+
+  --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-sm:
+    0 0 0 1px rgb(255 255 255 / 0.04),
+    0 1px 3px rgb(0 0 0 / 0.5);
+  --shadow-md:
+    0 0 0 1px rgb(255 255 255 / 0.05),
+    0 4px 16px rgb(0 0 0 / 0.5);
+  --shadow-lg:
+    0 0 0 1px rgb(255 255 255 / 0.06),
+    0 16px 48px rgb(0 0 0 / 0.6);
+  --shadow-showcase:
+    0 0 0 1px rgb(255 255 255 / 0.07),
+    0 24px 70px -20px rgb(0 0 0 / 0.75);
+}
+
+/* --- Glass ------------------------------------------------------------- *
+ * The navigation's frosted surface. Three parts, all load-bearing: the tint
+ * carries the text's contrast, the blur turns whatever is behind into texture
+ * rather than detail, and the saturate is the part that is easy to drop and
+ * should not be — blurring alone averages the backdrop towards grey and the
+ * bar reads as fog, where pushing saturation back up reads as glass.
  *
- * These are deeper than the board's versions of the same hues, and they are
- * held to roughly one luminance on purpose. A single opacity has to serve all
- * six, and the brand amber is over four times brighter than the brand blue —
- * at one alpha it washes out completely while the blue still reads. Balancing
- * the inks is what lets `--doodle-ink` stay one number.
- *
- * None of them states a competitive position: blue and coral still mean safe
- * and cut everywhere it counts, and reusing them here is fine precisely
- * because the wallpaper never sits next to a number. */
+ * No gloss gradient, though every guide to this style reaches for one. */
 :root {
-  /* The wallpaper's weight — the knob to turn if the doodles ever read as too
-     loud or too faint. Under about 0.15 they stop being visible rather than
-     becoming subtle: the strokes are barely a pixel wide once a glyph is
-     scaled down, and antialiasing drops most of those pixels below the
-     nominal alpha before they reach the screen. */
-  --doodle-ink: 0.2;
-
-  /* The neon bloom around each mark. Two drop-shadows are stacked off this
-     radius — a tight one for the filament and a wide one for the haze — and
-     both take the mark's own colour, so the glow is never a grey smudge.
-
-     Keep it small. The bloom is laid down before `--doodle-ink` fades the
-     whole mark, so it arrives at the screen at a fraction of its own alpha;
-     what looks like a gentle radius here is already most of what will show. */
-  --doodle-glow: 2px;
-
-  --color-doodle-blue: #2f52c8;
-  --color-doodle-coral: #d1492a;
-  --color-doodle-violet: #7a5af5;
-  --color-doodle-teal: #0e8a7c;
-  --color-doodle-amber: #a8660a;
-  --color-doodle-pink: #d43b7c;
+  --glass-blur: 20px;
+  --glass-saturate: 180%;
+  --glass-tint: rgb(250 250 248 / 0.72);
+  --glass-edge: rgb(26 25 23 / 0.08);
+  --glass-solid: #fafaf8;
 }
 
-/* The ten category tint/ink pairs, as custom properties rather than the hex
- * literals they used to be in `constants.ts`.
+:root[data-theme="dark"] {
+  --glass-tint: rgb(24 24 27 / 0.72);
+  --glass-edge: rgb(255 255 255 / 0.09);
+  --glass-solid: #18181b;
+}
+
+/* The ten category tint/ink pairs, as custom properties rather than hex
+ * literals in `constants.ts`.
  *
  * They are set in JSX inline styles, which a stylesheet cannot re-point, so
  * hard-coded values would have stayed pastel on a dark page — ten bright
  * blocks on near-black. As variables the same inline style resolves per theme.
- * `CATEGORY_COLORS` now holds the `var()` names; the colours live here. */
+ * `CATEGORY_COLORS` holds the `var()` names; the colours live here. */
 :root {
-  --cat-ai-tint: #e9e4f7;
+  --cat-ai-tint: #eeeafb;
   --cat-ai-ink: #544a8c;
-  --cat-dev-tools-tint: #dce7f7;
+  --cat-dev-tools-tint: #e4edfb;
   --cat-dev-tools-ink: #375688;
-  --cat-productivity-tint: #d7eae6;
+  --cat-productivity-tint: #ddefeb;
   --cat-productivity-ink: #2c6055;
-  --cat-marketing-tint: #f9e1d7;
+  --cat-marketing-tint: #fbe8df;
   --cat-marketing-ink: #9a4c31;
-  --cat-design-tint: #f7deea;
+  --cat-design-tint: #fbe5ef;
   --cat-design-ink: #8e4267;
-  --cat-founder-tools-tint: #f6e7c9;
-  --cat-founder-tools-ink: #84611e;
-  --cat-automation-tint: #e1e5ef;
+  --cat-founder-tools-tint: #faedd3;
+  --cat-founder-tools-ink: #7d5c1c;
+  --cat-automation-tint: #e8ebf3;
   --cat-automation-ink: #434d6e;
-  --cat-no-code-tint: #e5efd6;
-  --cat-no-code-ink: #51652a;
-  --cat-analytics-tint: #d6eaf0;
+  --cat-no-code-tint: #eaf3de;
+  --cat-no-code-ink: #4c6027;
+  --cat-analytics-tint: #deeff4;
   --cat-analytics-ink: #2a5f71;
-  --cat-creator-tint: #f6dfe0;
+  --cat-creator-tint: #fae6e7;
   --cat-creator-ink: #914248;
 }
 
 :root[data-theme="dark"] {
   /* Tints deepen to sit in a dark card, inks lighten to stay legible on them.
-     Both pairs hold the category's hue, which is the whole point of the
-     coding — the board is scanned by colour before it is read. */
+     Both hold the category's hue, which is the point of the coding — the board
+     is scanned by colour before it is read. */
   --cat-ai-tint: #2a2440;
   --cat-ai-ink: #c3b6ef;
   --cat-dev-tools-tint: #1f2a3d;
@@ -190,70 +279,20 @@
   --cat-creator-ink: #edaaae;
 }
 
-/* --- The dark theme ---------------------------------------------------- *
- *
- * Opt-in only. The reader picks it, it is remembered, and the OS is not
- * consulted: `prefers-color-scheme` would hand a dark-desktop visitor a dark
- * page on their first visit, and light is meant to be what the site opens in.
- *
- * Every name here already exists above. Nothing is added, so no component has
- * to branch — the same `bg-surface` that was white is now a lifted near-black.
- * -------------------------------------------------------------------- */
+/* The doodle wallpaper's palette. Parked with the component — see the note in
+ * `layout.tsx` — but kept intact so bringing it back is one element. */
+:root {
+  --doodle-ink: 0.2;
+  --color-doodle-blue: #2f52c8;
+  --color-doodle-coral: #d1492a;
+  --color-doodle-violet: #7a5af5;
+  --color-doodle-teal: #0e8a7c;
+  --color-doodle-amber: #a8660a;
+  --color-doodle-pink: #d43b7c;
+}
+
 :root[data-theme="dark"] {
-  /* Ground and surfaces. Unlike the light theme, these two cannot be equal:
-     with no shadow to speak of on a dark page, a card reads as a card only
-     because it sits a step above the ground it is on. */
-  --color-background: #121016;
-  --color-surface: #191621;
-  --color-muted: #221e2b;
-  --color-muted-strong: #2c2736;
-
-  /* Hairlines, lifted off the surface by about as much as the light theme's
-     lift them off white. */
-  --color-border: #332c40;
-  --color-border-strong: #4a4159;
-
-  --color-foreground: #f2eff6;
-  --color-subtle: #a89fb5;
-  --color-faint: #7a7189;
-
-  /* The button inverts. A blue dark enough to carry white text is too close to
-     the ground to read as a raised control, so the pairing flips: a light blue
-     face with the dark ground's ink on it. `text-primary` needs the same light
-     blue to clear `bg-primary-soft`, so both uses land on one colour. */
-  --color-primary: #8fa6ff;
-  --color-primary-foreground: #12101a;
-  --color-primary-soft: #1d2340;
-
-  --color-safe: #8fa6ff;
-  --color-rising: #8fa6ff;
-  --color-danger: #ff8f6b;
-  /* Still the ink — the survivor takes whatever "final" reads as on this
-     ground, which here is the bright end rather than the dark one. */
-  --color-gold: #f2eff6;
-
-  /* A dark shadow on a dark page is nothing, so the lift comes from a hairline
-     of light along the top edge instead, with the shadow only deepening the
-     separation underneath. */
-  --shadow-card: 0 14px 44px rgba(0, 0, 0, 0.55);
-  --shadow-tile:
-    0 0 0 1px rgba(255, 255, 255, 0.06),
-    0 10px 24px rgba(0, 0, 0, 0.5);
-  --shadow-raised:
-    0 0 0 1px rgba(255, 255, 255, 0.05),
-    0 2px 4px rgba(0, 0, 0, 0.4);
-
-  /* The wallpaper inverts too: light strokes on a dark sheet. Held to one
-     luminance for the same reason the light set is, and laid on a little
-     thinner, because light-on-dark reads stronger than dark-on-light at the
-     same alpha. */
   --doodle-ink: 0.16;
-
-  /* Wider here. A bloom reads on a dark sheet in a way it cannot on white —
-     light adds against dark and washes out against white — so dark is where
-     the neon actually looks like neon. */
-  --doodle-glow: 3px;
-
   --color-doodle-blue: #a8bcff;
   --color-doodle-coral: #ffb49c;
   --color-doodle-violet: #c9b6ff;
@@ -271,11 +310,12 @@
     color-scheme: light;
     -webkit-tap-highlight-color: transparent;
     background-color: var(--color-background);
+    /* An in-page anchor should land below the floating nav, not behind it. */
+    scroll-padding-top: 6rem;
   }
 
   /* Not cosmetic: this is what re-draws the scrollbars, the select menus and
-     the form controls the browser owns. Without it a dark page keeps light
-     native widgets. */
+     the form controls the browser owns. */
   :root[data-theme="dark"] {
     color-scheme: dark;
   }
@@ -283,8 +323,8 @@
   body {
     color: var(--color-foreground);
     font-family: var(--font-sans);
-    letter-spacing: -0.011em;
     text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
   }
 
   /* User-entered names and URLs must not enlarge cards or grid tracks. */
@@ -293,21 +333,24 @@
     overflow-wrap: anywhere;
   }
 
-  input, select, textarea {
+  input,
+  select,
+  textarea {
     max-width: 100%;
   }
 
   h1,
   h2,
   h3 {
-    letter-spacing: -0.03em;
+    letter-spacing: -0.028em;
+    text-wrap: balance;
   }
 
   /* Visible and on-brand, never a soft glow. */
   :focus-visible {
     outline: 2px solid var(--color-primary);
     outline-offset: 2px;
-    border-radius: 4px;
+    border-radius: var(--radius-xs);
   }
 
   ::selection {
@@ -315,7 +358,7 @@
     color: var(--color-foreground);
   }
 
-  /* Thin, warm scrollbars so dense standings tables don't get a heavy gutter.
+  /* Thin, quiet scrollbars so dense standings tables don't get a heavy gutter.
      Any element can still opt out with `[scrollbar-width:none]`. */
   * {
     scrollbar-width: thin;
@@ -336,9 +379,66 @@
     border: 3px solid var(--color-background);
     border-radius: 999px;
   }
+
+  button,
+  select,
+  summary {
+    cursor: pointer;
+  }
+
+  a,
+  button,
+  input,
+  select {
+    touch-action: manipulation;
+  }
 }
 
 @layer components {
+  /* --- Layout ---------------------------------------------------------- */
+
+  /* The one page container. Every section measures itself against this, so
+     the left edge of a headline lines up with the left edge of the nav and
+     with a card six sections further down. */
+  .shell {
+    width: 100%;
+    max-width: 72rem;
+    margin-inline: auto;
+    padding-inline: 1.25rem;
+  }
+
+  @media (min-width: 40rem) {
+    .shell {
+      padding-inline: 2rem;
+    }
+  }
+
+  /* Vertical rhythm. Two steps only: the normal gap between sections, and the
+     wider one reserved for a change of subject. */
+  .section {
+    padding-block: clamp(3.5rem, 7vw, 6rem);
+  }
+
+  .section-lg {
+    padding-block: clamp(5rem, 10vw, 9rem);
+  }
+
+  /* The hero. Generous above, where it separates itself from the
+     navigation, and shorter below, where the next section's own padding is
+     already doing half the work. */
+  .section-hero {
+    padding-top: clamp(4rem, 9vw, 7.5rem);
+    padding-bottom: clamp(3rem, 6vw, 5rem);
+  }
+
+  /* A measure that stays readable. Copy wider than this is hard to track back
+     to the start of the next line. */
+  .measure {
+    max-width: 38rem;
+  }
+
+  /* --- Type ------------------------------------------------------------ */
+
   /* Every competing number is tabular so ranks and rates never jitter. */
   .num {
     font-variant-numeric: tabular-nums;
@@ -368,67 +468,228 @@
     color: var(--color-foreground);
   }
 
-  /* Elevation: two soft, warm shadows, one for cards and one for raised tiles. */
+  /* A margin note. The hero has three annotations that are meant to read as
+     something pencilled beside the page rather than set into it: what the
+     picture is showing, and the one line about the format that would sound
+     like a boast in body copy.
+
+     A step larger than the copy it sits next to, because a handwritten face
+     matched to 13px Inter reads as a rendering fault rather than as a note.
+     Strictly decoration: it never carries a heading, a label, or a sentence
+     the page depends on. */
+  .hand {
+    font-family: var(--font-hand);
+    font-weight: 600;
+    font-size: 1.1875rem;
+    line-height: 1.22;
+    color: var(--color-subtle);
+  }
+
+  /* --- The hero illustration ------------------------------------------- *
+   * `HeroBracket` is one SVG, so its text is measured in viewBox units and
+   * the sizes have to stay on the elements as attributes. Only what does not
+   * scale — the family, and the tracking that goes with it — belongs here. */
+
+  .hero-caption {
+    font-family: var(--font-mono);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+  }
+
+  .hand-svg {
+    font-family: var(--font-hand);
+    font-weight: 600;
+  }
+
+  /* The pencilled notes are set in viewBox units too, so they shrink with the
+     picture. Below the width where the illustration is still roughly full
+     size they fall under reading, and they are annotations rather than
+     information — on a phone the drawing carries itself without them. */
+  .hero-note {
+    display: none;
+  }
+
+  @media (min-width: 40rem) {
+    .hero-note {
+      display: inline;
+    }
+  }
+
+  /* --- Elevation ------------------------------------------------------- */
+
   .shadow-card {
-    box-shadow: var(--shadow-card);
+    box-shadow: var(--shadow-md);
   }
 
   .shadow-tile {
-    box-shadow: var(--shadow-tile);
+    box-shadow: var(--shadow-sm);
   }
 
   .shadow-raised {
-    box-shadow: var(--shadow-raised);
+    box-shadow: var(--shadow-xs);
+  }
+
+  .shadow-showcase {
+    box-shadow: var(--shadow-showcase);
+  }
+
+  /* --- Glass ----------------------------------------------------------- */
+
+  .glass {
+    background-color: var(--glass-tint);
+    /* Safari still needs the prefix. */
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  }
+
+  /* Without a blur the tint alone would leave the nav's text sitting on
+     whatever happens to be behind it, so the surface goes fully opaque
+     instead. The glass is the enhancement; reading the nav is not. */
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .glass {
+      background-color: var(--glass-solid);
+    }
+  }
+
+  /* --- Navigation ------------------------------------------------------ *
+   *
+   * The bar is a floating pane, not a band across the top. At the top of the
+   * page it is invisible and the hero runs behind it; once the page moves it
+   * takes on a tint, an edge and a shadow, and becomes a surface that content
+   * passes under.
+   *
+   * The blur is always on rather than switching in with the tint. Turning
+   * `backdrop-filter` on mid-scroll pops, because a blur cannot be
+   * transitioned — and animating one would be the single most expensive thing
+   * on the page. With it always applied there is nothing to pop: at the top
+   * there is nothing behind the bar to blur, so it costs nothing and shows
+   * nothing, and the tint fading in is what the eye actually reads. */
+  .nav-surface {
+    background-color: transparent;
+    border: 1px solid transparent;
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    transition:
+      background-color var(--dur-base) var(--ease-out),
+      border-color var(--dur-base) var(--ease-out),
+      box-shadow var(--dur-base) var(--ease-out);
+  }
+
+  .nav-surface.is-scrolled {
+    background-color: var(--glass-tint);
+    border-color: var(--glass-edge);
+    box-shadow: var(--shadow-sm);
+  }
+
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .nav-surface.is-scrolled {
+      background-color: var(--glass-solid);
+    }
+  }
+
+  /* The mobile panel stays in the DOM so it can transition both ways.
+     `visibility` rather than `display` for the closed state: it animates as a
+     discrete step at the end of the transition, and it takes the panel out of
+     the accessibility tree and out of the tab order while it is shut. */
+  .nav-menu {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-6px) scale(0.99);
+    transform-origin: top center;
+    transition:
+      opacity var(--dur-base) var(--ease-out),
+      transform var(--dur-base) var(--ease-out),
+      visibility 0s linear var(--dur-base);
+  }
+
+  .nav-menu.is-open {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    transition-delay: 0s;
+  }
+
+  /* --- Decoration ------------------------------------------------------ *
+   * Sparse by design: meant to reward a second look, not to be the first
+   * thing seen. */
+
+  /* A faint dotted field, for the one or two places a plain ground would read
+     as unfinished. Flat dots rather than a gradient wash. */
+  .dot-grid {
+    background-image: radial-gradient(
+      circle at center,
+      var(--color-border-strong) 1px,
+      transparent 1px
+    );
+    background-size: 22px 22px;
+  }
+
+  /* A hairline that fades out at both ends, so a rule can stop without the
+     hard stub a plain border leaves. */
+  .rule-fade {
+    height: 1px;
+    background: linear-gradient(
+      to right,
+      transparent,
+      var(--color-border) 12%,
+      var(--color-border) 88%,
+      transparent
+    );
+  }
+
+  /* --- Motion ---------------------------------------------------------- *
+   * One entrance: up and in. `Reveal` adds `.is-in` when the element reaches
+   * the viewport, and stagger is a per-item delay. Everything starts hidden,
+   * so anything that failed to be observed would stay invisible — which is
+   * why `Reveal` also resolves anything already on screen at mount. */
+  .reveal {
+    opacity: 0;
+    transform: translateY(14px);
+    transition:
+      opacity var(--dur-slow) var(--ease-out),
+      transform var(--dur-slow) var(--ease-out);
+    transition-delay: var(--reveal-delay, 0ms);
+  }
+
+  .reveal.is-in {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* The live pulse, used for the LIVE dot and nothing that competes with
+     reading numbers. */
+  .pulse-dot {
+    animation: surviver-pulse 2.4s ease-in-out infinite;
+  }
+
+  /* The loading mark. Each bar of the logo rises and falls between the two
+     heights the logo itself uses — the short cut and the tall survivor — so
+     waiting reads as the board still deciding. */
+  .logo-bar {
+    animation: surviver-bar 1.05s ease-in-out infinite;
   }
 
   /* The theme toggle shows one of its two faces and names itself for the one
      it would switch to. Both are in the markup and CSS hides one, rather than
      React choosing from state: the theme is decided by a script that runs
      before hydration, so a button rendered from state would either disagree
-     with the page it is on or have to flicker to catch up. A hidden label is
-     also `display: none`, so it leaves the accessible name as well as the
-     screen. */
+     with the page it is on or flicker to catch up. A hidden label is also
+     `display: none`, so it leaves the accessible name as well as the screen. */
   [data-theme="dark"] .theme-when-light,
   [data-theme="light"] .theme-when-dark {
     display: none;
   }
 
-  /* The live pulse, used for the LIVE dot and nothing that competes with
-     reading numbers. */
-  .pulse-dot {
-    animation: surviver-pulse 1.8s ease-in-out infinite;
-  }
-
-  /* The loading mark. Each bar of the logo rises and falls between the two
-     heights the logo itself uses — the short cut and the tall survivor — so
-     waiting reads as the board still deciding. Animating `y` alongside
-     `height` keeps the bars pinned to their baseline and leaves the corner
-     radii undistorted, which scaling would not. */
-  .logo-bar {
-    animation: surviver-bar 1.05s ease-in-out infinite;
-  }
-
-  /* --- The doodle wallpaper ------------------------------------------- *
-   *
-   * Small doodles printed faintly into the page. `DoodleField` decides where
-   * each one goes and how pale it is; this is only how a mark is mounted.
-   * Nothing animates, so there is nothing here for reduced motion to undo.
-   * -------------------------------------------------------------------- */
+  /* --- The doodle wallpaper (parked) ------------------------------------ *
+   * Not rendered at the moment; see the note in `layout.tsx`. Kept whole so
+   * bringing it back is one element rather than a rebuild. */
   .doodle-field {
     position: fixed;
     inset: 0;
-    /* Behind every element in the flow, above the root background. `body`
-       has to stay transparent for this to be visible. */
     z-index: -1;
     overflow: hidden;
-    /* Decoration never takes a click or blocks a scroll. */
     pointer-events: none;
-    /* Fifty-four absolutely positioned marks that can never affect anything
-       outside this layer; say so, and the rest of the page stops paying to
-       have them considered. */
     contain: layout paint style;
-    /* Marks stay small: big enough to recognise a rocket, small enough that
-       one never competes with a line of text for the eye. */
     --doodle-base: clamp(24px, 3.4vmin, 44px);
   }
 
@@ -436,8 +697,6 @@
     position: absolute;
     left: var(--doodle-x);
     top: var(--doodle-y);
-    /* Centred on its own point, so scale and tilt grow around where the
-       scatter put it rather than dragging it off towards the corner. */
     translate: -50% -50%;
   }
 
@@ -445,26 +704,11 @@
     display: block;
     width: calc(var(--doodle-base) * var(--doodle-scale));
     height: calc(var(--doodle-base) * var(--doodle-scale));
-    /* Heavier than the icon sets draw themselves, because this is measured in
-       the glyph's own 24-unit box: at these sizes a 1.6 lands near a single
-       real pixel, which antialiasing then spreads into nothing. */
     stroke-width: 2.1;
-    /* Filament and haze, both in `currentColor` — which is the per-mark hue
-       the component set — so a coral doodle glows coral and a teal one teal.
-
-       This runs before `opacity` in the rendering order, so the bloom is faded
-       along with the stroke rather than sitting on top of it at full strength.
-       That is what keeps it a hint of light instead of a halo. */
-    filter:
-      drop-shadow(0 0 var(--doodle-glow) currentColor)
-      drop-shadow(0 0 calc(var(--doodle-glow) * 2.5) currentColor);
     opacity: var(--doodle-ink);
     rotate: var(--doodle-tilt);
   }
 
-  /* Density by viewport. The scatter is ordered so that any prefix already
-     covers the page, which is why a phone can simply stop early instead of
-     needing a layout of its own: fewer marks, same spacing. */
   .doodle--sm,
   .doodle--lg {
     display: none;
@@ -489,7 +733,7 @@
     opacity: 1;
   }
   50% {
-    opacity: 0.3;
+    opacity: 0.35;
   }
 }
 
@@ -513,7 +757,19 @@
   .logo-bar {
     animation: none;
   }
-}
 
-@layer base { button, select, summary { cursor: pointer; } a, button, input, select { touch-action: manipulation; } }
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; } }
+  /* Entrances resolve to their finished state rather than never arriving. */
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

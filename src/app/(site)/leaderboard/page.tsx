@@ -24,7 +24,7 @@ export default async function LeaderboardPage() {
 
   if (!season || standings.rows.length === 0) {
     return (
-      <div className="mx-auto w-full max-w-5xl px-4 pt-8 pb-4">
+      <div className="shell pt-8 pb-4">
         <header className="text-center">
           <h1 className="text-3xl font-semibold sm:text-4xl">Leaderboard</h1>
         </header>
@@ -44,7 +44,7 @@ export default async function LeaderboardPage() {
   const { rows, survivorCount, eliminationCount } = standings;
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 pt-8 pb-4">
+    <div className="shell pt-8 pb-4">
       <header className="text-center">
         <h1 className="text-3xl font-semibold sm:text-4xl">Leaderboard</h1>
         <p className="text-subtle mx-auto mt-3 max-w-xl text-[15px] leading-relaxed text-pretty">
@@ -107,18 +107,32 @@ function Row({ row, eliminated }: { row: StandingRow; eliminated: boolean }) {
       )}
     >
       {/* Rank + movement */}
-      <div className="flex items-baseline gap-1">
-        <span
-          className={cn(
-            "num text-sm font-semibold",
-            eliminated ? "text-danger" : "text-foreground",
-          )}
-        >
-          {row.rank ?? "—"}
-        </span>
+      <div className="flex items-center gap-1.5">
+        {row.rank === 1 ? (
+          <span className="mono flex size-6 items-center justify-center rounded-md border border-amber-400/50 bg-amber-50 text-[11px] font-bold text-amber-700 shadow-xs dark:bg-amber-950/60 dark:text-amber-300">
+            01
+          </span>
+        ) : row.rank === 2 ? (
+          <span className="mono flex size-6 items-center justify-center rounded-md border border-slate-300 bg-slate-100 text-[11px] font-bold text-slate-700 shadow-xs dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+            02
+          </span>
+        ) : row.rank === 3 ? (
+          <span className="mono flex size-6 items-center justify-center rounded-md border border-amber-600/40 bg-orange-50 text-[11px] font-bold text-amber-800 shadow-xs dark:bg-amber-950/40 dark:text-amber-400">
+            03
+          </span>
+        ) : (
+          <span
+            className={cn(
+              "mono text-sm font-semibold",
+              eliminated ? "text-danger" : "text-foreground",
+            )}
+          >
+            {row.rank ? (row.rank < 10 ? `0${row.rank}` : row.rank) : "—"}
+          </span>
+        )}
         {movement ? (
           <span
-            className={cn("num text-[10px]", movement > 0 ? "text-safe" : "text-danger")}
+            className={cn("num text-[10px] font-medium", movement > 0 ? "text-safe" : "text-danger")}
             title={`${movement > 0 ? "Up" : "Down"} ${Math.abs(movement)} since the last snapshot`}
           >
             {movement > 0 ? "▲" : "▼"}

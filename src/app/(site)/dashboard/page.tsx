@@ -38,7 +38,7 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
   const serverNow = new Date().toISOString();
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 pt-8 pb-4">
+    <div className="shell pt-8 pb-4">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="label">Founder dashboard</div>

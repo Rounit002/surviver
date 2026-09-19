@@ -41,7 +41,6 @@ except `NODE_VERSION` and `PAYMENT_PROVIDER`.
 | `CRON_SECRET` | generate a new 32-byte random value | yes |
 | `SECURITY_SECRET` | generate a separate 32-byte random value | yes |
 | `DODO_PAYMENTS_*` | configure live API, webhook, product, business, and environment values | yes |
-| `RESEND_API_KEY`, `EMAIL_FROM` | configure verified email delivery | yes |
 
 > Rotate the database and cron credentials that were previously written in this
 > document before deploying. Do not paste credentials into repository files.

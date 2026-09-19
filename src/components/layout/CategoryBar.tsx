@@ -12,10 +12,15 @@ import {
 } from "@/lib/competition/constants";
 
 /**
- * The category strip, after outbid.lol: a single rounded-full rail holding
- * horizontally scrollable chips, with the active one filled. It sits in the
- * header so category is a global filter rather than something buried on one
- * page.
+ * The category filter: a scrollable row of chips over a hairline.
+ *
+ * It used to sit in the site header, which made it a fixture on pages that
+ * have nothing to filter. It now sits with the board it filters, on the home
+ * page and on `/board` — a control next to the thing it controls, rather than
+ * a permanent strip under the navigation.
+ *
+ * The active chip inverts to the ink rather than filling with the accent. The
+ * accent belongs to the one real action on a page, and a filter is not it.
  */
 export function CategoryBar() {
   const pathname = usePathname();
@@ -28,34 +33,33 @@ export function CategoryBar() {
 
   const chip =
     "inline-flex shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-full " +
-    "min-h-11 px-2.5 py-1 text-[13px] whitespace-nowrap transition-colors";
+    "min-h-8.5 px-3.5 py-1 text-[13px] font-medium whitespace-nowrap " +
+    "transition-all duration-150";
 
   const isBoard = pathname === "/board" || pathname === "/";
 
   return (
-    <div className="bg-muted relative z-20 overflow-hidden rounded-full px-1.5 py-1.5">
+    <div className="border-border/80 relative border-b pb-3">
       <div className="flex items-center gap-1">
         <nav
           aria-label="Browse by category"
           className={cn(
             "min-w-0 flex-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
-            // Padding rather than a fade mask: the palette is flat fills only,
-            // so the rail ends on a gap instead of a gradient.
             "pr-2",
           )}
         >
-          <div className="flex w-max min-w-full items-center gap-0.5">
+          <div className="flex w-max min-w-full items-center gap-1.5">
             <Link
               href={hrefFor(null)}
               aria-current={isBoard && !active ? "page" : undefined}
               className={cn(
                 chip,
                 isBoard && !active
-                  ? "bg-primary text-primary-foreground font-medium"
-                  : "text-subtle hover:text-foreground",
+                  ? "bg-foreground text-background font-semibold shadow-xs"
+                  : "text-subtle hover:bg-muted/80 hover:text-foreground border border-border/50",
               )}
             >
-              <Icon name="grid" width="14" height="14" className="shrink-0" />
+              <Icon name="grid" width="13" height="13" className="shrink-0" />
               All
             </Link>
 
@@ -66,13 +70,11 @@ export function CategoryBar() {
                   key={category}
                   href={hrefFor(category)}
                   aria-current={current ? "page" : undefined}
-                  // Each chip carries its own pastel. Selecting one deepens the
-                  // ink and adds a ring rather than changing hue, so the active
-                  // state reads without the rail changing colour under you.
                   className={cn(
                     chip,
-                    "font-medium",
-                    current ? "bg-primary text-primary-foreground" : "text-subtle hover:bg-surface hover:text-foreground",
+                    current
+                      ? "bg-foreground text-background font-semibold shadow-xs"
+                      : "text-subtle hover:bg-muted/80 hover:text-foreground border border-border/50",
                   )}
                 >
                   {/* The mark carries the category's own ink, the same colour
@@ -91,13 +93,6 @@ export function CategoryBar() {
           </div>
         </nav>
 
-        <Link
-          href="/enter"
-          className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[13px] font-semibold transition-colors"
-        >
-          Enter
-          <span aria-hidden>&rarr;</span>
-        </Link>
       </div>
     </div>
   );

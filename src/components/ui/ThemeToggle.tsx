@@ -1,5 +1,7 @@
 "use client";
 
+import { cn } from "@/lib/cn";
+
 /**
  * The light/dark switch.
  *
@@ -23,7 +25,11 @@ export function ThemeToggle({ className }: { className?: string }) {
   return (
     <button
       type="button"
-      className={`border-border text-subtle hover:text-foreground hover:bg-muted flex size-11 shrink-0 items-center justify-center rounded-full border transition-colors ${className ?? ""}`}
+      className={cn(
+        "text-subtle hover:text-foreground hover:bg-muted flex size-9 shrink-0 items-center justify-center",
+        "rounded-[10px] transition-colors duration-[var(--dur-fast)]",
+        className,
+      )}
       onClick={() => {
         const root = document.documentElement;
         const next = root.dataset.theme === "dark" ? "light" : "dark";
@@ -37,7 +43,7 @@ export function ThemeToggle({ className }: { className?: string }) {
         // with the page or a dark page keeps a white status bar.
         document
           .querySelector('meta[name="theme-color"]')
-          ?.setAttribute("content", next === "dark" ? "#121016" : "#ffffff");
+          ?.setAttribute("content", next === "dark" ? "#1a1512" : "#fffdfa");
       }}
     >
       {/* Sun: shown in light, and it is the light theme that offers the dark

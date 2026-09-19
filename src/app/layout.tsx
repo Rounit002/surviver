@@ -1,13 +1,12 @@
 import type { Metadata, Viewport } from "next";
-import { Geist_Mono, Poppins } from "next/font/google";
+import { DM_Sans, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { headers } from "next/headers";
-import { DoodleField } from "@/components/layout/DoodleField";
 
-const poppins = Poppins({
-  variable: "--font-poppins",
+/* DM Sans for language — outbid.lol uses it. Geist Mono for figures. */
+const dmSans = DM_Sans({
+  variable: "--font-dm-sans",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
   display: "swap",
 });
 
@@ -18,43 +17,42 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  verification: { google: "8iN_AsYMOxUsABcU4cnGBQnuFxc1Jfj-XBCjLyLMgFE" },
   // Social metadata belongs to the public brand domain, even when APP_URL
   // still points at the deployment provider's internal/default hostname.
   metadataBase: new URL("https://surviver.lol"),
   title: {
-    default: "Surviver.lol — 32 products enter. One survives.",
-    template: "%s — Surviver.lol",
+    default: "outbid.lol — Claim a rank on the public leaderboard",
+    template: "%s — outbid.lol",
   },
   description:
-    "A performance-based promotional tournament for SaaS products. Every product gets equal exposure. Measured visitor interest decides who advances.",
+    "A public pay-to-rank leaderboard. No ads, no API keys, no revenue sharing — just claim the top spot and your brand is the first one customers see.",
   openGraph: {
-    title: "Surviver.lol — 32 products enter. One survives.",
+    title: "outbid.lol — Claim a rank on the public leaderboard",
     description:
-      "A performance-based promotional tournament for SaaS products. Every product gets equal exposure. Measured visitor interest decides who advances.",
-    siteName: "Surviver.lol",
+      "A public pay-to-rank leaderboard. No ads, no API keys, no revenue sharing.",
+    siteName: "outbid.lol",
     type: "website",
     images: [{
       url: "/social-preview.png",
       width: 1200,
       height: 630,
-      alt: "Surviver.lol — 32 products enter. One survives. A tournament for SaaS products.",
+      alt: "outbid.lol — Claim a rank on the public leaderboard",
     }],
   },
   twitter: {
     card: "summary_large_image",
     images: [{
       url: "/social-preview.png",
-      alt: "Surviver.lol — 32 products enter. One survives. A tournament for SaaS products.",
+      alt: "outbid.lol — Claim a rank on the public leaderboard",
     }],
-    title: "Surviver.lol — 32 products enter. One survives.",
+    title: "outbid.lol — Claim a rank on the public leaderboard",
     description:
-      "A performance-based promotional tournament for SaaS products. Attention decides who advances.",
+      "A public pay-to-rank leaderboard. Just outbid your competition to get to the top.",
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#ffffff",
+  themeColor: "#fffdfa",
   colorScheme: "light",
 };
 
@@ -73,32 +71,37 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       // theme first and correcting it in view. Scoped to this element only:
       // it does not cover any descendant.
       suppressHydrationWarning
-      className={`${poppins.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${dmSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      {/* No background on `body`: the root paints the canvas so the doodle
-          wallpaper, which sits below the flow at `z-index: -1`, is not
-          painted over. See the `html` rule in `globals.css`. */}
+      {/* The doodle wallpaper is parked, not deleted: the background is plain
+          for now. `DoodleField` and its `.doodle-*` rules in `globals.css` are
+          still here, so bringing it back is re-adding the import and one
+          `<DoodleField />` below.
+
+          The background still belongs on the root rather than on `body`. That
+          was done for the wallpaper, which paints at `z-index: -1` and would be
+          covered by a background on `body`, and it needs to stay that way for
+          the same reason the day the wallpaper returns. */}
       <body className="text-foreground flex min-h-full flex-col">
         {/* Applies a remembered dark theme before the page paints.
 
             It has to be inline and synchronous: anything deferred, imported or
-            hydrated runs after first paint, and the reader would watch a white
+            hydrated runs after first paint, and the reader would watch a warm
             page turn dark on every single navigation. Only "dark" is handled,
             because "light" is already what the server rendered. The nonce is
             what gets it past the CSP in `proxy.ts`. */}
         <script
           nonce={nonce}
           dangerouslySetInnerHTML={{
-            __html: `try{if(localStorage.getItem("theme")==="dark"){document.documentElement.dataset.theme="dark";document.querySelector('meta[name="theme-color"]').content="#121016"}}catch(e){}`,
+            __html: `try{if(localStorage.getItem("theme")==="dark"){document.documentElement.dataset.theme="dark";document.querySelector('meta[name="theme-color"]').content="#1a1512"}}catch(e){}`,
           }}
         />
-        <DoodleField />
         <script nonce={nonce} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
           "@context": "https://schema.org",
           "@type": "WebSite",
-          name: "Surviver.lol",
-          url: "https://surviver.lol",
-          description: "A performance-based promotional tournament for SaaS products.",
+          name: "outbid.lol",
+          url: "https://outbid.lol",
+          description: "A public pay-to-rank leaderboard. No ads, no API keys, no revenue sharing.",
           inLanguage: "en",
         }).replace(/</g, "\\u003c") }} />
         {children}

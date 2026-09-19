@@ -71,7 +71,7 @@ export default async function SeasonPage(props: PageProps<"/seasons/[number]">) 
   const isLive = season.status === "RUNNING";
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 pt-8 pb-4">
+    <div className="shell pt-8 pb-4">
       <header className="text-center">
         <div className="label">
           {season.status === "COMPLETED"
