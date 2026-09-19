@@ -25,7 +25,8 @@ export async function GET() {
   const destination = getPaymentCompletionUrl(env.appUrl, token);
   const response = NextResponse.redirect(destination);
 
-  response.cookies.delete(CAMPAIGN_TOKEN_COOKIE);
+  // Keep the existing short-lived capability so the guest dashboard remains
+  // accessible after returning. This does not extend its original expiry.
   response.cookies.delete(PENDING_PAYMENT_COOKIE);
   return response;
 }

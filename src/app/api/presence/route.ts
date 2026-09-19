@@ -1,4 +1,5 @@
 import { touchVisitor } from "@/lib/tracking/presence";
+import { isSameOrigin } from "@/lib/security/origin";
 import { getVisitorContext } from "@/lib/tracking/visitor";
 
 /**
@@ -9,7 +10,7 @@ import { getVisitorContext } from "@/lib/tracking/visitor";
  * intermediary's cache. Same-origin checks prevent cross-site writes.
  */
 export async function POST(request: Request) {
-  if (request.headers.get("origin") !== new URL(request.url).origin) {
+  if (!isSameOrigin(request)) {
     return new Response(null, { status: 403 });
   }
 

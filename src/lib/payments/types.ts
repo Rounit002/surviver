@@ -26,7 +26,7 @@ export type CheckoutSession = {
 };
 
 export type WebhookResult =
-  | { kind: "succeeded" | "failed"; localPaymentId?: string; providerPaymentId: string; eventId: string; amountCents?: number; currency?: string; businessId?: string }
+  | { kind: "succeeded" | "failed"; localPaymentId?: string; providerPaymentId: string; eventId: string; amountCents?: number; chargedAmountCents?: number; currency?: string; businessId?: string }
   | { kind: "refunded"; localPaymentId?: string; providerPaymentId: string; eventId: string; amountCents: number; currency?: string; businessId?: string }
   | { kind: "ignored"; reason?: string };
 

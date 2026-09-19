@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { publicUrl } from "@/lib/security/origin";
 
 /**
  * Rally landing (PRD 13).
@@ -10,7 +11,7 @@ import { prisma } from "@/lib/db";
  */
 export async function GET(request: Request, ctx: RouteContext<"/rally/[code]">) {
   const { code } = await ctx.params;
-  const url = new URL("/board", request.url);
+  const url = publicUrl("/board");
 
   // Bound the parameter before it reaches the database. This is an
   // unauthenticated endpoint, and the proxy only accepts this same shape when

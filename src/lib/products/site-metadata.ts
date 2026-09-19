@@ -1,6 +1,8 @@
 import "server-only";
 
 import { isIP } from "node:net";
+import { fetchPublicPage, isPublicAddress, UnsafeUrlError } from "@/lib/security/public-fetch";
+export { UnsafeUrlError } from "@/lib/security/public-fetch";
 
 /**
  * Fetches a submitted product URL so the entry form can prefill itself.
@@ -21,7 +23,6 @@ export type SiteMetadata = {
   faviconUrl: string | null;
 };
 
-export class UnsafeUrlError extends Error {}
 
 /** Accepts what a founder would paste and returns a canonical absolute URL. */
 export function normalizeUrl(raw: string): string {
@@ -41,6 +42,9 @@ export function normalizeUrl(raw: string): string {
     throw new UnsafeUrlError("Only http and https addresses are allowed.");
   }
   const bareHostname = url.hostname.replace(/^\[|\]$/g, "");
+  if (isIP(bareHostname) && !isPublicAddress(bareHostname)) {
+    throw new UnsafeUrlError("Enter a publicly accessible website.");
+  }
   if (!url.hostname.includes(".") && isIP(bareHostname) === 0) {
     throw new UnsafeUrlError("Enter a full domain, for example yourproduct.com.");
   }
@@ -53,32 +57,6 @@ export function normalizeUrl(raw: string): string {
 
   url.hash = "";
   return url.toString();
-}
-
-/**
- * Reads at most MAX_BYTES of the body, so a huge response cannot exhaust
- * memory. Copying is bounded per chunk: a hostile server that answers with one
- * enormous chunk must not get that whole chunk buffered before it is sliced.
- */
-async function readCapped(response: Response): Promise<string> {
-  const reader = response.body?.getReader();
-  if (!reader) return "";
-
-  const buffer = new Uint8Array(MAX_BYTES);
-  let total = 0;
-  try {
-    while (total < MAX_BYTES) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      const take = Math.min(value.length, MAX_BYTES - total);
-      buffer.set(value.subarray(0, take), total);
-      total += take;
-    }
-  } finally {
-    await reader.cancel().catch(() => undefined);
-  }
-
-  return new TextDecoder("utf-8", { fatal: false }).decode(buffer.subarray(0, total));
 }
 
 function decodeEntities(value: string): string {
@@ -116,46 +94,24 @@ export async function fetchSiteMetadata(inputUrl: string): Promise<SiteMetadata>
     const url = new URL(current);
     const remaining = deadline - Date.now();
     if (remaining <= 0) throw new UnsafeUrlError("The site took too long to respond.");
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), Math.max(1, deadline - Date.now()));
-
-    let response: Response;
+    let response: Awaited<ReturnType<typeof fetchPublicPage>>;
     try {
-      response = await fetch(url, {
-        redirect: "manual",
-        signal: controller.signal,
-        headers: {
-          // Identify honestly; some sites choose to block us, which is fine.
-          "user-agent": "SurviverBot/1.0 (+https://surviver.lol)",
-          accept: "text/html,application/xhtml+xml",
-        },
-      });
-    } catch {
-      clearTimeout(timer);
+      response = await fetchPublicPage(url, remaining, MAX_BYTES);
+    } catch (error) {
+      if (error instanceof UnsafeUrlError) throw error;
       return { url: current, title: null, description: null, imageUrl: null, faviconUrl: null };
     }
 
     // Follow redirects by hand so each new host is validated too.
     if (response.status >= 300 && response.status < 400) {
-      const location = response.headers.get("location");
-      await response.body?.cancel().catch(() => undefined);
-      clearTimeout(timer);
+      const location = response.location;
       if (!location) break;
+      if (hop === MAX_REDIRECTS) throw new UnsafeUrlError("The site redirected too many times.");
       current = normalizeUrl(new URL(location, current).toString());
       continue;
     }
 
-    if (!response.ok || !(response.headers.get("content-type") ?? "").includes("html")) {
-      await response.body?.cancel().catch(() => undefined);
-      clearTimeout(timer);
-      break;
-    }
-
-    try {
-      html = await readCapped(response);
-    } finally {
-      clearTimeout(timer);
-    }
+    html = response.html;
     break;
   }
 

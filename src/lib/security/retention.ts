@@ -12,7 +12,7 @@ import { prisma } from "@/lib/db";
 
 const SESSION_GRACE_MS = 24 * 60 * 60 * 1000;
 const WEBHOOK_RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
-const ABANDONED_CHECKOUT_MS = 2 * 60 * 60 * 1000;
+const FAILED_CHECKOUT_GRACE_MS = 2 * 60 * 60 * 1000;
 
 export type RetentionReport = {
   sessions: number;
@@ -36,13 +36,13 @@ export async function runRetention(now = new Date()): Promise<RetentionReport> {
     }),
   ]);
 
-  // A checkout that was started and never paid for should stop reserving the
-  // product URL. The capability is revoked at the same time.
+  // Only explicitly cancelled checkouts may be released. A declined attempt
+  // can later succeed, so FAILED and PENDING must remain recoverable.
   const abandonedEntries = await prisma.seasonEntry.updateMany({
     where: {
       status: "AWAITING_PAYMENT",
-      createdAt: { lte: new Date(now.getTime() - ABANDONED_CHECKOUT_MS) },
-      payment: { status: "PENDING" },
+      createdAt: { lte: new Date(now.getTime() - FAILED_CHECKOUT_GRACE_MS) },
+      payment: { status: "CANCELLED" },
     },
     data: { status: "WITHDRAWN", manageTokenRevokedAt: now },
   });

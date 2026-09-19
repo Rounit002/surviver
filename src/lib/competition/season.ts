@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 export { PUBLIC_SEASON_STATUSES, publicSeasonFilter, parseSeasonNumber } from "@/lib/competition/constants";
 import type { EntryStatus, Prisma, Season } from "@/generated/prisma";
 import { evaluateStartReadiness, type StartReadiness } from "@/lib/competition/readiness";
+import { PUBLIC_SEASON_STATUSES } from "@/lib/competition/constants";
 export { evaluateStartReadiness, STARTABLE_SEASON_STATUSES } from "@/lib/competition/readiness";
 export type { StartReadiness } from "@/lib/competition/readiness";
 
@@ -41,7 +42,7 @@ export async function getCurrentSeason(): Promise<Season | null> {
   });
   if (open) return open;
 
-  return prisma.season.findFirst({ orderBy: { number: "desc" } });
+  return prisma.season.findFirst({ where: { status: { in: PUBLIC_SEASON_STATUSES } }, orderBy: { number: "desc" } });
 }
 
 /**
@@ -117,13 +118,13 @@ export function startableEntryFilter(seasonId: string): Prisma.SeasonEntryWhereI
 }
 
 /** Paid, approved entries are public while waiting for the field to fill. */
-export async function getPublicUpcomingEntries(seasonId: string) {
+export async function getPublicUpcomingEntries(seasonId: string, category?: Prisma.EnumProductCategoryFilter["equals"]) {
   return prisma.seasonEntry.findMany({
     where: {
       seasonId,
       status: "UPCOMING",
       payment: { status: "SUCCEEDED" },
-      product: { approvalStatus: "APPROVED" },
+      product: { approvalStatus: "APPROVED", ...(category ? { category } : {}) },
       season: { status: { in: ["REGISTRATION_OPEN", "REGISTRATION_CLOSED"] } },
     },
     orderBy: { createdAt: "asc" },

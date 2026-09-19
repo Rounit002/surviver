@@ -85,7 +85,16 @@ Do this in the Dodo dashboard before the first real entry.
 
 ## 4. Scheduled rounds (optional)
 
-Rounds advance on a timer. Add a Render **Cron Job** (free):
+No recurring competition clock runs until the 35 paid, approved places are
+filled. The final payment starts the season; process boot recovers a full or
+already-running season. While the process is awake, the clock advances due
+rounds and retries stranded provider messages. Before capacity, transient
+webhook failures return a non-2xx response so the provider can redeliver.
+
+A sleeping Render Free service cannot guarantee on-time transitions. Before
+competition begins, arrange an always-on service or an external scheduler;
+do not enable recurring external jobs before the 35-entry threshold. The
+authenticated endpoint uses the same capacity guard:
 
 - Name: `surviver-rounds`
 - Schedule: `*/5 * * * *`

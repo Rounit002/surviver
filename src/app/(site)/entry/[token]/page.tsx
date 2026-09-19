@@ -69,7 +69,7 @@ export default async function EntryPage(props: PageProps<"/entry/[token]">) {
       {paid ? (
         <div className="border-safe/25 bg-safe/8 text-safe mb-6 rounded-lg border px-4 py-3 text-[13px] leading-relaxed">
           <strong className="font-semibold">{testMode ? "Test checkout completed." : "Payment succeeded."}</strong>{" "}
-          Your entry is confirmed and goes on the board when the season starts.
+          Your entry is confirmed and publicly listed. Competition starts when the field is full.
         </div>
       ) : null}
 

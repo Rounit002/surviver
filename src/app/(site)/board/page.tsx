@@ -68,7 +68,7 @@ export default async function BoardPage(props: PageProps<"/board">) {
         </Panel>
       ) : null}
 
-      {listingSeason ? <UpcomingProductList seasonId={listingSeason.id} /> : null}
+      {listingSeason ? <UpcomingProductList seasonId={listingSeason.id} capacity={listingSeason.capacity} category={activeCategory ?? undefined} /> : null}
 
       {visible.length === 0 && standings.rows.length > 0 ? (
         <Panel className="mt-6 px-6 py-14 text-center">

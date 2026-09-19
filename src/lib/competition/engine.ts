@@ -10,7 +10,9 @@ export async function lockSeason(tx: Prisma.TransactionClient, seasonId: string)
   await tx.$queryRaw`SELECT id FROM seasons WHERE id = ${seasonId} FOR UPDATE`;
 }
 export async function refreshRanks(tx: Prisma.TransactionClient, roundId: string, minimum: number, eliminate: number) {
-  const stats = await tx.productRoundStats.findMany({ where: { roundId, finalized: false } });
+  const stats = await tx.productRoundStats.findMany({
+    where: { roundId, finalized: false, entry: { status: { in: ["ACTIVE", "FINALIST"] } } },
+  });
   const ranked = rankScores(stats, minimum, eliminate);
   for (const row of ranked) await tx.productRoundStats.update({ where: { id: row.id }, data: { rank: row.rank, prevRank: row.prevRank, interestRate: row.interestRate, status: row.status } });
   return ranked;
@@ -77,13 +79,38 @@ export async function advanceSeason(seasonId: string) {
     if (season.status !== "RUNNING" || !round || round.endAt > now) {
       return "not due";
     }
-    const ranked = await refreshRanks(tx, round.id, season.minSampleImpressions, round.eliminationCount);
-    if (ranked.length < 2 || ranked.some(s => s.rank === null)) {
+    // A refunded/disqualified/withdrawn entry keeps its historical stats, but
+    // it can never be ranked, advanced or have its terminal status overwritten.
+    await tx.productRoundStats.updateMany({
+      where: { roundId: round.id, finalized: false, entry: { status: { notIn: ["ACTIVE", "FINALIST"] } } },
+      data: { finalized: true, finalizedAt: now, status: "ELIMINATED" },
+    });
+    const eligible = await tx.productRoundStats.findMany({
+      where: { roundId: round.id, finalized: false, entry: { status: { in: ["ACTIVE", "FINALIST"] } } },
+    });
+    if (eligible.length === 0) {
+      await tx.round.update({ where: { id: round.id }, data: { status: "COMPLETED", finalizedAt: now } });
+      await tx.season.update({ where: { id: seasonId }, data: { status: "COMPLETED", seasonEnd: now } });
+      await tx.activityEvent.create({ data: { roundId: round.id, type: "season.completed", message: `${season.name} ended with no eligible products remaining.` } });
+      return "completed";
+    }
+    if (eligible.length === 1) {
+      const winner = eligible[0]!;
+      await tx.productRoundStats.update({ where: { id: winner.id }, data: { rank: 1, prevRank: winner.rank, interestRate: winner.qualifiedImpressions ? winner.verifiedVisits / winner.qualifiedImpressions : 0, status: "SURVIVOR", finalized: true, finalizedAt: now } });
+      await tx.seasonEntry.update({ where: { id: winner.seasonEntryId }, data: { status: "SURVIVOR", finalRank: 1 } });
+      await tx.round.update({ where: { id: round.id }, data: { status: "COMPLETED", finalizedAt: now } });
+      await tx.season.update({ where: { id: seasonId }, data: { status: "COMPLETED", seasonEnd: now } });
+      await tx.activityEvent.create({ data: { roundId: round.id, seasonEntryId: winner.seasonEntryId, type: "season.completed", message: `${season.name} has one eligible product remaining. A survivor is crowned.` } });
+      return "completed";
+    }
+    const eliminationCount = eliminationFor(eligible.length);
+    const ranked = await refreshRanks(tx, round.id, season.minSampleImpressions, eliminationCount);
+    if (ranked.some(s => s.rank === null)) {
       await tx.round.update({ where: { id: round.id }, data: { endAt: new Date(now.getTime() + 3600000) } });
       await tx.activityEvent.create({ data: { roundId: round.id, type: "round.extended", message: `${round.name} extended by one hour so every product can reach the minimum sample.` } });
       return "extended";
     }
-    const survivors = ranked.slice(0, ranked.length - round.eliminationCount);
+    const survivors = ranked.slice(0, ranked.length - eliminationCount);
     for (const row of ranked) {
       const won = survivors.length === 1 && row.seasonEntryId === survivors[0].seasonEntryId;
       const eliminated = !survivors.some(s => s.seasonEntryId === row.seasonEntryId);

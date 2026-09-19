@@ -48,7 +48,7 @@ export function SiteFooter() {
           <div className="max-w-xs">
             <Wordmark size="sm" />
             <p className="text-subtle mt-4 text-sm leading-relaxed">
-              A promotional tournament for SaaS products. Thirty-two enter, one survives.
+              A promotional tournament for SaaS products. Thirty-five enter, one survives.
             </p>
           </div>
 

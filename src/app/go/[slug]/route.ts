@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { publicUrl } from "@/lib/security/origin";
 import { getVisitorContext } from "@/lib/tracking/visitor";
 import { recordInteraction } from "@/lib/tracking/events";
 import { verifyInteractionProof } from "@/lib/security/tokens";
@@ -25,7 +26,7 @@ function isSafeDestination(raw: string): boolean {
 
 export async function GET(request: Request, ctx: RouteContext<"/go/[slug]">) {
   const { slug } = await ctx.params;
-  if (!/^[a-z0-9-]{1,80}$/.test(slug)) return NextResponse.redirect(new URL("/board", request.url), 302);
+  if (!/^[a-z0-9-]{1,80}$/.test(slug)) return NextResponse.redirect(publicUrl("/board"), 302);
 
   const product = await prisma.product.findUnique({
     where: { slug },
@@ -56,8 +57,8 @@ export async function GET(request: Request, ctx: RouteContext<"/go/[slug]">) {
     },
   });
 
-  if (!product || product.approvalStatus !== "APPROVED" || !isSafeDestination(product.url)) {
-    return NextResponse.redirect(new URL("/board", request.url), 302);
+  if (!product || !product.entries.length || product.approvalStatus !== "APPROVED" || !isSafeDestination(product.url)) {
+    return NextResponse.redirect(publicUrl("/board"), 302);
   }
 
   const entry = product.entries[0];

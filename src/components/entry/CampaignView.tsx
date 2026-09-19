@@ -174,7 +174,7 @@ export function PendingState({ status, showFinish, testMode = false }: { status:
     AWAITING_APPROVAL: testMode
       ? "Test checkout completed. No money was charged."
       : "Paid. Finalising your entry.",
-    UPCOMING: "Confirmed. Your product goes on the board when the season starts.",
+    UPCOMING: "Confirmed. Your product is public while the field fills; competition starts at 35.",
     REJECTED: "This entry did not pass review. The payment status holds the refund record.",
     DISQUALIFIED: "This entry was disqualified. See the rules for details.",
   };

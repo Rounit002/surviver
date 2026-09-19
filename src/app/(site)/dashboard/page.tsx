@@ -9,7 +9,11 @@ import {
 } from "@/components/entry/CampaignView";
 import { Panel, PanelBody } from "@/components/ui/Panel";
 import { signOutAction } from "@/lib/auth/actions";
-import { requireUser } from "@/lib/auth/guards";
+import { getSessionUser } from "@/lib/auth/session";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { CAMPAIGN_TOKEN_COOKIE } from "@/lib/competition/constants";
+import { hashCapability } from "@/lib/security/tokens";
 import { prisma } from "@/lib/db";
 import { env } from "@/lib/env";
 
@@ -17,12 +21,17 @@ export const metadata: Metadata = { title: "Founder dashboard", robots: { index:
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage(props: PageProps<"/dashboard">) {
-  const user = await requireUser("/dashboard");
+  const user = await getSessionUser();
+  const token = (await cookies()).get(CAMPAIGN_TOKEN_COOKIE)?.value;
+  const guestAccess = token && /^[A-Za-z0-9_-]{43}$/.test(token)
+    ? { manageToken: hashCapability(token), manageTokenRevokedAt: null, manageTokenExpiresAt: { gt: new Date() } }
+    : null;
+  if (!user && !guestAccess) redirect("/login?next=%2Fdashboard");
   const params = await props.searchParams;
   const justEntered = params.entered === "1";
 
   const entries = await prisma.seasonEntry.findMany({
-    where: { product: { ownerId: user.id } },
+    where: { OR: [...(user ? [{ product: { ownerId: user.id } }] : []), ...(guestAccess ? [guestAccess] : [])] },
     orderBy: { createdAt: "desc" },
     include: {
       product: true,
@@ -42,20 +51,20 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="label">Founder dashboard</div>
-          <h1 className="mt-2 text-2xl font-semibold sm:text-3xl">{user.name}</h1>
-          <p className="text-faint mono mt-1 text-[13px]">{user.email}</p>
+          <h1 className="mt-2 text-2xl font-semibold sm:text-3xl">{user?.name ?? "Your product"}</h1>
+          <p className="text-faint mono mt-1 text-[13px]">{user?.email ?? "Private access for this browser. Save your campaign link for later."}</p>
         </div>
 
-        <form action={signOutAction}>
+        {user ? <form action={signOutAction}>
           <SubmitButton variant="ghost" size="sm" pendingLabel="Signing out…">
             Sign out
           </SubmitButton>
-        </form>
+        </form> : null}
       </header>
 
       {justEntered ? (
         <div className="border-safe/25 bg-safe/8 text-safe mt-6 rounded-lg border px-4 py-3 text-[13px]">
-          Payment received. Your entry goes live once approved.
+          Your entry status is shown below. Payment is confirmed by the payment provider.
         </div>
       ) : null}
 
@@ -64,7 +73,7 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
           <PanelBody className="py-14 text-center">
             <p className="text-subtle text-sm">You have not entered a season yet.</p>
             <p className="text-faint mx-auto mt-2 max-w-sm text-[13px] leading-relaxed">
-              Paste your link, pick a category, pay the flat fee. Every entry is reviewed by hand.
+              Paste your product link and pay the flat fee. Confirmed payments are listed automatically.
             </p>
             <div className="mt-5">
               <ButtonLink href="/enter" variant="primary" size="sm">

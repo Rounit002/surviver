@@ -69,7 +69,10 @@ export async function proxy(request: NextRequest) {
   if (process.env.NODE_ENV === "production") response.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
   if (request.nextUrl.pathname.startsWith("/entry/") || request.nextUrl.pathname.startsWith("/enter/checkout/")) response.headers.set("Cache-Control", "private, no-store, max-age=0");
 
-  const isSecure = request.nextUrl.protocol === "https:";
+  // A TLS-terminating proxy forwards plain HTTP internally, so the request's
+  // own protocol is not evidence that the visitor is on HTTP. In production the
+  // public origin is HTTPS, so these cookies are always Secure.
+  const isSecure = process.env.NODE_ENV === "production" || request.nextUrl.protocol === "https:";
   const base = {
     httpOnly: true,
     sameSite: "lax",

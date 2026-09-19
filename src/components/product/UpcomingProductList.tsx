@@ -2,10 +2,11 @@ import Link from "next/link";
 import { CATEGORY_LABELS } from "@/lib/competition/constants";
 import { getPublicUpcomingEntries } from "@/lib/competition/season";
 import { displayHost } from "@/lib/format";
+import type { ProductCategory } from "@/generated/prisma";
 
 /** Public preview only: these entries are paid and approved, but not competing yet. */
-export async function UpcomingProductList({ seasonId }: { seasonId: string }) {
-  const entries = await getPublicUpcomingEntries(seasonId);
+export async function UpcomingProductList({ seasonId, capacity, category }: { seasonId: string; capacity: number; category?: ProductCategory }) {
+  const entries = await getPublicUpcomingEntries(seasonId, category);
   if (!entries.length) return null;
 
   return (
@@ -13,7 +14,7 @@ export async function UpcomingProductList({ seasonId }: { seasonId: string }) {
       <div className="mb-4 text-center">
         <p className="label label-bright">Paid and approved</p>
         <h2 id="upcoming-products-heading" className="text-heading mt-2 font-semibold">
-          Waiting for the 35-product field
+          Waiting for the {capacity}-product field
         </h2>
         <p className="text-subtle mt-2 text-sm">
           These products are listed now. Competition and round timing begin when the field is ready.

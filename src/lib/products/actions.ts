@@ -12,6 +12,7 @@ import { lockSeason } from "@/lib/competition/engine";
 import { getPaymentProvider } from "@/lib/payments";
 import { fetchSiteMetadata, normalizeUrl, UnsafeUrlError } from "@/lib/products/site-metadata";
 import { hashCapability } from "@/lib/security/tokens";
+import { getSessionUser } from "@/lib/auth/session";
 import type { ProductCategory } from "@/generated/prisma";
 
 /* -------------------------------------------------------------------------- */
@@ -110,6 +111,7 @@ export async function createEntryAction(
   }
 
   const provider = getPaymentProvider();
+  const signedInOwner = await getSessionUser();
   const season = await getOpenSeason();
   if (!season) return { error: "No season is taking entries right now." };
   const hostname = new URL(url).hostname.replace(/^www\./i, "");
@@ -132,13 +134,13 @@ export async function createEntryAction(
     if (claimed >= current.capacity) return { error: "This season is full." };
     const duplicate = await tx.seasonEntry.findFirst({ where: { seasonId: season.id, product: { url }, OR: [
       { status: { notIn: ["REJECTED", "WITHDRAWN", "AWAITING_PAYMENT"] } },
-      { status: "AWAITING_PAYMENT", createdAt: { gte: new Date(now.getTime() - 2 * 60 * 60_000) } },
+      { status: "AWAITING_PAYMENT", payment: { status: "PENDING" } },
     ] } });
     if (duplicate) return { error: "That URL already has an entry. Use your original checkout or private campaign link." };
     // Guest founder record (User.passwordHash stays null): entering requires
     // no account, and the campaign is reached by manageToken, not by login. An
     // address that enters twice reuses the same row.
-    const owner = await tx.user.upsert({ where: { email }, update: {}, create: { email, name: email.split("@")[0]?.slice(0, 60) || "Founder" } });
+    const owner = signedInOwner ?? await tx.user.create({ data: { email, name: "Founder" } });
     const product = await tx.product.create({ data: { ownerId: owner.id, name, slug, url, tagline, description, category, logoUrl: asOptionalUrl(metadata?.faviconUrl ?? null), coverUrl: asOptionalUrl(metadata?.imageUrl ?? null), approvalStatus: "DRAFT" } });
     const entry = await tx.seasonEntry.create({ data: { seasonId: season.id, productId: product.id, status: "AWAITING_PAYMENT", rallyCode: `${slugify(name).slice(0, 12) || "entry"}-${randomBytes(6).toString("hex")}`, manageToken: hashCapability(manageToken), manageTokenExpiresAt: new Date(now.getTime() + 90 * 24 * 60 * 60_000) } });
     const payment = await tx.payment.create({ data: { userId: owner.id, seasonId: season.id, seasonEntryId: entry.id, provider: provider.name, amountCents: current.entryPriceCents, currency: current.currency, status: "PENDING", checkoutTokenHash: hashCapability(checkoutToken), checkoutTokenExpiresAt: new Date(now.getTime() + 2 * 60 * 60_000) } });

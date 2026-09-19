@@ -390,6 +390,7 @@ model Payment {
   checkoutTokenExpiresAt DateTime?
   refundRequestedAt DateTime?
   amountCents       Int
+  chargedAmountCents Int?
   currency          String        @default("usd")
   status            PaymentStatus @default(PENDING)
   refundedCents     Int           @default(0)
@@ -418,11 +419,17 @@ model WebhookEvent {
   payload       Json
   status        String   @default("RECEIVED")
   failureReason String?
+  /// How many times processing has been attempted, so a permanently broken
+  /// message stops being retried instead of looping forever.
+  attempts      Int      @default(0)
+  /// Earliest moment the retry sweep may pick this message up again.
+  nextAttemptAt DateTime?
   receivedAt    DateTime @default(now())
   processedAt   DateTime?
 
   @@index([provider, status])
   @@index([receivedAt])
+  @@index([status, nextAttemptAt])
   @@map("webhook_events")
 }
 

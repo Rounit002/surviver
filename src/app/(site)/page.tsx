@@ -273,7 +273,7 @@ export default async function HomePage() {
                   <span className="bg-primary-soft text-primary flex size-12 items-center justify-center rounded-[14px]">
                     <Icon name="spark" width="22" height="22" />
                   </span>
-                  <h3 className="text-heading mt-6 font-semibold">The board is yours to begin.</h3>
+                  <h3 className="text-heading mt-6 font-semibold">The field is filling.</h3>
                   <p className="text-subtle mt-3 max-w-sm text-sm leading-relaxed">
                     Paid and approved entries are listed below while the field fills. Competition starts at 35.
                   </p>
@@ -376,7 +376,7 @@ export default async function HomePage() {
           </div>
 
           {open || (!round && season?.status === "REGISTRATION_CLOSED") ? (
-            <UpcomingProductList seasonId={(open ?? season)!.id} />
+            <UpcomingProductList seasonId={(open ?? season)!.id} capacity={(open ?? season)!.capacity} />
           ) : null}
         </div>
       </section>
@@ -406,7 +406,7 @@ export default async function HomePage() {
               [
                 "01",
                 "Put your product in",
-                "Submit your link and pay the flat fee. Every listing is reviewed before it reaches the board.",
+                "Submit your link and pay the flat fee. Your product is listed once payment is confirmed.",
               ],
               [
                 "02",

@@ -1,9 +1,10 @@
 import { getVisitorContext } from "@/lib/tracking/visitor";
+import { isSameOrigin } from "@/lib/security/origin";
 import { recordInteraction } from "@/lib/tracking/events";
 import { readLimitedText } from "@/lib/security/request";
 import { verifyInteractionProof } from "@/lib/security/tokens";
 export async function POST(request: Request) {
-  if (request.headers.get("origin") !== new URL(request.url).origin) return new Response(null, { status: 403 });
+  if (!isSameOrigin(request)) return new Response(null, { status: 403 });
   let body;
   const raw = await readLimitedText(request, 4096);
   if (raw === null) return new Response(null, { status: 413 });
