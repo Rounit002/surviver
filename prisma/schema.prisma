@@ -175,7 +175,7 @@ model Season {
   status            SeasonStatus @default(DRAFT)
   entryPriceCents   Int          @default(2900)
   currency          String       @default("usd")
-  capacity          Int          @default(32)
+  capacity          Int          @default(35)
   registrationStart DateTime?
   registrationEnd   DateTime?
   seasonStart       DateTime?

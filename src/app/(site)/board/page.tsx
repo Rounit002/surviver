@@ -3,10 +3,11 @@ import Link from "next/link";
 import { CategoryBar } from "@/components/layout/CategoryBar";
 import { RoundBar } from "@/components/competition/RoundBar";
 import { ProductCard } from "@/components/product/ProductCard";
+import { UpcomingProductList } from "@/components/product/UpcomingProductList";
 import { ButtonLink } from "@/components/ui/Button";
 import { Panel } from "@/components/ui/Panel";
 import { CATEGORY_LABELS } from "@/lib/competition/constants";
-import { getActiveRound, getCurrentSeason } from "@/lib/competition/season";
+import { getActiveRound, getCurrentSeason, getOpenSeason } from "@/lib/competition/season";
 import { getStandings, balanceForVisitor } from "@/lib/competition/standings";
 import { getVisitorContext } from "@/lib/tracking/visitor";
 import type { ProductCategory } from "@/generated/prisma";
@@ -16,15 +17,12 @@ export const metadata = pageMetadata("/board");
 export const dynamic = "force-dynamic";
 
 export default async function BoardPage(props: PageProps<"/board">) {
-  const season = await getCurrentSeason();
+  const [season, openSeason] = await Promise.all([getCurrentSeason(), getOpenSeason()]);
   if (!season) return <EmptyBoard reason="No season has been created yet." />;
 
   const round = await getActiveRound(season.id);
   const standings = await getStandings(season, round);
-  if (standings.rows.length === 0) {
-    return <EmptyBoard reason="No contestants on the board yet." />;
-  }
-
+  const listingSeason = openSeason ?? (season.status === "REGISTRATION_CLOSED" ? season : null);
   const params = await props.searchParams;
   const rawCategory = typeof params.category === "string" ? params.category : undefined;
   const activeCategory =
@@ -63,7 +61,16 @@ export default async function BoardPage(props: PageProps<"/board">) {
         />
       </div>
 
-      {visible.length === 0 ? (
+      {standings.rows.length === 0 ? (
+        <Panel className="mt-6 px-6 py-10 text-center">
+          <p className="text-subtle text-sm">The competition has not started yet.</p>
+          <p className="text-faint mt-2 text-xs">Paid, approved products appear below while the field fills.</p>
+        </Panel>
+      ) : null}
+
+      {listingSeason ? <UpcomingProductList seasonId={listingSeason.id} /> : null}
+
+      {visible.length === 0 && standings.rows.length > 0 ? (
         <Panel className="mt-6 px-6 py-14 text-center">
           <p className="text-subtle text-sm">No contestants in that category this season.</p>
           <div className="mt-4">
@@ -72,14 +79,14 @@ export default async function BoardPage(props: PageProps<"/board">) {
             </ButtonLink>
           </div>
         </Panel>
-      ) : (
+      ) : visible.length ? (
         <div className="mt-6 grid grid-cols-1 gap-3">
           <h2 className="sr-only">Competing products</h2>
           {visible.map((row) => (
             <ProductCard key={row.entryId} row={row} roundName={round?.name} visitor={visitor} />
           ))}
         </div>
-      )}
+      ) : null}
 
       <p className="text-faint mt-8 text-center text-[12px] leading-relaxed">
         Paid placements, ordered to balance views for every visitor. Ranking cannot be purchased.{" "}

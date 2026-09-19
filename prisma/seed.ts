@@ -38,7 +38,7 @@ async function main() {
       status: "REGISTRATION_OPEN",
       entryPriceCents: 2900,
       currency: "usd",
-      capacity: 32,
+      capacity: 35,
       registrationStart: new Date(),
       registrationEnd: new Date(Date.now() + 14 * DAY_MS),
     },

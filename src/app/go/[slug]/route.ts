@@ -34,7 +34,16 @@ export async function GET(request: Request, ctx: RouteContext<"/go/[slug]">) {
       url: true,
       approvalStatus: true,
       entries: {
-        where: { status: { in: ["ACTIVE", "FINALIST", "SURVIVOR", "ELIMINATED"] } },
+        where: {
+          OR: [
+            { status: { in: ["ACTIVE", "FINALIST", "SURVIVOR", "ELIMINATED"] } },
+            {
+              status: "UPCOMING",
+              payment: { status: "SUCCEEDED" },
+              season: { status: { in: ["REGISTRATION_OPEN", "REGISTRATION_CLOSED"] } },
+            },
+          ],
+        },
         orderBy: { createdAt: "desc" },
         take: 1,
         select: {
@@ -59,7 +68,7 @@ export async function GET(request: Request, ctx: RouteContext<"/go/[slug]">) {
     try {
       const visitor = await getVisitorContext();
       const proof = new URL(request.url).searchParams.get("proof") ?? undefined;
-      if (verifyInteractionProof(proof, entry.id, visitor)) {
+      if (entry.status !== "UPCOMING" && verifyInteractionProof(proof, entry.id, visitor)) {
         await recordInteraction(entry.id, visitor, "visit");
       }
     } catch (error) {

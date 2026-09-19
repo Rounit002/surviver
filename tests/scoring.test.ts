@@ -27,6 +27,7 @@ test("uses verified visits and stable identity to resolve equal rates", () => {
 
 test("adjusts elimination counts for smaller live fields", () => {
   assert.equal(eliminationFor(32), 8);
+  assert.equal(eliminationFor(35), 8);
   assert.equal(eliminationFor(24), 8);
   assert.equal(eliminationFor(16), 8);
   assert.equal(eliminationFor(8), 4);

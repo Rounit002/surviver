@@ -128,13 +128,14 @@ export const ENTRY_STATUS_LABELS: Record<EntryStatus, string> = {
 };
 
 /**
- * Season 0 bracket. 32 enter, one survives (PRD 6). Stored on Round records at
- * season creation so later seasons can use a different shape without a deploy.
+ * Standard 35-entry bracket for a full season. Runtime round sizes are stored
+ * on Round records, so later seasons can use a different shape without a deploy.
  */
 export const DEFAULT_BRACKET = [
-  { name: "Round 1", entrants: 32, eliminate: 8 },
-  { name: "Round 2", entrants: 24, eliminate: 8 },
-  { name: "Round 3", entrants: 16, eliminate: 8 },
+  { name: "Round 1", entrants: 35, eliminate: 8 },
+  { name: "Round 2", entrants: 27, eliminate: 8 },
+  { name: "Round 3", entrants: 19, eliminate: 3 },
+  { name: "Round 4", entrants: 16, eliminate: 8 },
   { name: "Quarterfinal", entrants: 8, eliminate: 4 },
   { name: "Semifinal", entrants: 4, eliminate: 2 },
   { name: "Final", entrants: 2, eliminate: 1 },

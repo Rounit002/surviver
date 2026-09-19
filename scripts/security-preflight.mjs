@@ -16,6 +16,9 @@ requireStrong("CRON_SECRET");
 let appUrl;
 try { appUrl = new URL(process.env.APP_URL ?? ""); } catch { failures.push("APP_URL must be an absolute URL"); }
 if (appUrl?.protocol !== "https:") failures.push("APP_URL must use HTTPS in production");
+if (appUrl && (appUrl.hostname !== "surviver.lol" || appUrl.pathname !== "/" || appUrl.search || appUrl.hash || appUrl.port)) {
+  failures.push("APP_URL must be the canonical origin https://surviver.lol");
+}
 if (process.env.PAYMENT_PROVIDER !== "dodo") failures.push("PAYMENT_PROVIDER must be dodo in production");
 if (process.env.DODO_PAYMENTS_ENVIRONMENT !== "live_mode") failures.push("DODO_PAYMENTS_ENVIRONMENT must be live_mode in production");
 for (const name of ["DATABASE_URL", "DODO_PAYMENTS_API_KEY", "DODO_PAYMENTS_WEBHOOK_KEY", "DODO_PAYMENTS_PRODUCT_ID", "DODO_PAYMENTS_BUSINESS_ID"]) {

@@ -116,6 +116,21 @@ export function startableEntryFilter(seasonId: string): Prisma.SeasonEntryWhereI
   };
 }
 
+/** Paid, approved entries are public while waiting for the field to fill. */
+export async function getPublicUpcomingEntries(seasonId: string) {
+  return prisma.seasonEntry.findMany({
+    where: {
+      seasonId,
+      status: "UPCOMING",
+      payment: { status: "SUCCEEDED" },
+      product: { approvalStatus: "APPROVED" },
+      season: { status: { in: ["REGISTRATION_OPEN", "REGISTRATION_CLOSED"] } },
+    },
+    orderBy: { createdAt: "asc" },
+    include: { product: true },
+  });
+}
+
 /** The round currently accepting scoring events, if any. */
 export async function getActiveRound(seasonId: string) {
   return prisma.round.findFirst({

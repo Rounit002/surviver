@@ -13,7 +13,7 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" v
   <g font-family="Arial, sans-serif">
     <text x="136" y="94" font-size="34" font-weight="700" fill="#221d26">Surviver.lol</text>
     <text x="64" y="198" font-size="18" font-weight="700" letter-spacing="3" fill="#5d5566">THE SAAS SURVIVAL TOURNAMENT</text>
-    <text x="60" y="286" font-size="68" font-weight="700" letter-spacing="-3" fill="#221d26">32 products enter.</text>
+    <text x="60" y="286" font-size="68" font-weight="700" letter-spacing="-3" fill="#221d26">35 products enter.</text>
     <text x="60" y="369" font-size="68" font-weight="700" letter-spacing="-3" fill="#2f52c8">One survives.</text>
     <text x="64" y="434" font-size="25" fill="#5d5566">Equal exposure. Real interest. Earn your spot.</text>
     <line x1="64" y1="502" x2="1136" y2="502" stroke="#cfc9d4"/>

@@ -5,6 +5,7 @@ import { CategoryBar } from "@/components/layout/CategoryBar";
 import { QuickEntry } from "@/components/entry/QuickEntry";
 import { PresenceCounter } from "@/components/layout/PresenceCounter";
 import { ProductCard } from "@/components/product/ProductCard";
+import { UpcomingProductList } from "@/components/product/UpcomingProductList";
 import { Badge, BadgeDot } from "@/components/ui/Badge";
 import { ButtonLink } from "@/components/ui/Button";
 import { Countdown } from "@/components/ui/Countdown";
@@ -189,7 +190,7 @@ export default async function HomePage() {
             </div>
             <div className="mt-3">
               <div className="num text-foreground text-2xl font-bold tracking-tight sm:text-3xl">
-                {summary ? `${summary.claimed} / ${open?.capacity}` : "32"}
+                {summary ? `${summary.claimed} / ${open?.capacity}` : "35"}
                 <span className="text-subtle ml-2 text-xs font-normal">
                   {full ? "field full" : "spots entered"}
                 </span>
@@ -202,7 +203,7 @@ export default async function HomePage() {
                   />
                 </div>
               ) : (
-                <p className="text-faint mt-1 text-xs">32 contestants enter, 1 survives</p>
+                <p className="text-faint mt-1 text-xs">35 contestants enter, 1 survives</p>
               )}
             </div>
           </div>
@@ -240,7 +241,7 @@ export default async function HomePage() {
         <div className="shell">
           <SectionHeading
             eyebrow="Live board"
-            title="Thirty-two products. Equal exposure."
+            title="Thirty-five products. Equal exposure."
             copy="Order is shuffled for every visitor, so nobody compounds their own lead. Rank is earned from measured interest and cannot be bought."
             action={
               <ButtonLink href="/leaderboard" variant="secondary" size="sm">
@@ -274,7 +275,7 @@ export default async function HomePage() {
                   </span>
                   <h3 className="text-heading mt-6 font-semibold">The board is yours to begin.</h3>
                   <p className="text-subtle mt-3 max-w-sm text-sm leading-relaxed">
-                    Approved entries appear here when the season starts.
+                    Paid and approved entries are listed below while the field fills. Competition starts at 35.
                   </p>
                   {available ? (
                     <ButtonLink href="/enter" variant="primary" size="md" className="mt-7">
@@ -373,6 +374,10 @@ export default async function HomePage() {
               </div>
             </Reveal>
           </div>
+
+          {open || (!round && season?.status === "REGISTRATION_CLOSED") ? (
+            <UpcomingProductList seasonId={(open ?? season)!.id} />
+          ) : null}
         </div>
       </section>
 
