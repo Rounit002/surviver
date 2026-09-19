@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getVisitorContext } from "@/lib/tracking/visitor";
 import { recordInteraction } from "@/lib/tracking/events";
-import { consumeRateLimit, requestIp } from "@/lib/security/request";
 import { verifyInteractionProof } from "@/lib/security/tokens";
 
 /**
@@ -60,7 +59,7 @@ export async function GET(request: Request, ctx: RouteContext<"/go/[slug]">) {
     try {
       const visitor = await getVisitorContext();
       const proof = new URL(request.url).searchParams.get("proof") ?? undefined;
-      if (verifyInteractionProof(proof, entry.id, visitor) && await consumeRateLimit("visit-ip", await requestIp(), 60, 60_000)) {
+      if (verifyInteractionProof(proof, entry.id, visitor)) {
         await recordInteraction(entry.id, visitor, "visit");
       }
     } catch (error) {

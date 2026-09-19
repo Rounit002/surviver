@@ -410,17 +410,6 @@ model Payment {
   @@map("payments")
 }
 
-/// Atomic, shared rate-limit counters used by all application instances.
-model RateLimitBucket {
-  key         String   @id
-  windowStart DateTime
-  count       Int      @default(0)
-  expiresAt   DateTime
-
-  @@index([expiresAt])
-  @@map("rate_limit_buckets")
-}
-
 /// Durable inbox for authenticated provider messages and their processing state.
 model WebhookEvent {
   id            String   @id

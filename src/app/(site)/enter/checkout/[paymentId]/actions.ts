@@ -9,7 +9,6 @@ import { prisma } from "@/lib/db";
 import { isDevPayments } from "@/lib/payments";
 import { applyPaymentResult } from "@/lib/payments/fulfill";
 import { hasCheckoutCapability } from "@/lib/payments/access";
-import { consumeRateLimit, requestIp } from "@/lib/security/request";
 
 /**
  * Drives the dev checkout. Guarded so it can never run once a real provider is
@@ -44,8 +43,6 @@ export async function simulatePaymentAction(formData: FormData): Promise<void> {
   if (!holdsCookie && user?.id !== payment.userId) {
     redirect("/enter");
   }
-  if (!(await consumeRateLimit("dev-payment", await requestIp(), 10, 60 * 60_000))) throw new Error("Too many payment attempts.");
-
   const result = await applyPaymentResult({
     kind: outcome,
     localPaymentId: payment.id,

@@ -5,10 +5,8 @@ import { prisma } from "@/lib/db";
 /**
  * Scheduled housekeeping.
  *
- * Without this, three tables grow without bound and one of them is a security
- * control: rate-limit buckets are only useful if stale ones are removed, and an
- * expired session row that is never presented again is never deleted on read.
- * Abandoned checkouts are cleared so a submission that was never paid for stops
+ * Without this, expired session rows and processed webhook records grow without
+ * bound. Abandoned checkouts are also cleared so an unpaid submission stops
  * holding a product URL.
  */
 
@@ -17,15 +15,13 @@ const WEBHOOK_RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
 const ABANDONED_CHECKOUT_MS = 2 * 60 * 60 * 1000;
 
 export type RetentionReport = {
-  rateLimitBuckets: number;
   sessions: number;
   webhookEvents: number;
   abandonedEntries: number;
 };
 
 export async function runRetention(now = new Date()): Promise<RetentionReport> {
-  const [rateLimitBuckets, sessions, webhookEvents] = await Promise.all([
-    prisma.rateLimitBucket.deleteMany({ where: { expiresAt: { lte: now } } }),
+  const [sessions, webhookEvents] = await Promise.all([
     // Keep a short grace window so a just-expired session can still be
     // distinguished from one that never existed while debugging.
     prisma.session.deleteMany({
@@ -52,7 +48,6 @@ export async function runRetention(now = new Date()): Promise<RetentionReport> {
   });
 
   return {
-    rateLimitBuckets: rateLimitBuckets.count,
     sessions: sessions.count,
     webhookEvents: webhookEvents.count,
     abandonedEntries: abandonedEntries.count,

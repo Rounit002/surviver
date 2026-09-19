@@ -5,7 +5,6 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { createSession, destroySession } from "@/lib/auth/session";
 import { fakeVerify, hashPassword, passwordFitsBcrypt, verifyPassword } from "@/lib/auth/password";
-import { consumeRateLimit, requestIp } from "@/lib/security/request";
 import { safeNextPath } from "@/lib/auth/redirects";
 
 export type AuthFormState = {
@@ -62,11 +61,6 @@ export async function signUpAction(
   }
 
   const { name, email, password } = parsed.data;
-  const ip = await requestIp();
-  if (!(await consumeRateLimit("signup-ip", ip, 5, 60 * 60_000)) || !(await consumeRateLimit("signup-email", email, 3, 60 * 60_000))) {
-    return { error: "Too many attempts. Please try again later." };
-  }
-
   const existing = await prisma.user.findUnique({ where: { email }, select: { id: true } });
   if (existing) {
     return { error: "We could not create that account. Try signing in instead." };
@@ -99,10 +93,6 @@ export async function signInAction(
   }
 
   const { email, password } = parsed.data;
-  const ip = await requestIp();
-  if (!(await consumeRateLimit("signin-ip", ip, 12, 15 * 60_000)) || !(await consumeRateLimit("signin-email", email, 8, 15 * 60_000))) {
-    return { error: "Too many attempts. Please try again later." };
-  }
   const user = await prisma.user.findUnique({
     where: { email },
     select: { id: true, passwordHash: true },

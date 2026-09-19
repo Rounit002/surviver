@@ -2,9 +2,7 @@ import "server-only";
 
 import { createHash } from "node:crypto";
 import { headers } from "next/headers";
-import { prisma } from "@/lib/db";
 import { env } from "@/lib/env";
-import { hashCapability } from "@/lib/security/tokens";
 
 /**
  * The single source of truth for "who is this request from".
@@ -29,27 +27,6 @@ export async function requestIp(): Promise<string> {
 export function hashIp(ip: string | null | undefined): string | null {
   if (!ip || ip === "unknown") return null;
   return createHash("sha256").update(`${env.ipHashSalt}:${ip}`).digest("hex").slice(0, 32);
-}
-
-export async function consumeRateLimit(
-  scope: string,
-  identity: string,
-  limit: number,
-  windowMs: number,
-): Promise<boolean> {
-  const now = new Date();
-  const expiresAt = new Date(now.getTime() + windowMs);
-  const key = `${scope}:${hashCapability(identity).slice(0, 40)}`;
-  const rows = await prisma.$queryRaw<Array<{ count: number }>>`
-    INSERT INTO "rate_limit_buckets" ("key", "windowStart", "count", "expiresAt")
-    VALUES (${key}, ${now}, 1, ${expiresAt})
-    ON CONFLICT ("key") DO UPDATE SET
-      "count" = CASE WHEN "rate_limit_buckets"."expiresAt" <= ${now} THEN 1 ELSE "rate_limit_buckets"."count" + 1 END,
-      "windowStart" = CASE WHEN "rate_limit_buckets"."expiresAt" <= ${now} THEN ${now} ELSE "rate_limit_buckets"."windowStart" END,
-      "expiresAt" = CASE WHEN "rate_limit_buckets"."expiresAt" <= ${now} THEN ${expiresAt} ELSE "rate_limit_buckets"."expiresAt" END
-    RETURNING "count"
-  `;
-  return (rows[0]?.count ?? limit + 1) <= limit;
 }
 
 export async function readLimitedText(request: Request, maxBytes: number): Promise<string | null> {

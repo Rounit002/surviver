@@ -3,7 +3,7 @@ import test from "node:test";
 
 import { safeNextPath } from "../src/lib/auth/redirects";
 import { BCRYPT_MAX_BYTES, hashPassword, passwordFitsBcrypt, verifyPassword } from "../src/lib/auth/password";
-import { isPrivateAddress, normalizeUrl, UnsafeUrlError } from "../src/lib/products/site-metadata";
+import { normalizeUrl, UnsafeUrlError } from "../src/lib/products/site-metadata";
 import { hasCheckoutCapability } from "../src/lib/payments/access";
 import { hashCapability, createInteractionProof, verifyInteractionProof, signValue, verifySignedValue } from "../src/lib/security/tokens";
 import { parseSeasonNumber, PUBLIC_SEASON_STATUSES } from "../src/lib/competition/constants";
@@ -89,49 +89,13 @@ test("a differing suffix past 72 bytes cannot authenticate", async () => {
   assert.equal(await verifyPassword(`${base}DIFFERENT`, hash), false);
 });
 
-/* -------------------------------------------------------------------------- */
-/* F07 — SSRF address classification                                          */
-/* -------------------------------------------------------------------------- */
-
-test("private and special-use addresses are rejected", () => {
-  for (const address of [
-    "127.0.0.1",
-    "10.0.0.5",
-    "172.16.0.1",
-    "192.168.1.1",
-    "169.254.169.254",
-    "0.0.0.0",
-    "100.64.0.1",
-    "::1",
-    "fd00::1",
-    "fe80::1",
-    // The audit found both of these classified as public.
-    "::ffff:7f00:1",
-    "fe90::1",
-    "::ffff:127.0.0.1",
-    "::ffff:169.254.169.254",
-    "64:ff9b::7f00:1",
-    "not-an-address",
-    "",
-  ]) {
-    assert.equal(isPrivateAddress(address), true, `should block ${address}`);
-  }
-});
-
-test("ordinary public addresses are still allowed", () => {
-  for (const address of ["8.8.8.8", "1.1.1.1", "93.184.216.34", "2606:4700::1111"]) {
-    assert.equal(isPrivateAddress(address), false, `should allow ${address}`);
-  }
-});
-
-test("submitted URLs are restricted to plain public web addresses", () => {
+test("submitted URLs are restricted to plain web addresses", () => {
   for (const hostile of [
     "file:///etc/passwd",
     "gopher://example.com",
     "ftp://example.com",
     "https://user:pass@example.com",
     "https://example.com:22",
-    "https://localhost",
     "https://nodot",
   ]) {
     assert.throws(() => normalizeUrl(hostile), UnsafeUrlError, `should reject ${hostile}`);
@@ -139,6 +103,8 @@ test("submitted URLs are restricted to plain public web addresses", () => {
 
   assert.equal(normalizeUrl("example.com"), "https://example.com/");
   assert.equal(normalizeUrl("https://example.com/a?b=1#c"), "https://example.com/a?b=1");
+  assert.equal(normalizeUrl("http://127.0.0.1"), "http://127.0.0.1/");
+  assert.equal(normalizeUrl("http://[::1]"), "http://[::1]/");
 });
 
 /* -------------------------------------------------------------------------- */

@@ -11,7 +11,6 @@ import { getOpenSeason, CLAIMED_ENTRY_STATUSES } from "@/lib/competition/season"
 import { lockSeason } from "@/lib/competition/engine";
 import { getPaymentProvider } from "@/lib/payments";
 import { fetchSiteMetadata, normalizeUrl, UnsafeUrlError } from "@/lib/products/site-metadata";
-import { consumeRateLimit, requestIp } from "@/lib/security/request";
 import { hashCapability } from "@/lib/security/tokens";
 import type { ProductCategory } from "@/generated/prisma";
 
@@ -34,10 +33,6 @@ export type LookupResult = {
  * on their homepage. Open to anyone, because entering requires no account.
  */
 export async function lookupSiteAction(rawUrl: string): Promise<LookupResult> {
-  const ip = await requestIp();
-  if (!(await consumeRateLimit("site-lookup", ip, 10, 60 * 60_000))) {
-    return { ok: false, error: "Too many site lookups. Please try again later." };
-  }
   try {
     const metadata = await fetchSiteMetadata(rawUrl);
     return {
@@ -82,10 +77,6 @@ export async function createEntryAction(
   _prev: EntryFormState,
   formData: FormData,
 ): Promise<EntryFormState> {
-  const ip = await requestIp();
-  if (!(await consumeRateLimit("entry-ip", ip, 5, 24 * 60 * 60_000))) {
-    return { error: "Too many entry attempts. Please try again later." };
-  }
   const parsed = entrySchema.safeParse({ url: formData.get("url") });
 
   if (!parsed.success) {
