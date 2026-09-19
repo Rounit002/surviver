@@ -1,8 +1,10 @@
 import "server-only";
 import { prisma } from "@/lib/db";
+import { env } from "@/lib/env";
 import { advanceSeason, autoStartFullSeasons } from "@/lib/competition/engine";
 import { STARTABLE_SEASON_STATUSES } from "@/lib/competition/readiness";
 import { getStartReadiness } from "@/lib/competition/season";
+import { MAX_ATTEMPTS, RETRYABLE_STATUSES } from "@/lib/payments/webhook-policy";
 
 /**
  * In-process competition clock.
@@ -42,9 +44,24 @@ async function pendingSeasonCount(): Promise<number> {
   return 0;
 }
 
+/**
+ * Whether the clock has anything to come back for.
+ *
+ * A season is the obvious answer, but a provider message still owed a retry is
+ * the other one: that message can be the payment that puts a founder who has
+ * already been charged onto the board. Waiting for the field to fill before
+ * looking at it is exactly backwards — the message may be what fills it.
+ */
+async function hasPendingWork(): Promise<boolean> {
+  if (await pendingSeasonCount()) return true;
+  return (await prisma.webhookEvent.count({
+    where: { provider: env.paymentProvider, status: { in: RETRYABLE_STATUSES }, attempts: { lt: MAX_ATTEMPTS } },
+  })) > 0;
+}
+
 /** Idempotent: safe to call from a request path whenever a season may have moved. */
 export async function activateCompetitionScheduler() {
-  if (!(await pendingSeasonCount())) return;
+  if (!(await hasPendingWork())) return;
   if (scheduler.surviverCompetitionTimer) return;
   scheduler.surviverCompetitionTimer = setInterval(() => void runCompetitionTick(), TICK_MS);
   scheduler.surviverCompetitionTimer.unref?.();
@@ -111,7 +128,7 @@ async function tick(options: { retention?: boolean }): Promise<CompetitionTickRe
 
     // Nothing left to watch: stop the timer rather than poll an idle database.
     // A new payment brings it back through activateCompetitionScheduler.
-    if (!(await pendingSeasonCount())) stopTimer();
+    if (!(await hasPendingWork())) stopTimer();
   } catch (error) {
     console.error("[surviver] competition scheduler tick failed", error);
   }

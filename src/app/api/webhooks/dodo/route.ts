@@ -3,6 +3,7 @@ import { env } from "@/lib/env";
 import { readLimitedText } from "@/lib/security/request";
 import { claimWebhookEvent, releaseWebhookEvent } from "@/lib/payments/webhook-inbox";
 import { processWebhookPayload } from "@/lib/payments/webhook-processing";
+import { activateCompetitionScheduler } from "@/lib/competition/scheduler";
 import type { Prisma } from "@/generated/prisma";
 import { prisma } from "@/lib/db";
 
@@ -42,6 +43,12 @@ export async function POST(request: Request) {
     const stored = await prisma.webhookEvent.findUniqueOrThrow({ where: { id: inboxId }, select: { payload: true } });
     const outcome = await processWebhookPayload(eventId, JSON.stringify(stored.payload));
     await releaseWebhookEvent(inboxId, outcome.status, outcome.reason, new Date(), claimedAt);
+    // A message that did not settle is owed another attempt. Wake the clock so
+    // the sweep picks it up rather than waiting on a provider redelivery that
+    // may never come — a charged founder must not depend on one.
+    if (outcome.status !== "PROCESSED") {
+      await activateCompetitionScheduler().catch(error => console.error("[surviver] scheduler activation failed", error));
+    }
     return Response.json({ received: true }, { status: outcome.reason === "unknown payment" ? 503 : 200 });
   } catch (error) {
     // Left retryable on purpose: the scheduler sweep picks it up again, and a
