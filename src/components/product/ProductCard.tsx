@@ -4,8 +4,8 @@ import { cn } from "@/lib/cn";
 import { CATEGORY_COLORS, CATEGORY_LABELS } from "@/lib/competition/constants";
 import type { StandingRow } from "@/lib/competition/standings";
 import { displayHost, formatCount, formatInterestRate } from "@/lib/format";
-import type { ProductCategory } from "@/generated/prisma";
 import { createInteractionProof, type InteractionIdentity } from "@/lib/security/tokens";
+import { SiteFavicon } from "./SiteFavicon";
 
 /**
  * A contestant on the discovery board.
@@ -90,11 +90,7 @@ export function ProductCard({
         </div>
 
         {/* Product logo / monogram */}
-        <Monogram
-          name={product.name}
-          logoUrl={product.logoUrl}
-          category={product.category}
-        />
+        <SiteFavicon name={product.name} siteUrl={product.url} logoUrl={product.logoUrl} />
 
         {/* Product details */}
         <div className="min-w-0 flex-1">
@@ -172,48 +168,5 @@ export function ProductCard({
         </div>
       </div>
     </article>
-  );
-}
-
-/**
- * Falls back to a monogram tile tinted by category, so a wall of cards reads
- * as a set of groups rather than one undifferentiated grid.
- */
-function Monogram({
-  name,
-  logoUrl,
-  category,
-}: {
-  name: string;
-  logoUrl: string | null;
-  category: ProductCategory;
-}) {
-  if (logoUrl) {
-    return (
-      // Product logos are arbitrary remote URLs, so this stays a plain img
-      // rather than next/image, which would need every host allow-listed.
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={logoUrl}
-        alt={`${name} logo`}
-        loading="lazy"
-        decoding="async"
-        width={40}
-        height={40}
-        className="border-border size-10 shrink-0 rounded-md border object-cover"
-      />
-    );
-  }
-
-  const { tint, ink } = CATEGORY_COLORS[category];
-
-  return (
-    <div
-      aria-hidden
-      style={{ backgroundColor: tint, color: ink }}
-      className="flex size-10 shrink-0 items-center justify-center rounded-md text-[15px] font-semibold"
-    >
-      {name.slice(0, 1).toUpperCase()}
-    </div>
   );
 }

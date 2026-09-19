@@ -11,7 +11,8 @@ export type CheckoutInput = {
   amountCents: number;
   currency: string;
   description: string;
-  customerEmail: string;
+  /** Optional: hosted checkout can collect customer details after redirect. */
+  customerEmail?: string;
   /** Where the provider should return the founder after paying. */
   successUrl: string;
   cancelUrl: string;
