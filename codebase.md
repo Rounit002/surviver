@@ -6,7 +6,7 @@ Verified: 2026-09-08.
 
 ## 1. Product and current maturity
 
-Surviver.lol is a promotional tournament for SaaS products. The product promise is “35 products enter. One survives.” Founders pay a flat entry fee and submit a product listing; a full field of paid entries competes through timed rounds. Visitors browse a discovery board and outbound clicks are recorded as measured interest.
+Surviver.lol is a promotional tournament for SaaS products. The product promise is “32 products enter. One survives.” Founders pay a flat entry fee and submit a product listing; a full field of paid entries competes through timed rounds. Visitors browse a discovery board and outbound clicks are recorded as measured interest.
 
 The repository is a functional vertical slice with:
 
@@ -142,7 +142,7 @@ Centralizes:
 - the ten accepted product categories, labels, and pastel tint/ink colors;
 - public competitive-status labels, tones, chips, and descriptions;
 - entry-status labels;
-- the standard full-field progression: 35 → 27 → 19 → 16 → 8 → 4 → 2 → 1;
+- the standard full-field progression: 32 → 24 → 16 → 8 → 4 → 2 → 1;
 - cookie names for visitor, session, auth, Rally, and pending payment.
 
 ### `src/lib/competition/season.ts`
@@ -272,7 +272,7 @@ Rows with fewer than `season.minSampleImpressions` qualified impressions display
 
 ### Baseline seed: `prisma/seed.ts`
 
-Upserts Season 0 as registration-open with a 35-slot, `$29` default. It creates no user accounts. It is designed to be safe against an existing real-entry database.
+Upserts Season 0 as registration-open with a 32-slot, `$29` default. It creates no user accounts. It is designed to be safe against an existing real-entry database.
 
 ### Demo seed: `prisma/seed-demo.ts`
 

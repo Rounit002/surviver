@@ -38,7 +38,7 @@ test("an unreachable checkout stops holding its product URL", { skip: !databaseU
         number: (latest._max.number ?? -1) + 1,
         name: `Entry Availability ${marker}`,
         status: "REGISTRATION_OPEN",
-        capacity: 35,
+        capacity: 32,
         entryPriceCents: 2900,
         currency: "usd",
         registrationStart: new Date(Date.now() - 60_000),

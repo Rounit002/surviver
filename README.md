@@ -1,6 +1,6 @@
 # surviver
 
-A promotional tournament for SaaS products. 35 enter, one survives.
+A promotional tournament for SaaS products. 32 enter, one survives.
 
 Products pay a flat entry fee for a slot on a discovery board. Visitors browse,
 and the products they actually choose to visit earn a measured Interest Rate.

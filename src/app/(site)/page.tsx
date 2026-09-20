@@ -190,7 +190,7 @@ export default async function HomePage() {
             </div>
             <div className="mt-3">
               <div className="num text-foreground text-2xl font-bold tracking-tight sm:text-3xl">
-                {summary ? `${summary.claimed} / ${open?.capacity}` : "35"}
+                {summary ? `${summary.claimed} / ${open?.capacity}` : "32"}
                 <span className="text-subtle ml-2 text-xs font-normal">
                   {full ? "field full" : "spots entered"}
                 </span>
@@ -203,7 +203,7 @@ export default async function HomePage() {
                   />
                 </div>
               ) : (
-                <p className="text-faint mt-1 text-xs">35 contestants enter, 1 survives</p>
+                <p className="text-faint mt-1 text-xs">32 contestants enter, 1 survives</p>
               )}
             </div>
           </div>
@@ -275,7 +275,7 @@ export default async function HomePage() {
                   </span>
                   <h3 className="text-heading mt-6 font-semibold">The field is filling.</h3>
                   <p className="text-subtle mt-3 max-w-sm text-sm leading-relaxed">
-                    Paid and approved entries are listed below while the field fills. Competition starts at 35.
+                    Paid and approved entries are listed below while the field fills. Competition starts at 32.
                   </p>
                   {available ? (
                     <ButtonLink href="/enter" variant="primary" size="md" className="mt-7">

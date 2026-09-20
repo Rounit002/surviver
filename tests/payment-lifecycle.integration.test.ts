@@ -20,7 +20,7 @@ test("only verified, approved upcoming entries are publicly listed before compet
   ]);
 
   const marker = randomUUID();
-  const capacity = Number(process.env.TEST_SEASON_CAPACITY ?? "35");
+  const capacity = Number(process.env.TEST_SEASON_CAPACITY ?? "32");
   assert.ok(Number.isInteger(capacity) && capacity >= 2);
   let userId: string | undefined;
   let seasonId: string | undefined;

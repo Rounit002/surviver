@@ -29,25 +29,25 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Surviver.lol — the SaaS survival tournament",
     description:
-      "35 products enter, one survives. One flat entry fee, equal exposure, and a rank nobody can buy.",
+      "32 products enter, one survives. One flat entry fee, equal exposure, and a rank nobody can buy.",
     siteName: "Surviver.lol",
     type: "website",
     images: [{
       url: "/social-preview.png",
       width: 1200,
       height: 630,
-      alt: "Surviver.lol — 35 products enter. One survives.",
+      alt: "Surviver.lol — 32 products enter. One survives.",
     }],
   },
   twitter: {
     card: "summary_large_image",
     images: [{
       url: "/social-preview.png",
-      alt: "Surviver.lol — 35 products enter. One survives.",
+      alt: "Surviver.lol — 32 products enter. One survives.",
     }],
     title: "Surviver.lol — the SaaS survival tournament",
     description:
-      "35 products enter, one survives. Equal exposure, a flat entry fee, and a rank nobody can buy.",
+      "32 products enter, one survives. Equal exposure, a flat entry fee, and a rank nobody can buy.",
   },
 };
 
@@ -101,7 +101,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
           "@type": "WebSite",
           name: "Surviver.lol",
           url: "https://surviver.lol",
-          description: "A promotional tournament for SaaS products. 35 products enter, one survives.",
+          description: "A promotional tournament for SaaS products. 32 products enter, one survives.",
           inLanguage: "en",
         }).replace(/</g, "\\u003c") }} />
         {children}
