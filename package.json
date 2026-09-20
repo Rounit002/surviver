@@ -9,6 +9,7 @@
     "lint": "eslint src prisma prisma.config.ts",
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate",
+    "db:hash-legacy-capabilities": "node scripts/hash-legacy-manage-tokens.mjs",
     "db:check": "node scripts/check-db.mjs",
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",

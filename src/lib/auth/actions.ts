@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import { createSession, destroySession } from "@/lib/auth/session";
 import { fakeVerify, hashPassword, passwordFitsBcrypt, verifyPassword } from "@/lib/auth/password";
 import { safeNextPath } from "@/lib/auth/redirects";
+import { checkRequestLimit } from "@/lib/security/rate-limit";
 
 export type AuthFormState = {
   error?: string;
@@ -60,6 +61,15 @@ export async function signUpAction(
     return { fieldErrors: fieldErrorsFrom(parsed.error) };
   }
 
+  try {
+    if (!(await checkRequestLimit("signup", 3, 60 * 60_000)).allowed) {
+      return { error: "Too many attempts. Please try again in an hour." };
+    }
+  } catch (error) {
+    console.error("[surviver] signup limit unavailable", error);
+    return { error: "Sign-up is temporarily unavailable. Please try again shortly." };
+  }
+
   const { name, email, password } = parsed.data;
   const existing = await prisma.user.findUnique({ where: { email }, select: { id: true } });
   if (existing) {
@@ -90,6 +100,15 @@ export async function signInAction(
 
   if (!parsed.success) {
     return { fieldErrors: fieldErrorsFrom(parsed.error) };
+  }
+
+  try {
+    if (!(await checkRequestLimit("signin", 10, 15 * 60_000)).allowed) {
+      return { error: "Too many attempts. Please try again in 15 minutes." };
+    }
+  } catch (error) {
+    console.error("[surviver] sign-in limit unavailable", error);
+    return { error: "Sign-in is temporarily unavailable. Please try again shortly." };
   }
 
   const { email, password } = parsed.data;

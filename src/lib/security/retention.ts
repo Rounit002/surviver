@@ -38,6 +38,8 @@ export async function runRetention(now = new Date()): Promise<RetentionReport> {
     }),
   ]);
 
+  await prisma.rateLimitBucket.deleteMany({ where: { expiresAt: { lte: now } } });
+
   // A checkout stops holding its product URL once it can no longer be
   // completed. An explicit cancellation is released after a short grace. A
   // declined or never-finished attempt may still settle, so it is only written

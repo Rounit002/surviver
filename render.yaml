@@ -17,7 +17,7 @@ services:
     # hook runs `prisma generate`. `migrate deploy` applies any pending
     # migrations to the Supabase database before the new build is started; it
     # never creates a shadow database, so it is safe to run on every deploy.
-    buildCommand: npm ci && npx prisma migrate deploy && npm run build
+    buildCommand: npm ci && npm run db:hash-legacy-capabilities && npx prisma migrate deploy && npm run build
     startCommand: npm run start
 
     healthCheckPath: /

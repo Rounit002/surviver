@@ -482,3 +482,15 @@ model SiteVisitor {
   @@index([lastSeenAt])
   @@map("site_visitors")
 }
+
+/// Fixed-window abuse controls. The key is a keyed digest of the scope and
+/// requester identity; neither raw IP addresses nor account identifiers are stored.
+model RateLimitBucket {
+  key             String   @id
+  hitCount        Int      @default(0)
+  windowStartedAt DateTime
+  expiresAt       DateTime
+
+  @@index([expiresAt])
+  @@map("rate_limit_buckets")
+}

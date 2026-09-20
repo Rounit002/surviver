@@ -36,7 +36,7 @@ export default async function EntryPage(props: PageProps<"/entry/[token]">) {
   const tokenHash = hashCapability(token);
   const entry = await prisma.seasonEntry.findFirst({
     where: { AND: [
-      { OR: [{ manageToken: tokenHash }, { manageToken: token }] },
+      { manageToken: tokenHash },
       { manageTokenRevokedAt: null },
       { OR: [{ manageTokenExpiresAt: null }, { manageTokenExpiresAt: { gt: now } }] },
     ] },
@@ -50,8 +50,6 @@ export default async function EntryPage(props: PageProps<"/entry/[token]">) {
       },
     },
   });
-
-  if (entry?.manageToken === token) await prisma.seasonEntry.update({ where: { id: entry.id }, data: { manageToken: tokenHash } });
 
   if (!entry) notFound();
 

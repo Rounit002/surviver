@@ -12,6 +12,7 @@ import { lockSeason } from "@/lib/competition/engine";
 import { getPaymentProvider } from "@/lib/payments";
 import { fetchSiteMetadata, normalizeUrl, UnsafeUrlError } from "@/lib/products/site-metadata";
 import { hashCapability } from "@/lib/security/tokens";
+import { checkRequestLimit } from "@/lib/security/rate-limit";
 import { getSessionUser } from "@/lib/auth/session";
 import type { ProductCategory } from "@/generated/prisma";
 
@@ -34,6 +35,14 @@ export type LookupResult = {
  * on their homepage. Open to anyone, because entering requires no account.
  */
 export async function lookupSiteAction(rawUrl: string): Promise<LookupResult> {
+  try {
+    const limit = await checkRequestLimit("site-metadata", 6, 10 * 60_000);
+    if (!limit.allowed) return { ok: false, error: "Too many site lookups. Wait a few minutes and try again." };
+  } catch (error) {
+    console.error("[surviver] site lookup limit unavailable", error);
+    return { ok: false, error: "Site lookup is temporarily unavailable. Fill the details in by hand." };
+  }
+
   try {
     const metadata = await fetchSiteMetadata(rawUrl);
     return {
@@ -87,6 +96,14 @@ export async function createEntryAction(
       if (key === "url") fieldErrors.url ??= issue.message;
     }
     return { fieldErrors };
+  }
+
+  try {
+    const limit = await checkRequestLimit("entry-create", 5, 60 * 60_000);
+    if (!limit.allowed) return { error: "Too many entry attempts. Wait an hour before trying again." };
+  } catch (error) {
+    console.error("[surviver] entry creation limit unavailable", error);
+    return { error: "Entry creation is temporarily unavailable. Please try again shortly." };
   }
 
   let url: string;
