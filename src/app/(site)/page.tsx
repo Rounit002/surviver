@@ -453,7 +453,7 @@ export default async function HomePage() {
             </p>
             <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
               <ButtonLink href="/enter" variant="primary" size="lg">
-                Enter your product
+                Enter. Earn your spot.
                 <Icon name="arrow" width="16" height="16" />
               </ButtonLink>
               <ButtonLink href="/survivors" variant="secondary" size="lg">

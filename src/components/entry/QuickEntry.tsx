@@ -111,7 +111,7 @@ export function QuickEntry({ available, full = false, priceLabel }: QuickEntryPr
             onClick={openEntry}
             className="bg-primary text-primary-foreground flex h-11 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-[11px] px-5 text-sm font-semibold shadow-sm transition-all duration-150 hover:brightness-105 hover:shadow-md active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <span>{available ? "Enter Season" : full ? "All Spots Filled" : "Opening Soon"}</span>
+            <span>{available ? "Enter. Earn your spot." : full ? "All Spots Filled" : "Opening Soon"}</span>
             <Icon name="arrow" width="15" height="15" />
           </button>
         </div>

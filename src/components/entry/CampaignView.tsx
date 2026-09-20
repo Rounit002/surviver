@@ -185,7 +185,7 @@ export function PendingState({ status, showFinish, testMode = false }: { status:
       {showFinish && status === "AWAITING_PAYMENT" ? (
         <div className="mt-4">
           <ButtonLink href="/enter" variant="primary" size="sm">
-            Finish entering
+            Enter. Earn your spot.
           </ButtonLink>
         </div>
       ) : null}

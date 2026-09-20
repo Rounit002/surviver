@@ -100,7 +100,7 @@ export function NavBar({ ticker }: { ticker?: ReactNode }) {
             <ThemeToggle />
             <div className="hidden sm:block">
               <ButtonLink href="/enter" variant="primary" size="sm">
-                Enter your product
+                Enter. Earn your spot.
               </ButtonLink>
             </div>
 
@@ -159,7 +159,7 @@ export function NavBar({ ticker }: { ticker?: ReactNode }) {
           </nav>
           <div className="border-border mt-2 border-t pt-2">
             <ButtonLink href="/enter" variant="primary" size="md" className="w-full">
-              Enter your product
+              Enter. Earn your spot.
             </ButtonLink>
           </div>
         </div>

@@ -15,7 +15,7 @@ const GROUPS: { heading: string; links: { href: string; label: string }[] }[] = 
   {
     heading: "Compete",
     links: [
-      { href: "/enter", label: "Enter your product" },
+      { href: "/enter", label: "Enter. Earn your spot." },
       { href: "/board", label: "The board" },
       { href: "/leaderboard", label: "Leaderboard" },
       { href: "/dashboard", label: "Your campaigns" },

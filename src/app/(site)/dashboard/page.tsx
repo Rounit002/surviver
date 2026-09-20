@@ -77,7 +77,7 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
             </p>
             <div className="mt-5">
               <ButtonLink href="/enter" variant="primary" size="sm">
-                Enter a season
+                Enter. Earn your spot.
               </ButtonLink>
             </div>
           </PanelBody>

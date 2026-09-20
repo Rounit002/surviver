@@ -15,6 +15,6 @@ export default async function RulesPage() {
       <section><h2 className="text-lg font-semibold">03 / Advancing and elimination</h2><p className="text-subtle mt-2">Interest Rate is verified visits divided by qualified views, and a product needs {season?.minSampleImpressions ?? 250} qualified views to be ranked. At the deadline the lowest ranked go out; if any product is short on data, the round extends by an hour. Ties break on verified visits, then a stable entry identifier. Every round starts with fresh scores, and finished results are frozen.</p></section>
       <section><h2 className="text-lg font-semibold">04 / Rally responsibly</h2><p className="text-subtle mt-2">Your Rally link brings visitors to the whole board. A visitor earns you a Rally point after qualified views on two other products, and your own referred traffic never scores for you. Rally points add exposure only, capped at {Math.round((season?.rallyBonusCap ?? 0.15) * 100)}%.</p></section>
       <section><h2 className="text-lg font-semibold">05 / The survivor</h2><p className="text-subtle mt-2">The last product standing is recorded as the season survivor and kept in the archive for good. There is no cash prize.</p></section>
-    </div><Link href="/enter" className="text-primary mt-8 inline-block text-sm font-semibold">Enter your product →</Link>
+    </div><Link href="/enter" className="text-primary mt-8 inline-block text-sm font-semibold">Enter. Earn your spot. →</Link>
   </article>;
 }

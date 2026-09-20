@@ -108,7 +108,7 @@ function EmptyBoard({ reason }: { reason: string }) {
         <p className="text-subtle text-sm">{reason}</p>
         <div className="mt-5">
           <ButtonLink href="/enter" variant="primary" size="sm">
-            Enter the next season
+            Enter. Earn your spot.
           </ButtonLink>
         </div>
       </Panel>
