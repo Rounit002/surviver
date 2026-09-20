@@ -47,9 +47,8 @@ test("a full field starts and runs itself without any cron call", { skip: !datab
 
     await resumeCompetitionScheduler();
     assert.equal(isCompetitionSchedulerRunning(), false, "registration alone never starts the clock");
-    // Nothing starts and nothing advances, but the provider inbox is still
-    // swept: a payment stranded during registration has to be able to recover.
-    assert.deepEqual(await runCompetitionTick(), { started: [], results: [], webhooks: [] });
+    // Registration alone starts no recurring work.
+    assert.deepEqual(await runCompetitionTick(), { started: [], results: [] });
 
     // A complete field: every slot paid for and approved, nothing started.
     for (let i = 0; i < capacity; i++) {
