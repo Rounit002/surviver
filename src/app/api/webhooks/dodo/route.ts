@@ -43,13 +43,13 @@ export async function POST(request: Request) {
     const stored = await prisma.webhookEvent.findUniqueOrThrow({ where: { id: inboxId }, select: { payload: true } });
     const outcome = await processWebhookPayload(eventId, JSON.stringify(stored.payload));
     await releaseWebhookEvent(inboxId, outcome.status, outcome.reason, new Date(), claimedAt);
-    // A message that did not settle is owed another attempt. Wake the clock so
-    // the sweep picks it up rather than waiting on a provider redelivery that
-    // may never come — a charged founder must not depend on one.
-    if (outcome.status !== "PROCESSED") {
+    // A full season may have become startable after this payment was applied.
+    // For an unsettled event, the 503 below asks the provider to redeliver;
+    // registration alone must not start the competition timer.
+    if (outcome.status === "PROCESSED" && outcome.reason !== "ignored") {
       await activateCompetitionScheduler().catch(error => console.error("[surviver] scheduler activation failed", error));
     }
-    return Response.json({ received: true }, { status: outcome.reason === "unknown payment" ? 503 : 200 });
+    return Response.json({ received: true }, { status: outcome.status === "PROCESSED" ? 200 : 503 });
   } catch (error) {
     // Left retryable on purpose: the scheduler sweep picks it up again, and a
     // 500 also asks the provider to redeliver.

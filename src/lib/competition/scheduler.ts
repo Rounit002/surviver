@@ -1,10 +1,8 @@
 import "server-only";
 import { prisma } from "@/lib/db";
-import { env } from "@/lib/env";
 import { advanceSeason, autoStartFullSeasons } from "@/lib/competition/engine";
 import { STARTABLE_SEASON_STATUSES } from "@/lib/competition/readiness";
 import { getStartReadiness } from "@/lib/competition/season";
-import { MAX_ATTEMPTS, RETRYABLE_STATUSES } from "@/lib/payments/webhook-policy";
 
 /**
  * In-process competition clock.
@@ -44,24 +42,9 @@ async function pendingSeasonCount(): Promise<number> {
   return 0;
 }
 
-/**
- * Whether the clock has anything to come back for.
- *
- * A season is the obvious answer, but a provider message still owed a retry is
- * the other one: that message can be the payment that puts a founder who has
- * already been charged onto the board. Waiting for the field to fill before
- * looking at it is exactly backwards — the message may be what fills it.
- */
-async function hasPendingWork(): Promise<boolean> {
-  if (await pendingSeasonCount()) return true;
-  return (await prisma.webhookEvent.count({
-    where: { provider: env.paymentProvider, status: { in: RETRYABLE_STATUSES }, attempts: { lt: MAX_ATTEMPTS } },
-  })) > 0;
-}
-
 /** Idempotent: safe to call from a request path whenever a season may have moved. */
 export async function activateCompetitionScheduler() {
-  if (!(await hasPendingWork())) return;
+  if (!(await pendingSeasonCount())) return;
   if (scheduler.surviverCompetitionTimer) return;
   scheduler.surviverCompetitionTimer = setInterval(() => void runCompetitionTick(), TICK_MS);
   scheduler.surviverCompetitionTimer.unref?.();
@@ -103,24 +86,24 @@ async function tick(options: { retention?: boolean }): Promise<CompetitionTickRe
   scheduler.surviverCompetitionTicks = ticks;
   const report: CompetitionTickReport = { started: [], results: [] };
   try {
-    // Order matters: a stranded payment can be the entry that completes the
-    // field, so retries run before anything reads the counts. They run while
-    // registration is still open too — that is precisely when a payment the
-    // provider has stopped redelivering would otherwise sit unsettled, with a
-    // founder charged and nothing on the board to show for it.
+    // Until a complete paid field exists, no recurring clock or competition
+    // work runs. Webhook delivery itself retries unsettled events with 503.
+    if (!(await pendingSeasonCount())) {
+      stopTimer();
+      return report;
+    }
+
+    // A stranded success can be the payment that completed the field, so
+    // recover it immediately before rechecking readiness.
     report.webhooks = await sweepWebhooks();
+    report.started = await autoStartFullSeasons();
 
-    // Registration alone must not start any recurring competition work.
-    if (await pendingSeasonCount()) {
-      report.started = await autoStartFullSeasons();
-
-      const seasons = await prisma.season.findMany({ where: { status: "RUNNING" }, select: { id: true } });
-      for (const { id } of seasons) {
-        try {
-          report.results.push({ seasonId: id, outcome: await advanceSeason(id) });
-        } catch (error) {
-          console.error("[surviver] round transition failed", id, error);
-        }
+    const seasons = await prisma.season.findMany({ where: { status: "RUNNING" }, select: { id: true } });
+    for (const { id } of seasons) {
+      try {
+        report.results.push({ seasonId: id, outcome: await advanceSeason(id) });
+      } catch (error) {
+        console.error("[surviver] round transition failed", id, error);
       }
     }
 
@@ -128,7 +111,7 @@ async function tick(options: { retention?: boolean }): Promise<CompetitionTickRe
 
     // Nothing left to watch: stop the timer rather than poll an idle database.
     // A new payment brings it back through activateCompetitionScheduler.
-    if (!(await hasPendingWork())) stopTimer();
+    if (!(await pendingSeasonCount())) stopTimer();
   } catch (error) {
     console.error("[surviver] competition scheduler tick failed", error);
   }
