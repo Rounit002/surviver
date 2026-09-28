@@ -26,7 +26,18 @@ export const metadata: Metadata = {
     template: "%s — Surviver.lol",
   },
   description:
-    "Get your SaaS in front of real visitors. 32 spots at one flat fee, every product live all season, ranked by real clicks.",
+    "Launch and promote your SaaS, AI tool, or startup to real visitors. 32 products compete on equal terms and rank by verified clicks all season.",
+  applicationName: "Surviver.lol",
+  category: "technology",
+  keywords: [
+    "SaaS launch platform",
+    "SaaS product discovery",
+    "submit SaaS product",
+    "promote SaaS",
+    "startup launch platform",
+    "AI tool directory",
+    "SaaS leaderboard",
+  ],
   openGraph: {
     title: "Surviver.lol — 32 SaaS spots, ranked by real clicks",
     description:
@@ -91,11 +102,25 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         />
         <script nonce={nonce} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
           "@context": "https://schema.org",
-          "@type": "WebSite",
-          name: "Surviver.lol",
-          url: "https://surviver.lol",
-          description: "32 SaaS spots at one flat fee, every product live all season, ranked by real clicks.",
-          inLanguage: "en",
+          "@graph": [
+            {
+              "@type": "Organization",
+              "@id": "https://surviver.lol/#organization",
+              name: "Surviver.lol",
+              url: "https://surviver.lol",
+              logo: "https://surviver.lol/icon.svg",
+              sameAs: ["https://www.youtube.com/@rounieee"],
+            },
+            {
+              "@type": "WebSite",
+              "@id": "https://surviver.lol/#website",
+              name: "Surviver.lol",
+              url: "https://surviver.lol",
+              description: "A SaaS launch and product discovery platform where products rank by verified visitor clicks.",
+              inLanguage: "en",
+              publisher: { "@id": "https://surviver.lol/#organization" },
+            },
+          ],
         }).replace(/</g, "\\u003c") }} />
         {children}
       </body>

@@ -2,6 +2,7 @@ import { pageMetadata } from "@/lib/seo";
 import Link from "next/link";
 import { Icon } from "@/components/ui/Icon";
 import { FIELD_SIZE } from "@/lib/competition/constants";
+import { headers } from "next/headers";
 export const metadata = pageMetadata("/how-it-works");
 
 const STEPS = [
@@ -28,9 +29,38 @@ const STEPS = [
   },
 ] as const;
 
-export default function HowItWorksPage() {
+const FAQS = [
+  {
+    question: "What is Surviver.lol?",
+    answer: "Surviver.lol is a SaaS launch and product discovery platform. Each season gives 32 SaaS products, AI tools, startups, and developer products equal visibility and ranks them by verified visitor clicks.",
+  },
+  {
+    question: "Where can I submit my SaaS product for discovery?",
+    answer: "You can submit your SaaS product to an open Surviver.lol season. Once the entry is approved and the field fills, it appears on the public discovery board for the entire season.",
+  },
+  {
+    question: "How are products ranked?",
+    answer: "Products are ranked by verified clicks from real visitors. Repeat clicks, bots, and scripted traffic do not increase the score, and paid placement cannot buy a higher rank.",
+  },
+  {
+    question: "How long does a product stay visible?",
+    answer: "Every accepted product stays visible for the full season. Products are not removed for falling behind, so every entrant keeps the same opportunity to be discovered.",
+  },
+] as const;
+
+export default async function HowItWorksPage() {
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
   return (
     <article className="shell section">
+      <script nonce={nonce} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        mainEntity: FAQS.map(({ question, answer }) => ({
+          "@type": "Question",
+          name: question,
+          acceptedAnswer: { "@type": "Answer", text: answer },
+        })),
+      }).replace(/</g, "\\u003c") }} />
       <div className="max-w-2xl">
         <p className="eyebrow">How it works</p>
         <h1 className="text-title mt-3 font-semibold">Real clicks are the score.</h1>
@@ -75,6 +105,19 @@ export default function HowItWorksPage() {
         Full rules
         <Icon name="arrow" width="14" height="14" />
       </Link>
+
+      <section className="border-border mt-14 border-t pt-10" aria-labelledby="faq-title">
+        <p className="eyebrow">Frequently asked questions</p>
+        <h2 id="faq-title" className="text-title mt-3 font-semibold">Launching a product on Surviver.lol</h2>
+        <div className="mt-7 grid gap-6 md:grid-cols-2">
+          {FAQS.map(({ question, answer }) => (
+            <div key={question}>
+              <h3 className="font-semibold">{question}</h3>
+              <p className="text-subtle mt-2 text-sm leading-relaxed">{answer}</p>
+            </div>
+          ))}
+        </div>
+      </section>
     </article>
   );
 }

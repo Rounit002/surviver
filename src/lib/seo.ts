@@ -10,18 +10,21 @@ export const SOCIAL_CARD = {
   alt: "Surviver.lol — 32 SaaS spots, ranked by real clicks. Every product stays live all season.",
 };
 export const publicPages = [
-  { path: "/", title: "32 SaaS spots, ranked by real clicks", description: "Get your SaaS in front of real visitors. 32 spots at one flat fee, every product live all season, ranked by real clicks." },
-  { path: "/board", title: "SaaS discovery board", description: "Explore this season's 32 SaaS products, from AI and developer tools to design and productivity. Visit the products that catch your interest." },
-  { path: "/leaderboard", title: "Live SaaS leaderboard", description: "Follow the live Surviver.lol rankings: 32 SaaS products, ranked by real clicks for the whole season." },
-  { path: "/seasons", title: "Tournament seasons and results", description: "Browse Surviver.lol seasons, discover past lineups, and explore permanent tournament standings and results." },
-  { path: "/survivors", title: "Hall of Survivors", description: "Discover the SaaS products that outlasted their season. Explore Surviver.lol tournament winners and their earned results." },
-  { path: "/enter", title: "Enter your SaaS product", description: "Submit your SaaS product to a Surviver.lol season. Choose a category, review entry details, and compete for discovery through measured visitor interest." },
-  { path: "/how-it-works", title: "How it works", description: "32 spots, one flat fee. The season starts when all 32 are filled, every product stays live, and real clicks decide the rank." },
+  { path: "/", title: "SaaS Launch Platform & Product Discovery", description: "Launch and promote your SaaS, AI tool, or startup to real visitors. 32 products compete on equal terms and rank by verified clicks all season." },
+  { path: "/board", title: "Discover SaaS Products, AI Tools & Startups", description: "Discover new SaaS products, AI tools, developer tools, design apps, and productivity software competing for real visitor interest." },
+  { path: "/leaderboard", title: "Live SaaS & Startup Leaderboard", description: "Follow a live leaderboard of SaaS products, AI tools, and startups ranked by verified visitor clicks rather than paid position." },
+  { path: "/seasons", title: "SaaS Launch Seasons & Results", description: "Browse current and past SaaS launch seasons, product lineups, verified click rankings, winners, and permanent competition results." },
+  { path: "/survivors", title: "Top SaaS Products & Season Winners", description: "Discover winning SaaS products, AI tools, and startups that earned the most visitor interest in previous Surviver.lol seasons." },
+  { path: "/enter", title: "Submit Your SaaS, AI Tool or Startup", description: "Submit your SaaS product, AI tool, startup, or developer product for season-long discovery and ranking by verified visitor clicks." },
+  { path: "/how-it-works", title: "How the SaaS Launch Platform Works", description: "Learn how to launch and promote a SaaS product on Surviver.lol: 32 equal spots, season-long visibility, and rankings based on verified clicks." },
   { path: "/rules", title: "Rules", description: "Surviver.lol rules for entries, what counts as a click, ranking, Rally referrals, refunds, and season survivors." },
   { path: "/privacy", title: "Privacy Policy", description: "Learn how Surviver.lol handles campaign information, payments, analytics, essential cookies, and requests concerning personal information." },
   { path: "/terms", title: "Terms of Service", description: "Review Surviver.lol terms for product submissions, promotional placements, moderation, entry fees, rankings, and refunds." },
   { path: "/sitemap", title: "Site map", description: "Find every public Surviver.lol page, including the discovery board, leaderboard, season archives, competition rules, and entry information." },
 ] as const;
+
+/** Canonical, indexable 200 pages. Redirects such as /enter do not belong in XML sitemaps. */
+export const sitemapPages = publicPages.filter(({ path }) => path !== "/enter");
 
 export function pageMetadata(path: string, title?: string, description?: string): Metadata {
   const page = publicPages.find((page) => page.path === path);
@@ -30,6 +33,7 @@ export function pageMetadata(path: string, title?: string, description?: string)
   return {
     title: resolvedTitle,
     description: resolvedDescription,
+    keywords: ["SaaS launch platform", "SaaS product discovery", "submit SaaS product", "promote SaaS", "startup launch platform", "AI tool directory"],
     alternates: { canonical: `${SITE_URL}${path === "/" ? "" : path}` },
     openGraph: {
       title: resolvedTitle, description: resolvedDescription, url: `${SITE_URL}${path}`,

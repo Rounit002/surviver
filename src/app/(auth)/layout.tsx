@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { Wordmark } from "@/components/brand/Wordmark";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 export default function AuthLayout({ children }: LayoutProps<"/">) {
   return (
