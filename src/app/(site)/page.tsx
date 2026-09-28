@@ -241,7 +241,7 @@ export default async function HomePage() {
         <div className="shell">
           <SectionHeading
             eyebrow="Live board"
-            title="Thirty-five products. Equal exposure."
+            title="Thirty-two products. Equal exposure."
             copy="Order is shuffled for every visitor, so nobody compounds their own lead. Rank is earned from measured interest and cannot be bought."
             action={
               <ButtonLink href="/leaderboard" variant="secondary" size="sm">
