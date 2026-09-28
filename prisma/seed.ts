@@ -22,8 +22,6 @@ if (!connectionString) {
 
 const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString }) });
 
-const DAY_MS = 24 * 60 * 60 * 1000;
-
 async function main() {
   // The site has no administrator surface, so this seed provisions no
   // privileged account. The ADMIN role survives in the schema for the existing
@@ -40,7 +38,10 @@ async function main() {
       currency: "usd",
       capacity: 32,
       registrationStart: new Date(),
-      registrationEnd: new Date(Date.now() + 14 * DAY_MS),
+      // Registration stays open until the field fills. A fixed deadline made
+      // the public CTA silently close even though the season was still marked
+      // REGISTRATION_OPEN and had every spot available.
+      registrationEnd: null,
     },
   });
 

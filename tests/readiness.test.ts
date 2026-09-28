@@ -16,7 +16,7 @@ test("starts only when every spot is filled and paid", () => {
 });
 
 test("holds a season that is one or two spots short", () => {
-  for (const claimed of [33, 34]) {
+  for (const claimed of [30, 31]) {
     const readiness = evaluateStartReadiness(counts({ claimed, ready: claimed }));
     assert.equal(readiness.canStart, false, `${claimed} claimed must not start`);
     assert.equal(readiness.isFull, false);
