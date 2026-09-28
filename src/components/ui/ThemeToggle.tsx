@@ -26,8 +26,8 @@ export function ThemeToggle({ className }: { className?: string }) {
     <button
       type="button"
       className={cn(
-        "text-subtle hover:text-foreground hover:bg-muted flex size-9 shrink-0 items-center justify-center",
-        "rounded-[10px] transition-colors duration-[var(--dur-fast)]",
+        "group border-border bg-muted hover:border-border-strong relative flex h-8 w-14 shrink-0 cursor-pointer items-center rounded-full border p-1",
+        "text-subtle transition-colors duration-[var(--dur-fast)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
         className,
       )}
       onClick={() => {
@@ -46,13 +46,15 @@ export function ThemeToggle({ className }: { className?: string }) {
           ?.setAttribute("content", next === "dark" ? "#1a1512" : "#fffdfa");
       }}
     >
-      {/* Sun: shown in light, and it is the light theme that offers the dark
-          one, so the label names the destination rather than the state. */}
+      <span
+        aria-hidden="true"
+        className="bg-surface shadow-sm absolute left-1 top-1 size-6 rounded-full transition-transform duration-[var(--dur-base)] ease-[var(--ease-out)] dark:translate-x-6"
+      />
       <svg
         aria-hidden="true"
-        className="theme-when-light"
-        width="17"
-        height="17"
+        className="relative z-10 ml-1 text-foreground transition-colors"
+        width="12"
+        height="12"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
@@ -65,9 +67,9 @@ export function ThemeToggle({ className }: { className?: string }) {
       </svg>
       <svg
         aria-hidden="true"
-        className="theme-when-dark"
-        width="17"
-        height="17"
+        className="relative z-10 ml-auto mr-1 transition-colors dark:text-foreground"
+        width="12"
+        height="12"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"

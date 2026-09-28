@@ -5,22 +5,6 @@ import { cn } from "@/lib/cn";
 import type { StandingRow } from "@/lib/competition/standings";
 import { formatCount } from "@/lib/format";
 
-/** Podium tile colours, matching the social card. */
-const TILES = [
-  "bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300",
-  "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300",
-  "bg-orange-50 text-orange-800 dark:bg-orange-950/40 dark:text-orange-300",
-  "bg-muted text-subtle",
-];
-
-/** Logo blocks for the illustration, in four category hues. */
-const LOGOS = [
-  ["var(--cat-dev-tools-tint)", "var(--cat-dev-tools-ink)"],
-  ["var(--cat-productivity-tint)", "var(--cat-productivity-ink)"],
-  ["var(--cat-ai-tint)", "var(--cat-ai-ink)"],
-  ["var(--cat-marketing-tint)", "var(--cat-marketing-ink)"],
-];
-
 /**
  * The hero's right-hand picture: the board as it looks once a season is live.
  *
@@ -37,7 +21,7 @@ export function HeroRanking({ rows, live }: { rows: StandingRow[]; live: boolean
 
   return (
     <div className="relative">
-      <div aria-hidden className="bg-primary/15 absolute -inset-6 -z-10 rounded-[40px] blur-3xl" />
+      <div aria-hidden className="bg-foreground/5 absolute -inset-5 -z-10 rounded-[40px] blur-3xl" />
       <div className="border-border bg-surface shadow-showcase rounded-[28px] border p-5 sm:p-6">
         <div className="flex items-center justify-between px-1 pb-4">
           <span className="text-lg font-bold">Live ranking</span>
@@ -47,7 +31,7 @@ export function HeroRanking({ rows, live }: { rows: StandingRow[]; live: boolean
               LIVE
             </span>
           ) : (
-            <span className="bg-accent-soft text-accent rounded-full px-2.5 py-1 text-xs font-semibold">Starts at 32</span>
+            <span className="bg-muted text-subtle rounded-full px-2.5 py-1 text-xs font-semibold">Starts at 32</span>
           )}
         </div>
 
@@ -61,17 +45,17 @@ export function HeroRanking({ rows, live }: { rows: StandingRow[]; live: boolean
                 key={row?.entryId ?? i}
                 className={cn(
                   "flex items-center gap-3 rounded-[18px] border p-3 sm:gap-3.5 sm:p-3.5",
-                  i === 0 ? "border-amber-300/70 bg-amber-50/60 dark:border-amber-700/50 dark:bg-amber-950/20" : "bg-muted/50 border-transparent",
+                  i === 0 ? "border-border-strong bg-elevated" : "bg-muted/50 border-transparent",
                 )}
               >
-                <span className={cn("mono flex size-9 shrink-0 items-center justify-center rounded-[10px] text-sm font-bold", TILES[i])}>
+                <span className={cn("mono flex size-9 shrink-0 items-center justify-center rounded-[10px] text-sm font-bold", i === 0 ? "bg-foreground text-surface" : "bg-muted-strong text-subtle")}>
                   {String(row?.rank ?? i + 1).padStart(2, "0")}
                 </span>
                 {row ? (
                   <SiteFavicon name={row.product.name} siteUrl={row.product.url} logoUrl={row.product.logoUrl} />
                 ) : (
-                  <span className="flex size-10 shrink-0 items-center justify-center rounded-[11px]" style={{ backgroundColor: LOGOS[i]![0] }}>
-                    <span className="size-4 rounded-[5px]" style={{ backgroundColor: LOGOS[i]![1] }} />
+                  <span className="bg-surface border-border flex size-10 shrink-0 items-center justify-center rounded-[11px] border">
+                    <span className="bg-primary size-3.5 rounded-[4px] opacity-80" />
                   </span>
                 )}
                 <div className="min-w-0 flex-1">
@@ -88,7 +72,7 @@ export function HeroRanking({ rows, live }: { rows: StandingRow[]; live: boolean
                   </span>
                 </div>
                 {rising ? (
-                  <span className="bg-live-soft text-live flex shrink-0 items-center rounded-full px-2 py-1" title="Rising">
+                  <span className="bg-primary-soft text-primary flex shrink-0 items-center rounded-full px-2 py-1" title="Rising">
                     <svg width="11" height="9" viewBox="0 0 14 12" aria-hidden><path d="M7 0L14 12H0z" fill="currentColor" /></svg>
                   </span>
                 ) : null}
