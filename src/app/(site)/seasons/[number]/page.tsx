@@ -2,16 +2,16 @@ import { pageMetadata } from "@/lib/seo";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { RoundBar } from "@/components/competition/RoundBar";
-import { ButtonLink } from "@/components/ui/Button";
-import { Chip, StatusChip } from "@/components/ui/Chip";
+import { ButtonLink, buttonClass } from "@/components/ui/Button";
+import { StatusChip } from "@/components/ui/Chip";
 import { Panel, PanelHeader } from "@/components/ui/Panel";
 import { Stat } from "@/components/ui/Stat";
-import { cn } from "@/lib/cn";
 import { CATEGORY_LABELS } from "@/lib/competition/constants";
 import { getActiveRound, parseSeasonNumber, publicSeasonFilter } from "@/lib/competition/season";
 import { getStandings } from "@/lib/competition/standings";
 import { prisma } from "@/lib/db";
 import { displayHost, formatCount, formatDate, formatInterestRate, formatMoney } from "@/lib/format";
+import { EnterButton } from "@/components/entry/EnterButton";
 
 export const dynamic = "force-dynamic";
 
@@ -54,10 +54,6 @@ export default async function SeasonPage(props: PageProps<"/seasons/[number]">) 
     }));
 
   const standings = await getStandings(season, round);
-  const rounds = await prisma.round.findMany({
-    where: { seasonId: season.id },
-    orderBy: { roundNumber: "asc" },
-  });
 
   const totals = standings.rows.reduce(
     (acc, r) => ({
@@ -71,21 +67,21 @@ export default async function SeasonPage(props: PageProps<"/seasons/[number]">) 
   const isLive = season.status === "RUNNING";
 
   return (
-    <div className="shell pt-8 pb-4">
-      <header className="text-center">
-        <div className="label">
+    <div className="shell section">
+      <header>
+        <div className="eyebrow">
           {season.status === "COMPLETED"
             ? "Season archive"
             : isLive
               ? "Live season"
               : "Season"}
         </div>
-        <h1 className="mt-2 text-3xl font-semibold sm:text-4xl">{season.name}</h1>
-        <div className="text-faint mt-3 flex flex-wrap items-center justify-center gap-x-1.5 gap-y-1 text-[13px]">
+        <h1 className="text-title mt-3 font-semibold">{season.name}</h1>
+        <div className="text-subtle mt-3 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[13px]">
           <span>{formatMoney(season.entryPriceCents, season.currency)} entry</span>
           <span aria-hidden>&middot;</span>
           <span>
-            <span className="num">{season.capacity}</span> slots
+            <span className="num">{season.capacity}</span> spots
           </span>
           {season.seasonStart ? (
             <>
@@ -109,9 +105,9 @@ export default async function SeasonPage(props: PageProps<"/seasons/[number]">) 
           </p>
           {season.status === "REGISTRATION_OPEN" ? (
             <div className="mt-5">
-              <ButtonLink href="/enter" variant="primary" size="sm">
+              <EnterButton className={buttonClass("primary", "sm")}>
                 Enter {season.name}
-              </ButtonLink>
+              </EnterButton>
             </div>
           ) : null}
         </Panel>
@@ -131,10 +127,10 @@ export default async function SeasonPage(props: PageProps<"/seasons/[number]">) 
           <Panel className="mt-6">
             <div className="divide-border grid grid-cols-2 divide-x divide-y sm:grid-cols-4 sm:divide-y-0 [&>*]:px-5 [&>*]:py-4">
               <Stat label="Contestants" value={formatCount(standings.rows.length)} />
-              <Stat label="Qualified views" value={formatCount(totals.impressions)} />
-              <Stat label="Verified visits" value={formatCount(totals.visits)} />
+              <Stat label="Clicks" value={formatCount(totals.visits)} />
+              <Stat label="Views" value={formatCount(totals.impressions)} />
               <Stat
-                label="Average interest"
+                label="Click rate"
                 value={formatInterestRate(
                   totals.impressions > 0 ? totals.visits / totals.impressions : 0,
                 )}
@@ -147,26 +143,17 @@ export default async function SeasonPage(props: PageProps<"/seasons/[number]">) 
               title={
                 season.status === "COMPLETED"
                   ? "Final standings"
-                  : `Standings — ${round?.name ?? ""}`
+                  : "Live standings"
               }
             />
             <ol className="divide-border divide-y">
               {standings.rows.map((row) => {
-                const eliminated = (row.rank ?? 0) > standings.survivorCount;
                 return (
                   <li
                     key={row.entryId}
-                    className={cn(
-                      "grid grid-cols-[2rem_minmax(0,1fr)_auto] items-center gap-3 px-4 py-3",
-                      eliminated && "bg-danger/4",
-                    )}
+                    className="grid grid-cols-[2rem_minmax(0,1fr)_auto] items-center gap-3 px-4 py-3"
                   >
-                    <span
-                      className={cn(
-                        "num text-sm font-semibold",
-                        eliminated ? "text-danger" : "text-foreground",
-                      )}
-                    >
+                    <span className="num text-foreground text-sm font-semibold">
                       {row.rank ?? "—"}
                     </span>
 
@@ -179,18 +166,19 @@ export default async function SeasonPage(props: PageProps<"/seasons/[number]">) 
                       >
                         {row.product.name}
                       </a>
-                      <div className="text-faint mt-0.5 flex flex-wrap items-center gap-x-1.5 text-[12px]">
+                      <div className="text-subtle mt-0.5 flex flex-wrap items-center gap-x-1.5 text-[12px]">
                         <span>{CATEGORY_LABELS[row.product.category]}</span>
                         <span aria-hidden>&middot;</span>
                         <span className="mono">{displayHost(row.product.url)}</span>
                         <span aria-hidden>&middot;</span>
-                        <span className="num">{formatCount(row.verifiedVisits)} visits</span>
+                        <span className="num">{formatCount(row.qualifiedImpressions)} views</span>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-3">
                       <span className="num text-sm font-semibold">
-                        {row.collecting ? "—" : formatInterestRate(row.interestRate)}
+                        {formatCount(row.verifiedVisits)}
+                        <span className="text-subtle ml-1 text-xs font-normal">clicks</span>
                       </span>
                       <span className="hidden sm:block">
                         <StatusChip status={row.status} />
@@ -204,27 +192,7 @@ export default async function SeasonPage(props: PageProps<"/seasons/[number]">) 
         </>
       )}
 
-      {rounds.length > 0 ? (
-        <Panel className="mt-6">
-          <PanelHeader title="Rounds" />
-          <ul className="divide-border divide-y">
-            {rounds.map((r) => (
-              <li key={r.id} className="flex items-center justify-between gap-3 px-4 py-3">
-                <div>
-                  <div className="text-sm font-medium">{r.name}</div>
-                  <div className="text-faint mt-0.5 text-[12px]">
-                    {formatDate(r.startAt)} &rarr; {formatDate(r.endAt)} &middot; bottom{" "}
-                    <span className="num">{r.eliminationCount}</span> eliminated
-                  </div>
-                </div>
-                <Chip>{r.status.toLowerCase()}</Chip>
-              </li>
-            ))}
-          </ul>
-        </Panel>
-      ) : null}
-
-      <div className="mt-8 text-center">
+      <div className="mt-8">
         <ButtonLink href="/seasons" variant="secondary" size="sm">
           All seasons
         </ButtonLink>

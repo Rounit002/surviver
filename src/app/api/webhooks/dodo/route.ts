@@ -4,6 +4,7 @@ import { readLimitedText } from "@/lib/security/request";
 import { claimWebhookEvent, releaseWebhookEvent } from "@/lib/payments/webhook-inbox";
 import { processWebhookPayload } from "@/lib/payments/webhook-processing";
 import { activateCompetitionScheduler } from "@/lib/competition/scheduler";
+import { sendOwedRefunds } from "@/lib/payments/fulfill";
 import type { Prisma } from "@/generated/prisma";
 import { prisma } from "@/lib/db";
 
@@ -49,6 +50,8 @@ export async function POST(request: Request) {
     if (outcome.status === "PROCESSED" && outcome.reason !== "ignored") {
       await activateCompetitionScheduler().catch(error => console.error("[surviver] scheduler activation failed", error));
     }
+    // Any refund an earlier delivery owed but could not send goes out now.
+    await sendOwedRefunds().catch(error => console.error("[surviver] owed refund sweep failed", error));
     return Response.json({ received: true }, { status: outcome.status === "PROCESSED" ? 200 : 503 });
   } catch (error) {
     // Left retryable on purpose: the scheduler sweep picks it up again, and a

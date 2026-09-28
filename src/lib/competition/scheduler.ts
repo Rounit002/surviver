@@ -86,6 +86,10 @@ async function tick(options: { retention?: boolean }): Promise<CompetitionTickRe
   scheduler.surviverCompetitionTicks = ticks;
   const report: CompetitionTickReport = { started: [], results: [] };
   try {
+    // Owed refunds are money the site is holding by mistake; they are retried
+    // on every pass, including the cron call during registration.
+    await sweepRefunds();
+
     // Until a complete paid field exists, no recurring clock or competition
     // work runs. Webhook delivery itself retries unsettled events with 503.
     if (!(await pendingSeasonCount())) {
@@ -130,6 +134,15 @@ async function sweepWebhooks() {
     return await retryPendingWebhooks();
   } catch (error) {
     console.error("[surviver] webhook retry sweep failed", error);
+  }
+}
+
+async function sweepRefunds() {
+  try {
+    const { sendOwedRefunds } = await import("@/lib/payments/fulfill");
+    await sendOwedRefunds();
+  } catch (error) {
+    console.error("[surviver] owed refund sweep failed", error);
   }
 }
 

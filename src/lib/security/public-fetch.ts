@@ -10,6 +10,16 @@ export class UnsafeUrlError extends Error {}
 export function isPublicAddress(address: string): boolean {
   try {
     const parsed = ipaddr.parse(address);
+    // NAT64 (RFC 6052, 64:ff9b::/96): an IPv6-only network's DNS64 answers
+    // every public site with the site's IPv4 embedded in the last 32 bits.
+    // Refusing the whole range broke every lookup on such networks; instead
+    // judge the embedded address by the same rule, so 64:ff9b::a9fe:a9fe
+    // (169.254.169.254) is still refused.
+    if (parsed.kind() === "ipv6" && parsed.range() === "rfc6052") {
+      const parts = (parsed as ipaddr.IPv6).parts;
+      const embedded = new ipaddr.IPv4([parts[6]! >> 8, parts[6]! & 0xff, parts[7]! >> 8, parts[7]! & 0xff]);
+      return embedded.range() === "unicast";
+    }
     // Do not permit mapped IPv4, transition, link-local, private or reserved IPs.
     return parsed.range() === "unicast";
   } catch { return false; }
@@ -52,17 +62,31 @@ export async function fetchPublicPage(url: URL, timeoutMs: number, maxBytes: num
         resolve({ status, location, html: "" });
         return;
       }
+      // Only the <head> is needed, and it comes first. A modern homepage is
+      // often well over the cap, and treating that as a failure meant most
+      // real sites got no name or description at all. So stop at </head> or
+      // at the cap — whichever comes first — and use what has arrived. The
+      // cap still bounds memory; nothing past it is ever buffered.
       const chunks: Buffer[] = [];
       let size = 0;
+      let settled = false;
+      const finish = () => {
+        if (settled) return;
+        settled = true;
+        resolve({ status, location, html: Buffer.concat(chunks).toString("utf8") });
+      };
       response.on("data", (chunk: Buffer) => {
-        size += chunk.length;
-        if (size > maxBytes) {
-          response.destroy(new Error("Metadata response too large"));
-          return;
+        if (settled) return;
+        const room = maxBytes - size;
+        const piece = chunk.length > room ? chunk.subarray(0, room) : chunk;
+        chunks.push(piece);
+        size += piece.length;
+        if (size >= maxBytes || piece.includes("</head>")) {
+          finish();
+          response.destroy();
         }
-        chunks.push(chunk);
       });
-      response.on("end", () => resolve({ status, location, html: Buffer.concat(chunks).toString("utf8") }));
+      response.on("end", finish);
       response.on("error", reject);
     });
     const timer = setTimeout(() => request.destroy(new Error("Metadata timeout")), Math.max(1, deadline - Date.now()));

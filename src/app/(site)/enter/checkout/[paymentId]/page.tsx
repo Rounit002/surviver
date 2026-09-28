@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
-import { ButtonLink } from "@/components/ui/Button";
+import { buttonClass } from "@/components/ui/Button";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { Panel } from "@/components/ui/Panel";
 import { getSessionUser } from "@/lib/auth/session";
@@ -11,6 +11,7 @@ import { isDevPayments } from "@/lib/payments";
 import { formatMoney } from "@/lib/format";
 import { hasCheckoutCapability } from "@/lib/payments/access";
 import { simulatePaymentAction } from "./actions";
+import { EnterButton } from "@/components/entry/EnterButton";
 
 export const metadata: Metadata = { title: "Checkout", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -99,9 +100,9 @@ export default async function CheckoutPage(props: PageProps<"/enter/checkout/[pa
         </p>
 
         <div className="mt-4 text-center">
-          <ButtonLink href="/enter" variant="ghost" size="sm">
+          <EnterButton className={buttonClass("ghost", "sm")}>
             Cancel
-          </ButtonLink>
+          </EnterButton>
         </div>
       </Panel>
     </div>

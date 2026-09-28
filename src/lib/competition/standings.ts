@@ -12,7 +12,7 @@ export type StandingRow = {
   qualifiedImpressions: number;
   verifiedVisits: number;
   rallyPoints: number;
-  /** True until the product has enough sample for a stable rank (PRD 11). */
+  /** True until the product has its first click, so the board can say "no clicks yet". */
   collecting: boolean;
   product: {
     id: string;
@@ -32,34 +32,21 @@ export type Standings = {
   season: Season;
   round: Round | null;
   rows: StandingRow[];
-  /** Rank at and below which a product would currently be eliminated. */
-  cutLineRank: number | null;
-  eliminationCount: number;
-  survivorCount: number;
 };
 
 /**
- * Current standings for a round. Rows come back in rank order; the board
+ * Current standings for a season's ranking window, in rank order. The board
  * reorders them for display so performance never drives exposure.
  */
 export async function getStandings(
   season: Season,
   round: Round | null,
 ): Promise<Standings> {
-  if (!round) {
-    return {
-      season,
-      round: null,
-      rows: [],
-      cutLineRank: null,
-      eliminationCount: 0,
-      survivorCount: 0,
-    };
-  }
+  if (!round) return { season, round: null, rows: [] };
 
   const stats = await prisma.productRoundStats.findMany({
-    where: { roundId: round.id, entry: { product: { approvalStatus: "APPROVED" }, status: { in: ["ACTIVE", "FINALIST", "ELIMINATED", "SURVIVOR"] } } },
-    orderBy: [{ rank: "asc" }],
+    where: { roundId: round.id, entry: { product: { approvalStatus: "APPROVED" }, status: { in: ["ACTIVE", "FINALIST", "ELIMINATED", "SURVIVOR", "FINISHED"] } } },
+    orderBy: [{ rank: "asc" }, { verifiedVisits: "desc" }],
     include: {
       entry: {
         include: {
@@ -78,7 +65,7 @@ export async function getStandings(
     qualifiedImpressions: s.qualifiedImpressions,
     verifiedVisits: s.verifiedVisits,
     rallyPoints: s.rallyPoints,
-    collecting: s.qualifiedImpressions < season.minSampleImpressions,
+    collecting: s.verifiedVisits === 0,
     product: {
       id: s.entry.product.id,
       name: s.entry.product.name,
@@ -96,16 +83,7 @@ export async function getStandings(
     },
   }));
 
-  const survivorCount = Math.max(0, rows.length - round.eliminationCount);
-
-  return {
-    season,
-    round,
-    rows,
-    cutLineRank: rows.length > 0 ? survivorCount : null,
-    eliminationCount: round.eliminationCount,
-    survivorCount,
-  };
+  return { season, round, rows };
 }
 
 /**

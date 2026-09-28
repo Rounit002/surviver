@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import {
   CampaignHeader,
-  EliminatedReport,
+  FinalReport,
   LiveCampaign,
   PendingState,
 } from "@/components/entry/CampaignView";
@@ -79,8 +79,8 @@ export default async function EntryPage(props: PageProps<"/entry/[token]">) {
       <Panel className="mt-6">
         <CampaignHeader entry={entry} />
 
-        {entry.status === "ELIMINATED" ? (
-          <EliminatedReport entry={entry} />
+        {["ELIMINATED", "FINISHED", "SURVIVOR"].includes(entry.status) ? (
+          <FinalReport entry={entry} finalRank={entry.finalRank} />
         ) : hasStats ? (
           <LiveCampaign entry={entry} appUrl={env.appUrl} serverNow={serverNow} />
         ) : (

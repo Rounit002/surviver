@@ -22,7 +22,8 @@ test("a full field starts and runs itself without any cron call", { skip: !datab
   ]);
 
   const marker = randomUUID();
-  const capacity = 3;
+  // The database only accepts a 32-spot field, so the test uses a real one.
+  const capacity = 32;
   let userId: string | undefined;
   let seasonId: string | undefined;
 
@@ -85,15 +86,34 @@ test("a full field starts and runs itself without any cron call", { skip: !datab
     assert.deepEqual(idle.started, []);
     assert.deepEqual(idle.results, [{ seasonId: season.id, outcome: "not due" }]);
 
-    // Once the round falls due the same tick closes it, with no elimination
-    // decided by hand.
+    // One ranking window for the whole season: nobody is cut along the way.
+    assert.equal(round.eliminationCount, 0);
+    const window = round.endAt.getTime() - round.startAt.getTime();
+    assert.equal(window, season.seasonLengthHours * 3_600_000);
+
+    // Give one product the most clicks, then let the window fall due.
+    const stats = await prisma.productRoundStats.findMany({ where: { roundId: round.id }, orderBy: { id: "asc" } });
+    const leader = stats[5]!;
+    await prisma.productRoundStats.update({ where: { id: leader.id }, data: { verifiedVisits: 40, qualifiedImpressions: 400 } });
+    await prisma.productRoundStats.update({ where: { id: stats[9]!.id }, data: { verifiedVisits: 12, qualifiedImpressions: 300 } });
     await prisma.round.update({ where: { id: round.id }, data: { endAt: new Date(Date.now() - 1000) } });
     const closed = await runCompetitionTick();
-    assert.deepEqual(closed.results, [{ seasonId: season.id, outcome: "advanced" }]);
-    const second = await getActiveRound(season.id);
-    assert.ok(second);
-    assert.equal(second.roundNumber, 2);
-    assert.equal(second.name, "Final", "three entrants leave two finalists");
+    assert.deepEqual(closed.results, [{ seasonId: season.id, outcome: "completed" }]);
+
+    // The season ends in one step: the most-clicked product is the Survivor,
+    // every other product finishes with a distinct final rank, and no second
+    // round is ever opened.
+    assert.equal((await prisma.season.findUniqueOrThrow({ where: { id: season.id } })).status, "COMPLETED");
+    assert.equal(await prisma.round.count({ where: { seasonId: season.id } }), 1);
+    const entries = await prisma.seasonEntry.findMany({ where: { seasonId: season.id } });
+    const winner = entries.find(e => e.id === leader.seasonEntryId)!;
+    assert.equal(winner.status, "SURVIVOR");
+    assert.equal(winner.finalRank, 1);
+    assert.equal(entries.find(e => e.id === stats[9]!.seasonEntryId)!.finalRank, 2);
+    const others = entries.filter(e => e.id !== winner.id);
+    assert.ok(others.every(e => e.status === "FINISHED"));
+    assert.equal(new Set(entries.map(e => e.finalRank)).size, capacity, "final placings are distinct");
+    assert.equal(await prisma.seasonEntry.count({ where: { seasonId: season.id, status: "ELIMINATED" } }), 0);
   } finally {
     if (seasonId) await prisma.season.delete({ where: { id: seasonId } });
     if (userId) await prisma.user.delete({ where: { id: userId } });

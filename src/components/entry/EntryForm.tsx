@@ -251,8 +251,8 @@ export function EntryForm({
               aria-invalid={Boolean(state.fieldErrors?.rules)}
             />
             <span className="text-subtle">
-              This is a paid placement. Ranking is earned from measured interest, never bought,
-              and the bottom of each round is eliminated.
+              This is a paid placement. Ranking is earned from real clicks, never bought, and
+              every product stays live for the whole season.
             </span>
           </label>
           {state.fieldErrors?.rules ? (

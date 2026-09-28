@@ -36,6 +36,13 @@ services:
       - key: APP_URL
         sync: false
 
+      # Cloudflare Turnstile keys (dash.cloudflare.com -> Turnstile). Without
+      # both, clicks are counted without the invisible human check.
+      - key: TURNSTILE_SITE_KEY
+        sync: false
+      - key: TURNSTILE_SECRET_KEY
+        sync: false
+
       # Salt for hashing visitor IPs. Raw addresses are never stored, and
       # changing this invalidates existing visitor de-duplication.
       - key: IP_HASH_SALT

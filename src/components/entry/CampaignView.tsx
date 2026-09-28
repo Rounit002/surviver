@@ -1,11 +1,12 @@
-import { ButtonLink } from "@/components/ui/Button";
+import { buttonClass } from "@/components/ui/Button";
 import { Chip, StatusChip } from "@/components/ui/Chip";
 import { Countdown } from "@/components/ui/Countdown";
 import { PanelBody, PanelHeader } from "@/components/ui/Panel";
 import { Stat } from "@/components/ui/Stat";
-import { CATEGORY_LABELS, ENTRY_STATUS_LABELS } from "@/lib/competition/constants";
+import { CATEGORY_LABELS, ENTRY_STATUS_LABELS, FIELD_SIZE } from "@/lib/competition/constants";
 import { displayHost, formatCount, formatInterestRate } from "@/lib/format";
 import type { CompetitiveStatus, EntryStatus, ProductCategory } from "@/generated/prisma";
+import { EnterButton } from "@/components/entry/EnterButton";
 
 /**
  * The campaign panels shown to a founder, whether they arrived through a
@@ -67,24 +68,19 @@ export function LiveCampaign({
 }) {
   const current = entry.roundStats[0]!;
   const round = current.round;
-  const collecting = current.qualifiedImpressions < entry.season.minSampleImpressions;
 
   return (
     <>
       <div className="divide-border grid grid-cols-2 divide-x divide-y sm:grid-cols-4 sm:divide-y-0 [&>*]:px-5 [&>*]:py-4">
         <Stat label="Rank" value={current.rank ? `#${current.rank}` : "—"} />
-        <Stat
-          label="Interest rate"
-          value={collecting ? "—" : formatInterestRate(current.interestRate)}
-          hint={collecting ? "Collecting data" : undefined}
-        />
-        <Stat label="Qualified views" value={formatCount(current.qualifiedImpressions)} />
-        <Stat label="Verified visits" value={formatCount(current.verifiedVisits)} />
+        <Stat label="Clicks" value={formatCount(current.verifiedVisits)} />
+        <Stat label="Views" value={formatCount(current.qualifiedImpressions)} />
+        <Stat label="Click rate" value={formatInterestRate(current.interestRate)} />
       </div>
 
       <div className="border-border flex flex-wrap items-center justify-between gap-4 border-t px-5 py-4">
         <div className="flex items-baseline gap-2">
-          <span className="label">{round.name} ends in</span>
+          <span className="label">Season ends in</span>
           {round.status === "ACTIVE" ? (
             <Countdown endsAt={round.endAt.toISOString()} serverNow={serverNow} size="sm" />
           ) : (
@@ -102,7 +98,7 @@ export function LiveCampaign({
         <div className="label">Your Rally link</div>
         <p className="text-subtle mt-1.5 text-[13px] leading-relaxed">
           Visitors you bring who explore the board earn you Rally points — a capped exposure
-          boost next round.
+          boost on the board.
         </p>
         <code className="border-border bg-muted text-subtle mono mt-3 block truncate rounded-md border px-3 py-2 text-[12px]">
           {appUrl}/rally/{entry.rallyCode}
@@ -113,10 +109,10 @@ export function LiveCampaign({
 }
 
 /**
- * The end of the road for this product. Deliberately no re-entry call to
- * action: an eliminated founder gets their numbers, not an upsell.
+ * The season is over for this product. Deliberately no re-entry call to
+ * action: a founder gets their numbers, not an upsell.
  */
-export function EliminatedReport({ entry }: { entry: CampaignEntry }) {
+export function FinalReport({ entry, finalRank }: { entry: CampaignEntry; finalRank?: number | null }) {
   const last = entry.roundStats[0];
   const totals = entry.roundStats.reduce(
     (acc, s) => ({
@@ -130,10 +126,10 @@ export function EliminatedReport({ entry }: { entry: CampaignEntry }) {
 
   return (
     <>
-      <div className="border-border bg-danger/4 border-b px-5 py-4">
-        <p className="text-danger text-sm font-medium">
-          Eliminated in {last?.round.name ?? "this season"}
-          {last?.rank ? ` — finished #${last.rank}` : ""}
+      <div className="border-border bg-muted/50 border-b px-5 py-4">
+        <p className="text-sm font-semibold">
+          {entry.season.name} is over
+          {finalRank ?? last?.rank ? ` — you finished #${finalRank ?? last?.rank}` : ""}
         </p>
         <p className="text-subtle mt-1 text-[13px] leading-relaxed">
           Here is everything your campaign earned.
@@ -141,9 +137,9 @@ export function EliminatedReport({ entry }: { entry: CampaignEntry }) {
       </div>
 
       <div className="divide-border grid grid-cols-2 divide-x divide-y sm:grid-cols-4 sm:divide-y-0 [&>*]:px-5 [&>*]:py-4">
-        <Stat label="Qualified views" value={formatCount(totals.impressions)} />
-        <Stat label="Verified visits" value={formatCount(totals.visits)} />
-        <Stat label="Interest rate" value={formatInterestRate(rate)} />
+        <Stat label="Clicks" value={formatCount(totals.visits)} />
+        <Stat label="Views" value={formatCount(totals.impressions)} />
+        <Stat label="Click rate" value={formatInterestRate(rate)} />
         <Stat label="Rally points" value={formatCount(totals.rally)} />
       </div>
 
@@ -156,7 +152,7 @@ export function EliminatedReport({ entry }: { entry: CampaignEntry }) {
                 <span className="font-medium">{stat.round.name}</span>
                 <span className="text-subtle flex flex-wrap items-center gap-x-4 gap-y-2">
                   <span className="num">{formatCount(stat.qualifiedImpressions)} views</span>
-                  <span className="num">{formatCount(stat.verifiedVisits)} visits</span>
+                  <span className="num">{formatCount(stat.verifiedVisits)} clicks</span>
                   <span className="num">{formatInterestRate(stat.interestRate)}</span>
                 </span>
               </li>
@@ -174,7 +170,8 @@ export function PendingState({ status, showFinish, testMode = false }: { status:
     AWAITING_APPROVAL: testMode
       ? "Test checkout completed. No money was charged."
       : "Paid. Finalising your entry.",
-    UPCOMING: "Confirmed. Your product is public while the field fills; competition starts at 32.",
+    UPCOMING: `Confirmed. Your product is listed while the field fills; ranking starts when all ${FIELD_SIZE} spots are taken.`,
+    WITHDRAWN: "This entry isn’t active. If a payment completed after the season filled, it is refunded in full automatically.",
     REJECTED: "This entry did not pass review. The payment status holds the refund record.",
     DISQUALIFIED: "This entry was disqualified. See the rules for details.",
   };
@@ -184,9 +181,9 @@ export function PendingState({ status, showFinish, testMode = false }: { status:
       <p className="text-subtle text-sm">{copy[status] ?? ENTRY_STATUS_LABELS[status]}</p>
       {showFinish && status === "AWAITING_PAYMENT" ? (
         <div className="mt-4">
-          <ButtonLink href="/enter" variant="primary" size="sm">
+          <EnterButton className={buttonClass("primary", "sm")}>
             Enter. Earn your spot.
-          </ButtonLink>
+          </EnterButton>
         </div>
       ) : null}
     </PanelBody>

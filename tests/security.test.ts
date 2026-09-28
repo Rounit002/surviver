@@ -8,7 +8,7 @@ import { hasCheckoutCapability } from "../src/lib/payments/access";
 import { hashCapability, createInteractionProof, verifyInteractionProof, signValue, verifySignedValue } from "../src/lib/security/tokens";
 import { parseSeasonNumber, PUBLIC_SEASON_STATUSES } from "../src/lib/competition/constants";
 import { getPaymentProvider, isDevPayments } from "../src/lib/payments";
-import { isPublicAddress } from "../src/lib/security/public-fetch";
+import { isPublicAddress, resolvePublicHost } from "../src/lib/security/public-fetch";
 import { publicUrl } from "../src/lib/security/origin";
 import { env } from "../src/lib/env";
 import { MAX_ATTEMPTS, RETRYABLE_STATUSES, retryDelayMs } from "../src/lib/payments/webhook-policy";
@@ -112,11 +112,41 @@ test("submitted URLs are restricted to plain web addresses", () => {
 });
 
 test("metadata fetches reject every non-public address range", () => {
-  for (const address of ["127.0.0.1", "10.0.0.1", "172.16.0.1", "192.168.1.1", "169.254.169.254", "0.0.0.0", "::1", "fc00::1", "fe80::1", "::ffff:127.0.0.1"]) {
+  for (const address of [
+    "127.0.0.1", "10.0.0.1", "172.16.0.1", "192.168.1.1", "169.254.169.254", "0.0.0.0", "100.64.0.1",
+    "::1", "fc00::1", "fe80::1", "::ffff:127.0.0.1", "::ffff:169.254.169.254",
+    // AWS's IPv6 instance-metadata endpoint.
+    "fd00:ec2::254",
+  ]) {
     assert.equal(isPublicAddress(address), false, address);
   }
   assert.equal(isPublicAddress("1.1.1.1"), true);
   assert.equal(isPublicAddress("2606:4700:4700::1111"), true);
+});
+
+test("NAT64 addresses are judged by the IPv4 address they carry", () => {
+  // 64:ff9b::c6ca:b0e7 is 198.202.176.231 — a public site on a DNS64 network.
+  assert.equal(isPublicAddress("64:ff9b::c6ca:b0e7"), true);
+  // …but the same wrapping cannot smuggle in metadata, loopback or LAN hosts.
+  assert.equal(isPublicAddress("64:ff9b::a9fe:a9fe"), false); // 169.254.169.254
+  assert.equal(isPublicAddress("64:ff9b::7f00:1"), false); // 127.0.0.1
+  assert.equal(isPublicAddress("64:ff9b::a00:1"), false); // 10.0.0.1
+});
+
+test("a hostname that resolves to any private address is refused (DNS rebinding)", async () => {
+  // A rebinding domain answers with a public address and a private one; the
+  // fetch is pinned to what was validated, so every answer must be public.
+  const rebinding = async () => [
+    { address: "93.184.216.34", family: 4 },
+    { address: "169.254.169.254", family: 4 },
+  ];
+  await assert.rejects(resolvePublicHost("rebind.example", rebinding as never), UnsafeUrlError);
+
+  const clean = async () => [{ address: "93.184.216.34", family: 4 }];
+  assert.deepEqual(await resolvePublicHost("example.com", clean as never), { address: "93.184.216.34", family: 4 });
+
+  // A literal private IP never reaches DNS at all.
+  await assert.rejects(resolvePublicHost("[fd00:ec2::254]"), UnsafeUrlError);
 });
 
 test("application redirects use APP_URL rather than a proxy request origin", () => {
@@ -384,4 +414,20 @@ test("draft and cancelled seasons are not publicly listable", () => {
   assert.ok(!PUBLIC_SEASON_STATUSES.includes("CANCELLED"));
   assert.ok(PUBLIC_SEASON_STATUSES.includes("RUNNING"));
   assert.ok(PUBLIC_SEASON_STATUSES.includes("COMPLETED"));
+});
+
+test("one IPv6 subscriber (/64) counts as one network, like one IPv4 address", async () => {
+  const { networkKey } = await import("../src/lib/security/request");
+  assert.equal(networkKey("2001:db8:1:2:aaaa::1"), networkKey("2001:db8:1:2:ffff:1234:5678:9abc"));
+  assert.notEqual(networkKey("2001:db8:1:2::1"), networkKey("2001:db8:1:3::1"));
+  assert.equal(networkKey("::ffff:203.0.113.9"), "203.0.113.9");
+  assert.equal(networkKey("203.0.113.9"), "203.0.113.9");
+});
+
+test("a click proof used faster than a person could click is refused", async () => {
+  const { createInteractionProof, verifyInteractionProof } = await import("../src/lib/security/tokens");
+  const identity = { visitorId: "a".repeat(32), sessionId: "b".repeat(32) };
+  const proof = createInteractionProof("entry-1", identity);
+  assert.equal(verifyInteractionProof(proof, "entry-1", identity, 1500), false);
+  assert.equal(verifyInteractionProof(proof, "entry-1", identity, 0), true);
 });

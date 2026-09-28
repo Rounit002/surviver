@@ -3,7 +3,7 @@ import "server-only";
 import { createHmac } from "node:crypto";
 import { prisma } from "@/lib/db";
 import { env } from "@/lib/env";
-import { requestIp } from "@/lib/security/request";
+import { networkKey, requestIp } from "@/lib/security/request";
 
 let checksSincePrune = 0;
 
@@ -13,7 +13,8 @@ export async function checkRequestLimit(
   maximum: number,
   windowMs: number,
 ): Promise<{ allowed: boolean; retryAfterSeconds: number }> {
-  return consumeLimit(scope, await requestIp(), maximum, windowMs);
+  const ip = await requestIp();
+  return consumeLimit(scope, ip === "unknown" ? ip : networkKey(ip), maximum, windowMs);
 }
 
 /** Separate subject input keeps the database counter deterministic in tests. */

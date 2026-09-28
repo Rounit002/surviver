@@ -56,6 +56,9 @@ enum EntryStatus {
   ELIMINATED
   FINALIST
   SURVIVOR
+  /// The season ended and this product placed below first. Nothing is cut
+  /// mid-season, so this — not ELIMINATED — is where every non-winner lands.
+  FINISHED
   DISQUALIFIED
   WITHDRAWN
 }
@@ -175,6 +178,8 @@ model Season {
   status            SeasonStatus @default(DRAFT)
   entryPriceCents   Int          @default(2900)
   currency          String       @default("usd")
+  /// The field is always 32. A database CHECK enforces it for every season
+  /// that has not started, so no seed, script or hand edit can open a 35.
   capacity          Int          @default(32)
   registrationStart DateTime?
   registrationEnd   DateTime?
@@ -183,11 +188,13 @@ model Season {
 
   // --- Tunable competition rules (PRD 7, 11, 14: set per season) ---
   /// Minimum qualified impressions before a product gets a stable public rank.
+  /// Unused since ranking moved to clicks; kept for historical seasons.
   minSampleImpressions Int   @default(250)
-  /// Default length of a normal round, in hours.
+  /// Legacy elimination-round lengths. Unused: a season is one ranking window.
   defaultRoundHours    Int   @default(24)
-  /// Length of the final round, in hours.
   finalRoundHours      Int   @default(48)
+  /// How long the ranking runs once all 32 spots are filled.
+  seasonLengthHours    Int   @default(720)
   /// Rally points required for one step of exposure bonus.
   rallyPointsPerStep   Int   @default(10)
   /// Exposure weight added per step, as a fraction.
@@ -235,6 +242,7 @@ model SeasonEntry {
   roundStats       ProductRoundStats[]
   impressionEvents ImpressionEvent[]
   clickEvents      ClickEvent[]
+  lineupClicks     LineupClick[]
   rallyVisitors    RallyVisitor[]      @relation("ReferringEntry")
   activityEvents   ActivityEvent[]
 
@@ -351,6 +359,26 @@ model ClickEvent {
   @@map("click_events")
 }
 
+/// A click on a product while the field is still filling.
+///
+/// Competition clicks need an active round, so before this a product waiting
+/// for the 32nd spot showed no traffic at all. These are shown publicly as
+/// "clicks" on the lineup, one per visitor per product, and never feed the
+/// ranking — which starts from zero for everyone when the season goes live.
+model LineupClick {
+  id            String   @id @default(cuid())
+  seasonEntryId String
+  visitorId     String
+  ipHash        String?
+  createdAt     DateTime @default(now())
+
+  entry SeasonEntry @relation(fields: [seasonEntryId], references: [id], onDelete: Cascade)
+
+  @@unique([seasonEntryId, visitorId])
+  @@index([seasonEntryId, ipHash, createdAt])
+  @@map("lineup_clicks")
+}
+
 /// A spectator brought in through a founder's Rally link (PRD section 14).
 model RallyVisitor {
   id               String    @id @default(cuid())
@@ -388,7 +416,11 @@ model Payment {
   providerCheckoutId String?
   checkoutTokenHash String? @unique
   checkoutTokenExpiresAt DateTime?
+  /// Set when a refund is owed (paid into a full or closed season).
   refundRequestedAt DateTime?
+  /// Set once the provider accepted the refund request. Owed-but-unsent
+  /// refunds are retried until this is filled.
+  refundSentAt      DateTime?
   amountCents       Int
   chargedAmountCents Int?
   currency          String        @default("usd")

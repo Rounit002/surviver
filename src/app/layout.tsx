@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { DM_Sans, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { headers } from "next/headers";
+import { SOCIAL_CARD } from "@/lib/seo";
 
 /* DM Sans for language — outbid.lol uses it. Geist Mono for figures. */
 const dmSans = DM_Sans({
@@ -21,33 +22,25 @@ export const metadata: Metadata = {
   // still points at the deployment provider's internal/default hostname.
   metadataBase: new URL("https://surviver.lol"),
   title: {
-    default: "Surviver.lol — the SaaS survival tournament",
+    default: "Surviver.lol — 32 SaaS spots, ranked by real clicks",
     template: "%s — Surviver.lol",
   },
   description:
-    "A promotional tournament for SaaS products. One flat entry fee, equal exposure for everyone, and measured visitor interest decides which product survives each round.",
+    "Get your SaaS in front of real visitors. 32 spots at one flat fee, every product live all season, ranked by real clicks.",
   openGraph: {
-    title: "Surviver.lol — the SaaS survival tournament",
+    title: "Surviver.lol — 32 SaaS spots, ranked by real clicks",
     description:
-      "32 products enter, one survives. One flat entry fee, equal exposure, and a rank nobody can buy.",
+      "32 spots, one flat fee. Every product stays live all season and real clicks decide the rank.",
     siteName: "Surviver.lol",
     type: "website",
-    images: [{
-      url: "/social-preview.png",
-      width: 1200,
-      height: 630,
-      alt: "Surviver.lol — 32 products enter. One survives.",
-    }],
+    images: [SOCIAL_CARD],
   },
   twitter: {
     card: "summary_large_image",
-    images: [{
-      url: "/social-preview.png",
-      alt: "Surviver.lol — 32 products enter. One survives.",
-    }],
-    title: "Surviver.lol — the SaaS survival tournament",
+    images: [SOCIAL_CARD],
+    title: "Surviver.lol — 32 SaaS spots, ranked by real clicks",
     description:
-      "32 products enter, one survives. Equal exposure, a flat entry fee, and a rank nobody can buy.",
+      "32 spots, one flat fee. Every product stays live all season and real clicks decide the rank.",
   },
 };
 
@@ -101,7 +94,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
           "@type": "WebSite",
           name: "Surviver.lol",
           url: "https://surviver.lol",
-          description: "A promotional tournament for SaaS products. 32 products enter, one survives.",
+          description: "32 SaaS spots at one flat fee, every product live all season, ranked by real clicks.",
           inLanguage: "en",
         }).replace(/</g, "\\u003c") }} />
         {children}

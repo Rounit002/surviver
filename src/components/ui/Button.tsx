@@ -19,8 +19,8 @@ type Size = "sm" | "md" | "lg";
 
 const VARIANTS: Record<Variant, string> = {
   primary:
-    "bg-primary text-primary-foreground border border-primary font-medium shadow-raised " +
-    "hover:brightness-110 active:translate-y-px",
+    "btn-primary text-primary-foreground border border-primary font-semibold " +
+    "hover:brightness-110 hover:-translate-y-px active:translate-y-px",
   secondary:
     "bg-surface text-foreground border border-border font-medium shadow-raised " +
     "hover:border-border-strong hover:bg-muted active:translate-y-px",
@@ -49,6 +49,11 @@ const BASE =
   "transition-[background-color,border-color,filter,transform,box-shadow] " +
   "duration-[var(--dur-fast)] ease-[var(--ease-out)] " +
   "disabled:opacity-50 disabled:pointer-events-none whitespace-nowrap";
+
+/** The button classes, for elements that are not one of the components below. */
+export function buttonClass(variant: Variant = "secondary", size: Size = "md", className?: string) {
+  return cn(BASE, VARIANTS[variant], SIZES[size], className);
+}
 
 type CommonProps = {
   variant?: Variant;

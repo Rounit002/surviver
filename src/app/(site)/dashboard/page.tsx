@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { ButtonLink } from "@/components/ui/Button";
+import { buttonClass } from "@/components/ui/Button";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import {
   CampaignHeader,
-  EliminatedReport,
+  FinalReport,
   LiveCampaign,
   PendingState,
 } from "@/components/entry/CampaignView";
@@ -16,6 +16,7 @@ import { CAMPAIGN_TOKEN_COOKIE } from "@/lib/competition/constants";
 import { hashCapability } from "@/lib/security/tokens";
 import { prisma } from "@/lib/db";
 import { env } from "@/lib/env";
+import { EnterButton } from "@/components/entry/EnterButton";
 
 export const metadata: Metadata = { title: "Founder dashboard", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -76,9 +77,9 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
               Paste your product link and pay the flat fee. Confirmed payments are listed automatically.
             </p>
             <div className="mt-5">
-              <ButtonLink href="/enter" variant="primary" size="sm">
+              <EnterButton className={buttonClass("primary", "sm")}>
                 Enter. Earn your spot.
-              </ButtonLink>
+              </EnterButton>
             </div>
           </PanelBody>
         </Panel>
@@ -91,8 +92,8 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
               <Panel key={entry.id}>
                 <CampaignHeader entry={entry} />
 
-                {entry.status === "ELIMINATED" ? (
-                  <EliminatedReport entry={entry} />
+                {["ELIMINATED", "FINISHED", "SURVIVOR"].includes(entry.status) ? (
+                  <FinalReport entry={entry} finalRank={entry.finalRank} />
                 ) : current ? (
                   <LiveCampaign entry={entry} appUrl={env.appUrl} serverNow={serverNow} />
                 ) : (

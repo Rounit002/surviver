@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { publicUrl } from "@/lib/security/origin";
 import { getVisitorContext } from "@/lib/tracking/visitor";
-import { recordInteraction } from "@/lib/tracking/events";
+import { recordInteraction, recordLineupClick } from "@/lib/tracking/events";
 import { verifyInteractionProof } from "@/lib/security/tokens";
 
 /**
@@ -13,6 +13,8 @@ import { verifyInteractionProof } from "@/lib/security/tokens";
  * given visitor to a given product within a round scores; later ones are still
  * recorded for analytics.
  */
+
+const MIN_CLICK_MS = 1500;
 
 /** Only ever redirect to a plain web address we stored ourselves. */
 function isSafeDestination(raw: string): boolean {
@@ -37,7 +39,7 @@ export async function GET(request: Request, ctx: RouteContext<"/go/[slug]">) {
       entries: {
         where: {
           OR: [
-            { status: { in: ["ACTIVE", "FINALIST", "SURVIVOR", "ELIMINATED"] } },
+            { status: { in: ["ACTIVE", "FINALIST", "SURVIVOR", "ELIMINATED", "FINISHED"] } },
             {
               status: "UPCOMING",
               payment: { status: "SUCCEEDED" },
@@ -69,8 +71,12 @@ export async function GET(request: Request, ctx: RouteContext<"/go/[slug]">) {
     try {
       const visitor = await getVisitorContext();
       const proof = new URL(request.url).searchParams.get("proof") ?? undefined;
-      if (entry.status !== "UPCOMING" && verifyInteractionProof(proof, entry.id, visitor)) {
-        await recordInteraction(entry.id, visitor, "visit");
+      // A click faster than MIN_CLICK_MS after the page was served is a
+      // script, not a person. The visitor still reaches the site either way.
+      if (verifyInteractionProof(proof, entry.id, visitor, MIN_CLICK_MS)) {
+        // Competing products score; lineup products count clicks for display.
+        if (entry.status === "UPCOMING") await recordLineupClick(entry.id, visitor);
+        else await recordInteraction(entry.id, visitor, "visit");
       }
     } catch (error) {
       console.error("[surviver] failed to record outbound visit", error);

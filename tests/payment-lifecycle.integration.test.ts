@@ -8,7 +8,7 @@ if (databaseUrl) process.env.DATABASE_URL = databaseUrl;
 test("only verified, approved upcoming entries are publicly listed before competition starts", {
   skip: !databaseUrl,
 }, async () => {
-  const [{ prisma }, { applyPaymentResult }, { autoStartFullSeasons, advanceSeason }, { getActiveRound, getPublicUpcomingEntries }, { getStandings }, { claimWebhookEvent, releaseWebhookEvent }, { processWebhookPayload, retryPendingWebhooks }, { MAX_ATTEMPTS }] = await Promise.all([
+  const [{ prisma }, { applyPaymentResult, sendOwedRefunds }, { autoStartFullSeasons, advanceSeason }, { getActiveRound, getPublicUpcomingEntries, countTakenSpots }, { getStandings }, { claimWebhookEvent, releaseWebhookEvent }, { processWebhookPayload, retryPendingWebhooks }, { MAX_ATTEMPTS }] = await Promise.all([
     import("../src/lib/db"),
     import("../src/lib/payments/fulfill"),
     import("../src/lib/competition/engine"),
@@ -173,7 +173,7 @@ test("only verified, approved upcoming entries are publicly listed before compet
         number: (latestSeason._max.number ?? -1) + 2,
         name: `Retry Integration ${marker}`,
         status: "REGISTRATION_OPEN",
-        capacity: 2,
+        capacity: 32,
         entryPriceCents: season.entryPriceCents,
         currency: "usd",
         registrationStart: new Date(Date.now() - 60_000),
@@ -181,6 +181,15 @@ test("only verified, approved upcoming entries are publicly listed before compet
       },
     });
     lateSeasonId = lateSeason.id;
+
+    // Thirty spots are already paid for; the last two are the ones under test.
+    for (let i = 0; i < 30; i++) {
+      const product = await prisma.product.create({
+        data: { ownerId: user.id, name: `Filler ${i}`, slug: `filler-${marker}-${i}`, url: `https://filler-${marker}-${i}.invalid/`, tagline: "Filler", description: "Filler fixture only", category: "PRODUCTIVITY", approvalStatus: "APPROVED" },
+      });
+      const entry = await prisma.seasonEntry.create({ data: { seasonId: lateSeason.id, productId: product.id, rallyCode: `filler-${marker}-${i}`, status: "UPCOMING" } });
+      await prisma.payment.create({ data: { userId: user.id, seasonId: lateSeason.id, seasonEntryId: entry.id, provider: "dev", amountCents: lateSeason.entryPriceCents, currency: "usd", status: "SUCCEEDED" } });
+    }
 
     const lateEntries = [];
     for (let i = 0; i < 2; i++) {
@@ -200,7 +209,7 @@ test("only verified, approved upcoming entries are publicly listed before compet
     assert.equal((await applyPaymentResult({ kind: "succeeded", localPaymentId: lateEntries[0]!.paymentId, providerPaymentId: `dev_payment_${lateEntries[0]!.paymentId}`, eventId: `retry-${marker}-paid`, amountCents: lateSeason.entryPriceCents, currency: "usd" })).applied, true);
 
     // Public listing filters by category, so only the matching product shows.
-    assert.equal((await getPublicUpcomingEntries(lateSeason.id)).length, 1);
+    assert.equal((await getPublicUpcomingEntries(lateSeason.id)).length, 31);
     assert.equal((await getPublicUpcomingEntries(lateSeason.id, "DESIGN")).length, 1);
     assert.equal((await getPublicUpcomingEntries(lateSeason.id, "ANALYTICS")).length, 0);
 
@@ -234,7 +243,7 @@ test("only verified, approved upcoming entries are publicly listed before compet
     // — no cron, no administrator, no provider redelivery.
     assert.equal((await prisma.season.findUniqueOrThrow({ where: { id: lateSeason.id } })).status, "RUNNING");
     for (const late of lateEntries) {
-      assert.equal((await prisma.seasonEntry.findUniqueOrThrow({ where: { id: late.entryId } })).status, "FINALIST");
+      assert.equal((await prisma.seasonEntry.findUniqueOrThrow({ where: { id: late.entryId } })).status, "ACTIVE");
     }
     // Once competing, they are no longer part of the "waiting" listing.
     assert.equal((await getPublicUpcomingEntries(lateSeason.id)).length, 0);
@@ -242,6 +251,27 @@ test("only verified, approved upcoming entries are publicly listed before compet
     // Settled means settled: a redelivery of the same message changes nothing.
     assert.equal(await claimWebhookEvent(strandedInboxId, "dev", "succeeded", strandedBody), false);
     assert.deepEqual(await retryPendingWebhooks(), []);
+
+    // ---------------------------------------------------------------------
+    // A payment that lands after the field filled is refunded, not kept.
+    //
+    // Before, a full season was a refusal: the founder was charged, got no
+    // spot, and the message was retried until it was exhausted. Now the charge
+    // is recorded, the entry is released and the refund goes out.
+    // ---------------------------------------------------------------------
+    const lateProduct = await prisma.product.create({
+      data: { ownerId: user.id, name: "Too Late", slug: `too-late-${marker}`, url: `https://too-late-${marker}.invalid/`, tagline: "Late fixture", description: "Late fixture only", category: "AI" },
+    });
+    const lateEntry = await prisma.seasonEntry.create({ data: { seasonId: lateSeason.id, productId: lateProduct.id, rallyCode: `too-late-${marker}`, status: "AWAITING_PAYMENT" } });
+    const latePayment = await prisma.payment.create({ data: { userId: user.id, seasonId: lateSeason.id, seasonEntryId: lateEntry.id, provider: "dev", amountCents: lateSeason.entryPriceCents, currency: "usd", status: "PENDING" } });
+    const tooLate = await applyPaymentResult({ kind: "succeeded", localPaymentId: latePayment.id, providerPaymentId: `dev_payment_${latePayment.id}`, eventId: `too-late-${marker}`, amountCents: lateSeason.entryPriceCents, currency: "usd" });
+    assert.equal(tooLate.applied, true, "a late payment is settled, not left retrying");
+    const refunded = await prisma.payment.findUniqueOrThrow({ where: { id: latePayment.id } });
+    assert.ok(refunded.refundRequestedAt, "a refund is owed");
+    assert.ok(refunded.refundSentAt, "and it was sent to the provider");
+    assert.equal((await prisma.seasonEntry.findUniqueOrThrow({ where: { id: lateEntry.id } })).status, "WITHDRAWN");
+    assert.equal(await sendOwedRefunds(), 0, "a sent refund is never requested twice");
+    assert.equal(await prisma.seasonEntry.count({ where: { seasonId: lateSeason.id, status: "ACTIVE" } }), 32, "the field stays at 32");
 
     // ---------------------------------------------------------------------
     // The provider's word on the amount is checked against what was quoted.
@@ -283,7 +313,17 @@ test("only verified, approved upcoming entries are publicly listed before compet
     assert.equal((await prisma.seasonEntry.findUniqueOrThrow({ where: { id: underpaidEntry.id } })).status, "AWAITING_PAYMENT");
 
     // ---------------------------------------------------------------------
-    // A product withdrawn during a live round leaves the competition for good.
+    // An open checkout holds its spot until the hold lapses.
+    // ---------------------------------------------------------------------
+    const holdProduct = await prisma.product.create({ data: { ownerId: user.id, name: "Holder", slug: `holder-${marker}`, url: `https://holder-${marker}.invalid/`, tagline: "Hold", description: "Hold fixture only", category: "AI" } });
+    const holdEntry = await prisma.seasonEntry.create({ data: { seasonId: season.id, productId: holdProduct.id, rallyCode: `holder-${marker}`, status: "AWAITING_PAYMENT" } });
+    const holdPayment = await prisma.payment.create({ data: { userId: user.id, seasonId: season.id, seasonEntryId: holdEntry.id, provider: "dev", amountCents: season.entryPriceCents, currency: "usd", status: "PENDING", checkoutTokenExpiresAt: new Date(Date.now() + 60_000) } });
+    assert.equal((await countTakenSpots(prisma, season.id)).held, 1);
+    await prisma.payment.update({ where: { id: holdPayment.id }, data: { checkoutTokenExpiresAt: new Date(Date.now() - 1000) } });
+    assert.equal((await countTakenSpots(prisma, season.id)).held, 0, "an expired hold returns its spot");
+
+    // ---------------------------------------------------------------------
+    // A product withdrawn during a live season leaves the ranking for good.
     //
     // Its figures stay on the record, but they must not be ranked against the
     // products still playing, and finalization must never write ACTIVE back
@@ -296,24 +336,18 @@ test("only verified, approved upcoming entries are publicly listed before compet
       where: { roundId: activeRound.id, seasonEntryId: withdrawn.entryId },
       data: { qualifiedImpressions: 100, verifiedVisits: 100 },
     });
-    await prisma.season.update({ where: { id: season.id }, data: { minSampleImpressions: 0 } });
     await prisma.round.update({ where: { id: activeRound.id }, data: { endAt: new Date(Date.now() - 1000) } });
-    await advanceSeason(season.id);
+    assert.equal(await advanceSeason(season.id), "completed");
 
     assert.equal((await prisma.seasonEntry.findUniqueOrThrow({ where: { id: withdrawn.entryId } })).status, "WITHDRAWN");
-    // Not ranked: it was finalized out of the round rather than scored in it.
+    // Not ranked: it was finalized out of the window rather than scored in it.
     const withdrawnStats = await prisma.productRoundStats.findFirstOrThrow({ where: { roundId: activeRound.id, seasonEntryId: withdrawn.entryId } });
     assert.equal(withdrawnStats.finalized, true);
-    assert.equal(withdrawnStats.status, "ELIMINATED");
     assert.equal(withdrawnStats.rank, null, "a withdrawn product is never given a rank");
-    // And it does not take a place in the next round.
-    assert.equal(await prisma.productRoundStats.count({ where: { seasonEntryId: withdrawn.entryId, round: { roundNumber: 2 } } }), 0);
-    const nextRound = await prisma.round.findFirstOrThrow({ where: { seasonId: season.id, roundNumber: 2 } });
-    const advanced = await prisma.productRoundStats.findMany({ where: { roundId: nextRound.id }, select: { seasonEntryId: true } });
-    assert.ok(!advanced.some(row => row.seasonEntryId === withdrawn.entryId));
+    // Its clicks cannot win the season.
+    assert.notEqual((await prisma.seasonEntry.findFirstOrThrow({ where: { seasonId: season.id, status: "SURVIVOR" } })).id, withdrawn.entryId);
     // A second pass must not resurrect it either.
-    await prisma.round.update({ where: { id: nextRound.id }, data: { endAt: new Date(Date.now() - 1000) } });
-    await advanceSeason(season.id);
+    assert.equal(await advanceSeason(season.id), "not due");
     assert.equal((await prisma.seasonEntry.findUniqueOrThrow({ where: { id: withdrawn.entryId } })).status, "WITHDRAWN");
   } finally {
     await prisma.webhookEvent.deleteMany({ where: { id: { contains: marker } } });

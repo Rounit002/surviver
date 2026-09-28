@@ -2,9 +2,10 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { NavBar } from "@/components/layout/NavBar";
 import { LiveDot } from "@/components/ui/Chip";
-import { getActiveRound, getCurrentSeason } from "@/lib/competition/season";
+import { CLAIMED_ENTRY_STATUSES, getActiveRound, getCurrentSeason } from "@/lib/competition/season";
 import { prisma } from "@/lib/db";
 import { formatCount } from "@/lib/format";
+import { EnterButton } from "@/components/entry/EnterButton";
 
 /**
  * The server half of the navigation: it does the data fetching and hands the
@@ -53,30 +54,20 @@ async function SeasonTicker() {
           |
         </span>
         <span>
-          <span className="num">{formatCount(competing)}</span> competing
+          <span className="num">{formatCount(competing)}</span> live
         </span>
-        {round ? (
-          <span className="text-danger">
-            <span className="num">{formatCount(round.eliminationCount)}</span> go out
-          </span>
-        ) : null}
+        {round ? <span>ranked by clicks</span> : null}
       </Link>
     );
   }
 
   if (season.status === "REGISTRATION_OPEN") {
     const claimed = await prisma.seasonEntry.count({
-      where: {
-        seasonId: season.id,
-        status: {
-          in: ["AWAITING_APPROVAL", "UPCOMING", "ACTIVE", "ELIMINATED", "FINALIST", "SURVIVOR"],
-        },
-      },
+      where: { seasonId: season.id, status: { in: CLAIMED_ENTRY_STATUSES } },
     });
 
     return (
-      <Link
-        href="/enter"
+      <EnterButton
         className="text-subtle hover:text-foreground inline-flex max-w-full items-center gap-2 text-[13px] whitespace-nowrap transition-colors duration-[var(--dur-fast)]"
       >
         <span className="text-foreground font-medium">{season.name}</span>
@@ -92,7 +83,7 @@ async function SeasonTicker() {
             </>
           )}
         </span>
-      </Link>
+      </EnterButton>
     );
   }
 

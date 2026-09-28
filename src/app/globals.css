@@ -56,9 +56,17 @@
   --color-primary-foreground: #ffffff;
   --color-primary-soft: #edf3fe;
 
+  /* --- The second accent ----------------------------------------------
+     Warm coral, the colour of the wordmark's ".lol". Blue is the action;
+     coral is the warmth around it — highlights, a glow, a badge — so the page
+     is never just blue on beige. Never a button fill. */
+  --color-accent: #e0603f;
+  --color-accent-soft: #fdeee8;
+
   /* --- Live state ------------------------------------------------------
      The pulsing "online" and "live activity" indicator. Reserved. */
   --color-live: #009f31;
+  --color-live-soft: #e3f5e8;
 
   /* --- Competitive state -----------------------------------------------
      Pastel blue for safe/rising, coral/red for danger. */
@@ -175,9 +183,13 @@
   --color-primary-foreground: #121526;
   --color-primary-soft: #1a233d;
 
+  --color-accent: #ff8a6b;
+  --color-accent-soft: #3a2119;
+
   /* The live indicator: a brighter, slightly desaturated green that holds
      its identity on a dark ground. */
   --color-live: #50c05f;
+  --color-live-soft: #16301b;
 
   --color-safe: #7ea5fc;
   --color-rising: #7ea5fc;
@@ -435,6 +447,298 @@
      to the start of the next line. */
   .measure {
     max-width: 38rem;
+  }
+
+  /* --- Atmosphere ------------------------------------------------------ *
+   * The page used to be two colours on beige and read as unfinished. These
+   * add depth without adding noise: a blue and a coral glow behind the hero,
+   * a faint dot grid that fades out, and a lift on things you can pick.
+   * Gradients live only here, on backgrounds — never on text or controls. */
+
+  .hero-atmosphere {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .hero-atmosphere::before {
+    content: "";
+    position: absolute;
+    inset: -6rem 0 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(38rem 24rem at 50% 0%, color-mix(in oklab, var(--color-primary) 16%, transparent), transparent 70%),
+      radial-gradient(26rem 18rem at 88% 40%, color-mix(in oklab, var(--color-accent) 12%, transparent), transparent 70%),
+      radial-gradient(24rem 18rem at 8% 70%, color-mix(in oklab, var(--cat-productivity-ink) 10%, transparent), transparent 70%);
+  }
+
+  .hero-atmosphere::after {
+    content: "";
+    position: absolute;
+    inset: -6rem 0 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image: radial-gradient(circle at center, var(--color-border-strong) 1px, transparent 1.2px);
+    background-size: 24px 24px;
+    mask-image: radial-gradient(ellipse 60% 55% at 50% 30%, #000 20%, transparent 75%);
+    opacity: 0.55;
+  }
+
+  /* The glows drift slowly, so the hero feels alive without anything moving
+     enough to read as an animation. */
+  .hero-atmosphere::before {
+    animation: hero-drift 18s ease-in-out infinite alternate;
+  }
+
+  /* Pointer light: a glow under the cursor plus a second, primary-coloured
+     dot grid revealed only around it, so the grid "lights up" as you move. */
+  .hero-glow {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 400ms ease;
+    background:
+      radial-gradient(22rem 22rem at var(--mx, 50%) var(--my, 30%), color-mix(in oklab, var(--color-primary) 10%, transparent), transparent 70%);
+  }
+
+  .hero-glow::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(circle at center, var(--color-primary) 1.3px, transparent 1.6px);
+    background-size: 24px 24px;
+    background-position: 0 6rem;
+    mask-image: radial-gradient(9rem 9rem at var(--mx, 50%) var(--my, 30%), #000, transparent 75%);
+    opacity: 0.7;
+  }
+
+  .hero-glow[data-on] {
+    opacity: 1;
+  }
+
+  /* A hand-drawn stroke under the headline's second line that draws itself in. */
+  .hero-underline {
+    position: relative;
+    display: inline-block;
+  }
+
+  .hero-underline svg {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -0.12em;
+    width: 100%;
+    height: 0.28em;
+    overflow: visible;
+  }
+
+  .hero-underline path {
+    fill: none;
+    stroke: var(--color-accent);
+    stroke-width: 4;
+    stroke-linecap: round;
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: hero-draw 900ms 700ms cubic-bezier(0.65, 0, 0.35, 1) forwards;
+  }
+
+  /* The YouTube / Discord tiles in the hero, tinted with each brand's colour. */
+  .reach-tile {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 1rem 0.6rem 0.6rem;
+    border-radius: 16px;
+    border: 1px solid color-mix(in oklab, var(--brand) 26%, var(--color-border));
+    background: color-mix(in oklab, var(--brand) 7%, var(--color-surface));
+    transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+  }
+
+  .reach-tile:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in oklab, var(--brand) 50%, var(--color-border));
+    box-shadow: 0 10px 24px -12px color-mix(in oklab, var(--brand) 55%, transparent);
+  }
+
+  .reach-tile-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.6rem;
+    height: 2.6rem;
+    border-radius: 12px;
+    background: var(--color-surface);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.08);
+  }
+
+  /* A live number that just changed pops once. Keyed in React, so it only
+     runs when the value actually changes. */
+  .num-tick {
+    display: inline-block;
+    animation: num-tick 450ms ease-out;
+  }
+
+  /* The hero headline. Sized for its half of a two-column hero rather than
+     the full width: large on a desktop, and never wider than its column. */
+  .hero-title {
+    font-size: clamp(2.5rem, 1rem + 3.3vw, 4.25rem);
+    line-height: 1.02;
+    letter-spacing: -0.04em;
+  }
+
+  /* Small coloured label above a heading. */
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    border-radius: 999px;
+    background: var(--color-primary-soft);
+    color: var(--color-primary);
+    padding: 0.3rem 0.7rem;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+  }
+
+  /* The primary action glows in its own colour, so it is the first thing the
+     eye lands on without being made bigger or louder. */
+  .btn-primary {
+    background: var(--color-primary);
+    box-shadow:
+      0 1px 0 rgb(255 255 255 / 0.18) inset,
+      0 6px 18px -6px color-mix(in oklab, var(--color-primary) 70%, transparent);
+  }
+
+  .card-lift {
+    transition:
+      transform var(--dur-base) var(--ease-out),
+      box-shadow var(--dur-base) var(--ease-out),
+      border-color var(--dur-base) var(--ease-out);
+  }
+
+  @media (hover: hover) {
+    .card-lift:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+      border-color: var(--color-border-strong);
+    }
+  }
+
+  /* --- Spotlight card ------------------------------------------------- *
+   * `SpotlightCard` writes --x/--y as the pointer moves. ::before is the
+   * light inside the card; ::after is a 1px ring, lit only near the pointer
+   * (a mask cuts it down to the border). Both fade in on hover only. */
+  .spotlight-card {
+    --x: 50%;
+    --y: 0%;
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: 22px;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    transition:
+      transform var(--dur-base) var(--ease-out),
+      box-shadow var(--dur-base) var(--ease-out),
+      border-color var(--dur-base) var(--ease-out);
+  }
+
+  .spotlight-card::before,
+  .spotlight-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity var(--dur-base) var(--ease-out);
+  }
+
+  .spotlight-card::before {
+    z-index: -1;
+    background: radial-gradient(340px circle at var(--x) var(--y), color-mix(in oklab, var(--glow) 14%, transparent), transparent 60%);
+  }
+
+  .spotlight-card::after {
+    z-index: 2;
+    padding: 1.5px;
+    background: radial-gradient(220px circle at var(--x) var(--y), color-mix(in oklab, var(--glow) 85%, transparent), transparent 70%);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  }
+
+  @media (hover: hover) {
+    .spotlight-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 18px 40px -18px color-mix(in oklab, var(--glow) 45%, transparent), var(--shadow-sm);
+    }
+
+    .spotlight-card:hover::before,
+    .spotlight-card:hover::after {
+      opacity: 1;
+    }
+  }
+
+  /* A faint dotted texture for a card's cover strip. */
+  .cover-dots {
+    background-image: radial-gradient(circle at center, color-mix(in oklab, currentColor 22%, transparent) 1px, transparent 1.3px);
+    background-size: 14px 14px;
+  }
+
+  /* A full-colour band for the closing call to action. */
+  .band {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    background: var(--color-primary);
+    color: var(--color-primary-foreground);
+  }
+
+  .band::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background:
+      radial-gradient(30rem 20rem at 100% 0%, color-mix(in oklab, var(--color-accent) 45%, transparent), transparent 70%),
+      radial-gradient(26rem 18rem at 0% 100%, rgb(255 255 255 / 0.16), transparent 70%);
+  }
+
+  /* A slot that is being paid for right now: diagonal hatching. */
+  .slot-held {
+    background-image: repeating-linear-gradient(
+      -45deg,
+      var(--color-accent-soft) 0 5px,
+      transparent 5px 10px
+    );
+  }
+
+  /* A row of short facts separated by quiet dots — "1 online · 2/32 entered".
+     The separator is drawn by CSS so an item that renders nothing leaves no
+     orphaned dot behind. */
+  .stat-strip {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    column-gap: 0.75rem;
+    row-gap: 0.375rem;
+  }
+
+  .stat-strip > * + *::before {
+    content: "";
+    display: inline-block;
+    width: 3px;
+    height: 3px;
+    margin-right: 0.75rem;
+    border-radius: 999px;
+    background: var(--color-border-strong);
+    vertical-align: middle;
   }
 
   /* --- Type ------------------------------------------------------------ */
@@ -727,6 +1031,20 @@
   }
 }
 
+@keyframes hero-drift {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(2%, 1.5rem, 0) scale(1.06); }
+}
+
+@keyframes hero-draw {
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes num-tick {
+  0% { transform: translateY(35%); opacity: 0; }
+  100% { transform: none; opacity: 1; }
+}
+
 @keyframes surviver-pulse {
   0%,
   100% {
@@ -754,8 +1072,15 @@
   /* Dropping the name rather than the duration leaves each bar on its
      authored attributes, which is the resolved logo rather than a frozen
      frame of the loop. */
-  .logo-bar {
+  .logo-bar,
+  .hero-atmosphere::before,
+  .num-tick {
     animation: none;
+  }
+
+  .hero-underline path {
+    animation: none;
+    stroke-dashoffset: 0;
   }
 
   /* Entrances resolve to their finished state rather than never arriving. */

@@ -1,11 +1,12 @@
 import { pageMetadata } from "@/lib/seo";
 import Link from "next/link";
-import { ButtonLink } from "@/components/ui/Button";
+import { ButtonLink, buttonClass } from "@/components/ui/Button";
 import { Chip, LiveBadge } from "@/components/ui/Chip";
 import { Panel } from "@/components/ui/Panel";
 import { CLAIMED_ENTRY_STATUSES, publicSeasonFilter } from "@/lib/competition/season";
 import { prisma } from "@/lib/db";
 import { formatDate, formatMoney } from "@/lib/format";
+import { EnterButton } from "@/components/entry/EnterButton";
 
 export const metadata = pageMetadata("/seasons");
 
@@ -36,12 +37,10 @@ export default async function SeasonsPage() {
   );
 
   return (
-    <div className="shell pt-8 pb-4">
-      <header className="text-center">
-        <h1 className="text-3xl font-semibold sm:text-4xl">Seasons</h1>
-        <p className="text-subtle mx-auto mt-3 max-w-xl text-[15px] leading-relaxed text-pretty">
-          Every season stays public after it ends: full field, final standings, earned numbers.
-        </p>
+    <div className="shell section">
+      <header>
+        <h1 className="text-title font-semibold">Seasons</h1>
+        <p className="text-subtle mt-2">Every season stays public, results and all.</p>
       </header>
 
       {seasons.length === 0 ? (
@@ -63,7 +62,7 @@ export default async function SeasonsPage() {
                       <SeasonStatusChip status={season.status} />
                     </div>
 
-                    <div className="text-faint mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[12px]">
+                    <div className="text-subtle mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[12px]">
                       <span>
                         <span className="num">{claimed}</span> / {season.capacity} entered
                       </span>
@@ -97,9 +96,9 @@ export default async function SeasonsPage() {
                         Watch live
                       </ButtonLink>
                     ) : season.status === "REGISTRATION_OPEN" ? (
-                      <ButtonLink href="/enter" variant="primary" size="sm">
+                      <EnterButton className={buttonClass("primary", "sm")}>
                         Enter
-                      </ButtonLink>
+                      </EnterButton>
                     ) : null}
                     <ButtonLink href={`/seasons/${season.number}`} variant="secondary" size="sm">
                       Details
@@ -112,10 +111,9 @@ export default async function SeasonsPage() {
         </div>
       )}
 
-      <p className="text-faint mt-8 text-center text-[12px]">
-        Looking for past winners?{" "}
-        <Link href="/survivors" className="text-primary hover:text-primary/80">
-          Hall of Survivors
+      <p className="mt-6 text-sm">
+        <Link href="/survivors" className="text-primary hover:underline">
+          Past winners →
         </Link>
       </p>
     </div>

@@ -53,6 +53,8 @@ export async function proxy(request: NextRequest) {
     // The dev server's hot-reload channel is a websocket on this same origin,
     // which `'self'` does not cover for the ws: scheme.
     `connect-src 'self'${process.env.NODE_ENV === "development" ? " ws: wss:" : ""}`,
+    // Cloudflare Turnstile, the invisible human check, runs in an iframe.
+    "frame-src https://challenges.cloudflare.com",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",

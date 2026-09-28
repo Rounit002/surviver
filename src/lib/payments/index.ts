@@ -4,21 +4,40 @@ import { randomBytes } from "node:crypto";
 import { env } from "@/lib/env";
 import type { CheckoutInput, CheckoutSession, PaymentProvider, WebhookResult } from "@/lib/payments/types";
 
+type DodoProduct = {
+  business_id?: string; is_recurring?: boolean; pricing_mode?: string | null;
+  price?: { type?: string; currency?: string; price?: number; discount?: number; tax_inclusive?: boolean; pay_what_you_want?: boolean; purchasing_power_parity?: boolean };
+};
+
+/**
+ * The configured product, re-read at most every few minutes rather than on
+ * every checkout — that extra round trip sat in front of every founder's
+ * redirect to payment. The price is still verified against the season on
+ * every checkout, and again against the signed webhook when money moves.
+ */
+let productCache: { key: string; product: DodoProduct; expires: number } | undefined;
+
+async function fetchDodoProduct(base: string): Promise<DodoProduct> {
+  const key = `${base}|${env.dodoProductId}`;
+  if (productCache && productCache.key === key && productCache.expires > Date.now()) return productCache.product;
+  const response = await fetch(`${base}/products/${encodeURIComponent(env.dodoProductId)}`, {
+    headers: { Authorization: `Bearer ${env.dodoApiKey}` }, signal: AbortSignal.timeout(10_000),
+  });
+  if (!response.ok) throw new Error(`Dodo product validation failed (${response.status}).`);
+  const product = (await response.json()) as DodoProduct;
+  productCache = { key, product, expires: Date.now() + 5 * 60_000 };
+  return product;
+}
+
 const dodoProvider: PaymentProvider = {
   name: "dodo",
   async createCheckout(input) {
     if (!env.dodoApiKey || !env.dodoProductId) throw new Error("Dodo Payments is not configured. Set DODO_PAYMENTS_API_KEY and DODO_PAYMENTS_PRODUCT_ID.");
     const base = env.dodoEnvironment === "test_mode" ? "https://test.dodopayments.com" : "https://live.dodopayments.com";
-    const productResponse = await fetch(`${base}/products/${encodeURIComponent(env.dodoProductId)}`, {
-      headers: { Authorization: `Bearer ${env.dodoApiKey}` }, signal: AbortSignal.timeout(10_000),
-    });
-    if (!productResponse.ok) throw new Error(`Dodo product validation failed (${productResponse.status}).`);
-    const product = (await productResponse.json()) as {
-      business_id?: string; is_recurring?: boolean; pricing_mode?: string | null;
-      price?: { type?: string; currency?: string; price?: number; discount?: number; tax_inclusive?: boolean; pay_what_you_want?: boolean; purchasing_power_parity?: boolean };
-    };
+    const product = await fetchDodoProduct(base);
     const configuredPrice = product.price;
     if (product.business_id !== env.dodoBusinessId || product.is_recurring || configuredPrice?.type !== "one_time_price" || configuredPrice.price !== input.amountCents || configuredPrice.currency?.toLowerCase() !== input.currency.toLowerCase() || configuredPrice.discount || configuredPrice.pay_what_you_want || configuredPrice.purchasing_power_parity || product.pricing_mode) {
+      productCache = undefined;
       console.error("[surviver] Dodo product configuration does not match the season price");
       throw new Error("Checkout is temporarily unavailable because the payment product price is misconfigured.");
     }

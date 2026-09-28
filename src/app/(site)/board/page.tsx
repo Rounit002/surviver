@@ -4,13 +4,14 @@ import { CategoryBar } from "@/components/layout/CategoryBar";
 import { RoundBar } from "@/components/competition/RoundBar";
 import { ProductCard } from "@/components/product/ProductCard";
 import { UpcomingProductList } from "@/components/product/UpcomingProductList";
-import { ButtonLink } from "@/components/ui/Button";
+import { ButtonLink, buttonClass } from "@/components/ui/Button";
 import { Panel } from "@/components/ui/Panel";
 import { CATEGORY_LABELS } from "@/lib/competition/constants";
 import { getActiveRound, getCurrentSeason, getOpenSeason } from "@/lib/competition/season";
 import { getStandings, balanceForVisitor } from "@/lib/competition/standings";
 import { getVisitorContext } from "@/lib/tracking/visitor";
 import type { ProductCategory } from "@/generated/prisma";
+import { EnterButton } from "@/components/entry/EnterButton";
 
 export const metadata = pageMetadata("/board");
 
@@ -40,15 +41,12 @@ export default async function BoardPage(props: PageProps<"/board">) {
 
   return (
     <div className="shell section">
-      <header className="text-center">
+      <header>
         <h1 className="text-title font-semibold">The board</h1>
-        <p className="text-subtle text-lead mx-auto mt-4 max-w-xl text-pretty">
-          Same entry fee, same starting exposure. The ones you choose to visit are the ones
-          that survive.
-        </p>
+        <p className="text-subtle mt-2">Visit what interests you. Your visits decide who survives.</p>
       </header>
 
-      <div className="mt-10">
+      <div className="mt-8">
         <CategoryBar />
       </div>
 
@@ -62,10 +60,9 @@ export default async function BoardPage(props: PageProps<"/board">) {
       </div>
 
       {standings.rows.length === 0 ? (
-        <Panel className="mt-6 px-6 py-10 text-center">
-          <p className="text-subtle text-sm">The competition has not started yet.</p>
-          <p className="text-faint mt-2 text-xs">Paid, approved products appear below while the field fills.</p>
-        </Panel>
+        <div className="border-border text-subtle mt-6 rounded-[16px] border border-dashed px-6 py-10 text-center text-sm">
+          Competition hasn’t started yet.
+        </div>
       ) : null}
 
       {listingSeason ? <UpcomingProductList seasonId={listingSeason.id} capacity={listingSeason.capacity} category={activeCategory ?? undefined} /> : null}
@@ -80,18 +77,18 @@ export default async function BoardPage(props: PageProps<"/board">) {
           </div>
         </Panel>
       ) : visible.length ? (
-        <div className="mt-6 grid grid-cols-1 gap-3">
+        <div className="mt-6 grid grid-cols-1 gap-2.5">
           <h2 className="sr-only">Competing products</h2>
           {visible.map((row) => (
-            <ProductCard key={row.entryId} row={row} roundName={round?.name} visitor={visitor} />
+            <ProductCard key={row.entryId} row={row} visitor={visitor} />
           ))}
         </div>
       ) : null}
 
-      <p className="text-faint mt-8 text-center text-[12px] leading-relaxed">
-        Paid placements, ordered to balance views for every visitor. Ranking cannot be purchased.{" "}
-        <Link href="/how-it-works" className="text-primary hover:text-primary/80">
-          How scoring works
+      <p className="text-subtle mt-6 text-xs">
+        Paid placements. Rank is earned, never bought.{" "}
+        <Link href="/how-it-works" className="text-primary hover:underline">
+          Scoring
         </Link>
       </p>
     </div>
@@ -100,16 +97,16 @@ export default async function BoardPage(props: PageProps<"/board">) {
 
 function EmptyBoard({ reason }: { reason: string }) {
   return (
-    <div className="shell pt-8 pb-4">
-      <header className="text-center">
-        <h1 className="text-3xl font-semibold sm:text-4xl">The board</h1>
+    <div className="shell section">
+      <header>
+        <h1 className="text-title font-semibold">The board</h1>
       </header>
       <Panel className="mt-8 px-6 py-16 text-center">
         <p className="text-subtle text-sm">{reason}</p>
         <div className="mt-5">
-          <ButtonLink href="/enter" variant="primary" size="sm">
+          <EnterButton className={buttonClass("primary", "sm")}>
             Enter. Earn your spot.
-          </ButtonLink>
+          </EnterButton>
         </div>
       </Panel>
     </div>

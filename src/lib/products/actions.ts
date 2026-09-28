@@ -6,13 +6,14 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { env } from "@/lib/env";
-import { CAMPAIGN_TOKEN_COOKIE, PENDING_PAYMENT_COOKIE } from "@/lib/competition/constants";
-import { getOpenSeason, blockingEntryFilter, CLAIMED_ENTRY_STATUSES } from "@/lib/competition/season";
+import { CAMPAIGN_TOKEN_COOKIE, CHECKOUT_HOLD_MS, PENDING_PAYMENT_COOKIE } from "@/lib/competition/constants";
+import { getOpenSeason, blockingEntryFilter, countTakenSpots } from "@/lib/competition/season";
 import { lockSeason } from "@/lib/competition/engine";
 import { getPaymentProvider } from "@/lib/payments";
 import { fetchSiteMetadata, normalizeUrl, UnsafeUrlError } from "@/lib/products/site-metadata";
 import { hashCapability } from "@/lib/security/tokens";
 import { checkRequestLimit } from "@/lib/security/rate-limit";
+import { cleanText } from "@/lib/security/text";
 import { getSessionUser } from "@/lib/auth/session";
 import type { ProductCategory } from "@/generated/prisma";
 
@@ -34,9 +35,17 @@ export type LookupResult = {
  * Reads a submitted site so the founder does not have to retype what is already
  * on their homepage. Open to anyone, because entering requires no account.
  */
-export async function lookupSiteAction(rawUrl: string): Promise<LookupResult> {
+export async function lookupSiteAction(rawUrl: unknown): Promise<LookupResult> {
+  // A server action is a public endpoint: the argument is whatever a script
+  // posts, not what the typed client sends. Validate before spending a
+  // rate-limit hit or a network request on it.
+  const parsed = lookupSchema.safeParse(rawUrl);
+  if (!parsed.success) return { ok: false, error: "Enter a valid website URL." };
+
   try {
-    const limit = await checkRequestLimit("site-metadata", 6, 10 * 60_000);
+    // Lookups now start while the founder types (debounced, cached per tab),
+    // so a few more per window than one-per-submit. Still bounded per IP.
+    const limit = await checkRequestLimit("site-metadata", 15, 10 * 60_000);
     if (!limit.allowed) return { ok: false, error: "Too many site lookups. Wait a few minutes and try again." };
   } catch (error) {
     console.error("[surviver] site lookup limit unavailable", error);
@@ -44,12 +53,12 @@ export async function lookupSiteAction(rawUrl: string): Promise<LookupResult> {
   }
 
   try {
-    const metadata = await fetchSiteMetadata(rawUrl);
+    const metadata = await fetchSiteMetadata(parsed.data);
     return {
       ok: true,
       url: metadata.url,
-      name: metadata.title?.slice(0, 60) ?? undefined,
-      description: metadata.description?.slice(0, 400) ?? undefined,
+      name: cleanText(metadata.title, 60) || undefined,
+      description: cleanText(metadata.description, 400) || undefined,
       imageUrl: metadata.imageUrl,
       faviconUrl: metadata.faviconUrl,
     };
@@ -71,9 +80,9 @@ export type EntryFormState = {
   fieldErrors?: Partial<Record<EntryField, string>>;
 };
 
-const entrySchema = z.object({
-  url: z.string().min(1, "Enter your product URL.").max(2048, "That URL is too long."),
-});
+const urlField = z.string().trim().min(1, "Enter your product URL.").max(2048, "That URL is too long.");
+const lookupSchema = urlField;
+const entrySchema = z.object({ url: urlField });
 
 function slugify(value: string): string {
   return value
@@ -132,9 +141,11 @@ export async function createEntryAction(
   const season = await getOpenSeason();
   if (!season) return { error: "No season is taking entries right now." };
   const hostname = new URL(url).hostname.replace(/^www\./i, "");
-  const name = (metadata?.title?.trim() || hostname).slice(0, 60) || hostname.slice(0, 60);
-  const tagline = (metadata?.description?.trim() || `Visit ${hostname}`).slice(0, 90);
-  const description = (metadata?.description?.trim() || `${name} — visit ${hostname} to learn more.`).slice(0, 400);
+  const scrapedTitle = cleanText(metadata?.title, 60);
+  const scrapedDescription = cleanText(metadata?.description, 400);
+  const name = scrapedTitle || hostname.slice(0, 60);
+  const tagline = cleanText(scrapedDescription, 90) || `Visit ${hostname}`;
+  const description = scrapedDescription || `${name} — visit ${hostname} to learn more.`;
   const category: ProductCategory = "AI";
   // The listing is managed with a short-lived capability link held in a secure
   // cookie; no founder email is needed to create the guest record or checkout.
@@ -147,8 +158,13 @@ export async function createEntryAction(
     await lockSeason(tx, season.id);
     const current = await tx.season.findUniqueOrThrow({ where: { id: season.id } });
     if (current.status !== "REGISTRATION_OPEN" || (current.registrationStart && current.registrationStart > now) || (current.registrationEnd && current.registrationEnd <= now)) return { error: "Registration has closed." };
-    const claimed = await tx.seasonEntry.count({ where: { seasonId: season.id, status: { in: CLAIMED_ENTRY_STATUSES } } });
+    // Phase one of the two-phase sale: under the season lock, a checkout is
+    // only opened if a spot is free counting both paid spots and spots other
+    // founders are holding in checkout right now. The hold lapses on its own
+    // after CHECKOUT_HOLD_MS, so an abandoned tab returns its spot to the pool.
+    const { claimed, held } = await countTakenSpots(tx, season.id, now);
     if (claimed >= current.capacity) return { error: "This season is full." };
+    if (claimed + held >= current.capacity) return { error: "Every remaining spot is being checked out right now. Try again in a few minutes." };
     const duplicate = await tx.seasonEntry.findFirst({ where: blockingEntryFilter(season.id, url, now) });
     if (duplicate) return { error: "That URL already has an entry. Use your original checkout or private campaign link." };
     // Guest founder record (User.passwordHash stays null): entering requires
@@ -157,7 +173,7 @@ export async function createEntryAction(
     const owner = signedInOwner ?? await tx.user.create({ data: { email, name: "Founder" } });
     const product = await tx.product.create({ data: { ownerId: owner.id, name, slug, url, tagline, description, category, logoUrl: asOptionalUrl(metadata?.faviconUrl ?? null), coverUrl: asOptionalUrl(metadata?.imageUrl ?? null), approvalStatus: "DRAFT" } });
     const entry = await tx.seasonEntry.create({ data: { seasonId: season.id, productId: product.id, status: "AWAITING_PAYMENT", rallyCode: `${slugify(name).slice(0, 12) || "entry"}-${randomBytes(6).toString("hex")}`, manageToken: hashCapability(manageToken), manageTokenExpiresAt: new Date(now.getTime() + 90 * 24 * 60 * 60_000) } });
-    const payment = await tx.payment.create({ data: { userId: owner.id, seasonId: season.id, seasonEntryId: entry.id, provider: provider.name, amountCents: current.entryPriceCents, currency: current.currency, status: "PENDING", checkoutTokenHash: hashCapability(checkoutToken), checkoutTokenExpiresAt: new Date(now.getTime() + 2 * 60 * 60_000) } });
+    const payment = await tx.payment.create({ data: { userId: owner.id, seasonId: season.id, seasonEntryId: entry.id, provider: provider.name, amountCents: current.entryPriceCents, currency: current.currency, status: "PENDING", checkoutTokenHash: hashCapability(checkoutToken), checkoutTokenExpiresAt: new Date(now.getTime() + CHECKOUT_HOLD_MS) } });
     return { entry, payment };
   });
   if ("error" in result) return { error: result.error };
@@ -171,12 +187,14 @@ export async function createEntryAction(
     sameSite: "lax",
     secure: env.isProduction,
     path: "/",
-    maxAge: 60 * 60 * 2,
+    maxAge: CHECKOUT_HOLD_MS / 1000,
   } as const;
   store.set(PENDING_PAYMENT_COOKIE, checkoutToken, capabilityCookie);
   // Held here rather than sent to the provider as a return URL, so the private
   // campaign capability never lands in provider dashboards, logs or analytics.
-  store.set(CAMPAIGN_TOKEN_COOKIE, manageToken, capabilityCookie);
+  // It outlives the spot hold: a founder who pays late may be refunded, but
+  // must still be able to reach their campaign page to see why.
+  store.set(CAMPAIGN_TOKEN_COOKIE, manageToken, { ...capabilityCookie, maxAge: 2 * 60 * 60 });
 
   let session;
   try {

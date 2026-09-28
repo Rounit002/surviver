@@ -71,16 +71,16 @@ export const COMPETITIVE_STATUS: Record<CompetitiveStatus, StatusPresentation> =
     description: "Not enough qualified views yet for a stable rank.",
   },
   SAFE: {
-    label: "Safe",
+    label: "Live",
     tone: "text-safe",
     chip: "bg-safe/8 border-safe/25 text-safe",
-    description: "Currently above the elimination line.",
+    description: "On the board for the whole season, ranked by clicks.",
   },
   RISING: {
     label: "Rising",
-    tone: "text-safe",
-    chip: "bg-safe/8 border-safe/25 text-safe",
-    description: "Climbing the standings since the last snapshot.",
+    tone: "text-live",
+    chip: "bg-live/10 border-live/30 text-live",
+    description: "Climbed the rankings since the last click.",
   },
   DANGER: {
     label: "Danger",
@@ -123,28 +123,28 @@ export const ENTRY_STATUS_LABELS: Record<EntryStatus, string> = {
   ELIMINATED: "Eliminated",
   FINALIST: "Finalist",
   SURVIVOR: "Survivor",
+  FINISHED: "Finished",
   DISQUALIFIED: "Disqualified",
   WITHDRAWN: "Withdrawn",
 };
 
 /**
- * Standard 32-entry bracket for a full season. Runtime round sizes are stored
- * on Round records, so later seasons can use a different shape without a deploy.
+ * The field. Every season is exactly this many products; the database enforces
+ * it with a CHECK constraint on `seasons.capacity`. Copy that needs the number
+ * before a season row exists reads it from here, never from a literal.
  */
-export const DEFAULT_BRACKET = [
-  { name: "Round 1", entrants: 32, eliminate: 8 },
-  { name: "Round 2", entrants: 24, eliminate: 8 },
-  { name: "Round 3", entrants: 16, eliminate: 8 },
-  { name: "Quarterfinal", entrants: 8, eliminate: 4 },
-  { name: "Semifinal", entrants: 4, eliminate: 2 },
-  { name: "Final", entrants: 2, eliminate: 1 },
-] as const;
+export const FIELD_SIZE = 32;
+
+/** How long a pending checkout holds its spot before it returns to the pool. */
+export const CHECKOUT_HOLD_MS = 30 * 60_000;
 
 /** Cookie names. Visitor id is long lived; session id is per browser session. */
 export const VISITOR_COOKIE = "sv_vid";
 export const SESSION_COOKIE = "sv_sid";
 export const AUTH_COOKIE = "sv_auth";
 export const RALLY_COOKIE = "sv_rally";
+/// Proof this browser passed the invisible human check, bound to its visitor id.
+export const HUMAN_COOKIE = "sv_human";
 /// Proves this browser started a checkout, so paying needs no account.
 export const PENDING_PAYMENT_COOKIE = "sv_pay";
 /// Holds the private campaign capability while the founder is away at the

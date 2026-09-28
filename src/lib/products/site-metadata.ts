@@ -86,6 +86,26 @@ function metaContent(html: string, patterns: RegExp[]): string | null {
  * and the founder fills the fields in by hand.
  */
 export async function fetchSiteMetadata(inputUrl: string): Promise<SiteMetadata> {
+  // The dialog's preview already read this site moments ago; submitting used
+  // to read it all over again (up to FETCH_TIMEOUT_MS) before checkout could
+  // open. Reuse a recent answer instead. Server-side only: nothing the client
+  // sends can put a value in here.
+  const key = normalizeUrl(inputUrl);
+  const hit = metadataCache.get(key);
+  if (hit && hit.expires > Date.now()) return hit.value;
+  const value = await readSiteMetadata(key);
+  if (value.title || value.description) {
+    if (metadataCache.size >= CACHE_MAX) metadataCache.delete(metadataCache.keys().next().value!);
+    metadataCache.set(key, { value, expires: Date.now() + CACHE_TTL_MS });
+  }
+  return value;
+}
+
+const CACHE_TTL_MS = 10 * 60_000;
+const CACHE_MAX = 500;
+const metadataCache = new Map<string, { value: SiteMetadata; expires: number }>();
+
+async function readSiteMetadata(inputUrl: string): Promise<SiteMetadata> {
   let current = normalizeUrl(inputUrl);
   let html = "";
   const deadline = Date.now() + FETCH_TIMEOUT_MS;

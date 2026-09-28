@@ -20,7 +20,28 @@ export const CLAIMED_ENTRY_STATUSES: EntryStatus[] = [
   "ELIMINATED",
   "FINALIST",
   "SURVIVOR",
+  "FINISHED",
 ];
+
+/**
+ * A checkout that is still inside its hold window. It is not paid yet, but it
+ * holds a spot: otherwise the last spot can be sold to several founders at
+ * once, and all but the first would pay for nothing (the oversell race).
+ */
+export function heldEntryFilter(seasonId: string, now = new Date()): Prisma.SeasonEntryWhereInput {
+  return {
+    seasonId,
+    status: "AWAITING_PAYMENT",
+    payment: { status: "PENDING", checkoutTokenExpiresAt: { gt: now } },
+  };
+}
+
+/** Paid spots plus spots held by an in-flight checkout. */
+export async function countTakenSpots(client: Prisma.TransactionClient, seasonId: string, now = new Date()) {
+  const claimed = await client.seasonEntry.count({ where: { seasonId, status: { in: CLAIMED_ENTRY_STATUSES } } });
+  const held = await client.seasonEntry.count({ where: heldEntryFilter(seasonId, now) });
+  return { claimed, held };
+}
 
 /** Entries that are actually competing right now. */
 export const LIVE_ENTRY_STATUSES: EntryStatus[] = ["ACTIVE", "FINALIST"];
@@ -65,25 +86,28 @@ export async function getOpenSeason(): Promise<Season | null> {
 
 export type SeasonSummary = {
   season: Season;
+  /** Paid spots. */
   claimed: number;
+  /** Spots held by a checkout in progress. */
+  held: number;
+  /** Spots anyone can still buy right now. */
   remaining: number;
   isFull: boolean;
   acceptingEntries: boolean;
 };
 
 export async function getSeasonSummary(season: Season): Promise<SeasonSummary> {
-  const claimed = await prisma.seasonEntry.count({
-    where: { seasonId: season.id, status: { in: CLAIMED_ENTRY_STATUSES } },
-  });
-
-  const remaining = Math.max(0, season.capacity - claimed);
+  const now = new Date();
+  const { claimed, held } = await countTakenSpots(prisma, season.id, now);
+  const remaining = Math.max(0, season.capacity - claimed - held);
 
   return {
     season,
     claimed,
+    held,
     remaining,
-    isFull: remaining === 0,
-    acceptingEntries: season.status === "REGISTRATION_OPEN" && remaining > 0 && (!season.registrationStart || season.registrationStart <= new Date()) && (!season.registrationEnd || season.registrationEnd > new Date()),
+    isFull: claimed >= season.capacity,
+    acceptingEntries: season.status === "REGISTRATION_OPEN" && remaining > 0 && (!season.registrationStart || season.registrationStart <= now) && (!season.registrationEnd || season.registrationEnd > now),
   };
 }
 
@@ -148,7 +172,7 @@ export async function getPublicUpcomingEntries(seasonId: string, category?: Pris
       season: { status: { in: ["REGISTRATION_OPEN", "REGISTRATION_CLOSED"] } },
     },
     orderBy: { createdAt: "asc" },
-    include: { product: true },
+    include: { product: true, _count: { select: { lineupClicks: true } } },
   });
 }
 

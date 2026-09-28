@@ -49,10 +49,15 @@ export function createInteractionProof(entryId: string, identity: InteractionIde
   return signValue(payload);
 }
 
+/**
+ * `minAgeMs` rejects a proof used sooner than a person could have read the
+ * page and clicked — scripts fire the instant the HTML arrives.
+ */
 export function verifyInteractionProof(
   proof: string | undefined,
   entryId: string,
   identity: InteractionIdentity,
+  minAgeMs = 0,
 ): boolean {
   const payload = verifySignedValue(proof, /^[A-Za-z0-9_-]{1,512}$/);
   if (!payload) return false;
@@ -61,7 +66,7 @@ export function verifyInteractionProof(
       e?: unknown; v?: unknown; s?: unknown; i?: unknown;
     };
     return parsed.e === entryId && parsed.v === identity.visitorId && parsed.s === identity.sessionId &&
-      typeof parsed.i === "number" && Date.now() - parsed.i >= 0 && Date.now() - parsed.i <= 10 * 60_000;
+      typeof parsed.i === "number" && Date.now() - parsed.i >= minAgeMs && Date.now() - parsed.i <= 10 * 60_000;
   } catch {
     return false;
   }

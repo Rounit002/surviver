@@ -1,18 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Badge } from "@/components/ui/Badge";
-import { Icon } from "@/components/ui/Icon";
 import { formatCount } from "@/lib/format";
 import type { Presence } from "@/lib/tracking/presence";
 
 /**
- * Two chips beside the season badge: how many people are here now, and how
- * many have been.
- *
- * Badges rather than a line of text, because they sit in a row with the season
- * badge and three pills read as one status strip where a pill next to a
- * sentence reads as a mistake.
+ * How many people are here now, and how many have been — two entries in the
+ * home page's stat strip.
  *
  * The server renders the counts it already knows, so the line is in the first
  * HTML response rather than popping in. The heartbeat then adds this visitor
@@ -60,23 +54,27 @@ export function PresenceCounter({ initial }: { initial: Presence }) {
     };
   }, []);
 
+  // Two pills that sit beside the hero's status pill, so "how full" and "how
+  // busy" read as one row at the very top.
+  const pill = "border-border bg-surface/80 text-subtle inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[13px] backdrop-blur";
   return (
     <>
-      <Badge>
-        <Icon name="users" width="14" height="14" className="text-faint shrink-0" />
-        <span className="inline-flex items-center gap-1.5">
-          <span className="pulse-dot bg-safe inline-block size-1.5 rounded-full" aria-hidden />
-          <span className="num text-foreground font-medium">{formatCount(presence.online)}</span>{" "}
-          online
+      <span className={pill}>
+        <span className="relative flex size-2" aria-hidden>
+          <span className="bg-live absolute inset-0 animate-ping rounded-full opacity-60 motion-reduce:animate-none" />
+          <span className="bg-live relative size-2 rounded-full" />
         </span>
-      </Badge>
-      <Badge>
-        <Icon name="bars" width="14" height="14" className="text-faint shrink-0" />
-        <span>
-          <span className="num text-foreground font-medium">{formatCount(presence.total)}</span>{" "}
-          {presence.total === 1 ? "visit" : "visits"}
-        </span>
-      </Badge>
+        <strong key={presence.online} className="num num-tick text-foreground font-semibold">{formatCount(presence.online)}</strong>
+        online
+      </span>
+      <span className={pill}>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z" />
+          <circle cx="12" cy="12" r="3" />
+        </svg>
+        <strong key={presence.total} className="num num-tick text-foreground font-semibold">{formatCount(presence.total)}</strong>
+        {presence.total === 1 ? "visit" : "visits"}
+      </span>
     </>
   );
 }

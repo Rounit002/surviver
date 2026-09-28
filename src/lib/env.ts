@@ -87,6 +87,32 @@ export const env = {
   get isProduction() {
     return isProduction();
   },
+  /**
+   * The one request header that carries the real client address. Lower-cased,
+   * and limited to headers an ingress actually sets.
+   */
+  get clientIpHeader() {
+    const name = read("CLIENT_IP_HEADER", "x-forwarded-for").toLowerCase();
+    if (!["x-forwarded-for", "cf-connecting-ip", "true-client-ip", "x-real-ip", "fly-client-ip"].includes(name)) {
+      throw new Error(`CLIENT_IP_HEADER ${JSON.stringify(name)} is not a supported client-address header.`);
+    }
+    return name;
+  },
+  /**
+   * Cloudflare Turnstile, the invisible "is this a person" check that clicks
+   * must pass to count. Outside production it falls back to Cloudflare's
+   * published always-pass test keys, so local development works unconfigured.
+   * In production both keys must be set for the check to switch on.
+   */
+  get turnstileSiteKey() {
+    return read("TURNSTILE_SITE_KEY", isProduction() ? "" : "1x00000000000000000000AA");
+  },
+  get turnstileSecretKey() {
+    return read("TURNSTILE_SECRET_KEY", isProduction() ? "" : "1x0000000000000000000000000000000AA");
+  },
+  get turnstileEnabled() {
+    return Boolean(this.turnstileSiteKey && this.turnstileSecretKey);
+  },
   get dodoApiKey() { return read("DODO_PAYMENTS_API_KEY", ""); },
   get dodoWebhookKey() { return read("DODO_PAYMENTS_WEBHOOK_KEY", ""); },
   get dodoProductId() { return read("DODO_PAYMENTS_PRODUCT_ID", ""); },

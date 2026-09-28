@@ -6,13 +6,13 @@ import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import { Wordmark } from "@/components/brand/Wordmark";
-import { ButtonLink } from "@/components/ui/Button";
+import { buttonClass } from "@/components/ui/Button";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { EnterButton } from "@/components/entry/EnterButton";
 
 const LINKS = [
   { href: "/board", label: "Board" },
   { href: "/leaderboard", label: "Leaderboard" },
-  { href: "/seasons", label: "Seasons" },
   { href: "/survivors", label: "Survivors" },
   { href: "/how-it-works", label: "How it works" },
 ];
@@ -99,9 +99,9 @@ export function NavBar({ ticker }: { ticker?: ReactNode }) {
           <div className="flex items-center gap-1.5">
             <ThemeToggle />
             <div className="hidden sm:block">
-              <ButtonLink href="/enter" variant="primary" size="sm">
+              <EnterButton className={buttonClass("primary", "sm")}>
                 Enter. Earn your spot.
-              </ButtonLink>
+              </EnterButton>
             </div>
 
             <button
@@ -158,9 +158,9 @@ export function NavBar({ ticker }: { ticker?: ReactNode }) {
             ))}
           </nav>
           <div className="border-border mt-2 border-t pt-2">
-            <ButtonLink href="/enter" variant="primary" size="md" className="w-full">
+            <EnterButton className={buttonClass("primary", "md", "w-full")}>
               Enter. Earn your spot.
-            </ButtonLink>
+            </EnterButton>
           </div>
         </div>
       </div>

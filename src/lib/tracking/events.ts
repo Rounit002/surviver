@@ -2,10 +2,35 @@ import "server-only";
 import type { SourceType } from "@/generated/prisma";
 import { prisma } from "@/lib/db";
 import { lockSeason, refreshRanks } from "@/lib/competition/engine";
-import { isScorable, type VisitorContext } from "./visitor";
+import { canCountClicks, type VisitorContext } from "./visitor";
+
+/**
+ * Count a click on a product that is in the lineup but not yet competing.
+ *
+ * Shown publicly as that product's clicks, so it gets the same guards as a
+ * scored click: a verified human, no bot user agent, once per visitor, and
+ * once per network for the season. It never touches the ranking.
+ */
+export async function recordLineupClick(entryId: string, visitor: VisitorContext): Promise<boolean> {
+  if (!canCountClicks(visitor)) return false;
+  if (visitor.ipHash) {
+    const sameNetwork = await prisma.lineupClick.findFirst({
+      where: { seasonEntryId: entryId, ipHash: visitor.ipHash },
+      select: { id: true },
+    });
+    if (sameNetwork) return false;
+  }
+  const created = await prisma.lineupClick.createMany({
+    data: [{ seasonEntryId: entryId, visitorId: visitor.visitorId, ipHash: visitor.ipHash }],
+    skipDuplicates: true,
+  });
+  return created.count === 1;
+}
+
 
 export async function recordInteraction(entryId: string, visitor: VisitorContext, kind: "impression" | "visit", dwellMs = 0) {
-  if (!isScorable(visitor) || /bot|crawler|spider|headless/i.test(visitor.userAgent ?? "")) return false;
+  // Views and clicks both feed the board, so both need a counted visitor.
+  if (!canCountClicks(visitor)) return false;
   const identity = await prisma.seasonEntry.findUnique({ where: { id: entryId }, select: { seasonId: true } });
   if (!identity) return false;
   return prisma.$transaction(async tx => {
@@ -47,14 +72,25 @@ export async function recordInteraction(entryId: string, visitor: VisitorContext
         }
       }
     } else {
+      // A click only scores after this visitor was actually shown the card.
       const impression = await tx.impressionEvent.findFirst({ where: { roundId: round.id, seasonEntryId: entryId, visitorId: visitor.visitorId, qualified: true } });
       if (!impression) return false;
+      // Clicks decide the ranking, so each one is guarded twice: once per
+      // visitor cookie and once per network (IP, or IPv6 /64), both for the
+      // whole season. The second stops a script that clears cookies between
+      // clicks from minting a fresh "visitor" each time.
       const duplicate = await tx.clickEvent.findFirst({ where: { roundId: round.id, seasonEntryId: entryId, visitorId: visitor.visitorId, qualifiesForScore: true } });
       if (duplicate) return false;
+      const sameNetwork = await tx.clickEvent.findFirst({ where: { roundId: round.id, seasonEntryId: entryId, ipHash: visitor.ipHash, qualifiesForScore: true } });
+      if (sameNetwork) {
+        await tx.clickEvent.create({ data: { ...common, qualifiesForScore: false, suspicious: true } });
+        await tx.productRoundStats.update({ where: { id: stats.id }, data: { suspiciousEvents: { increment: 1 } } });
+        return false;
+      }
       await tx.clickEvent.create({ data: { ...common, qualifiesForScore: true } });
       await tx.productRoundStats.update({ where: { id: stats.id }, data: { verifiedVisits: { increment: 1 }, ...(sourceType === "DISCOVERY" ? { discoveryVisits: { increment: 1 } } : { rallyVisits: { increment: 1 } }) } });
     }
-    await refreshRanks(tx, round.id, entry.season.minSampleImpressions, round.eliminationCount);
+    await refreshRanks(tx, round.id);
     return true;
   }, { timeout: 20000 });
 }
