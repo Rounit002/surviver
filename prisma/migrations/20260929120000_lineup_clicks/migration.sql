@@ -17,4 +17,3 @@ CREATE UNIQUE INDEX "lineup_clicks_seasonEntryId_visitorId_key" ON "lineup_click
 
 -- AddForeignKey
 ALTER TABLE "lineup_clicks" ADD CONSTRAINT "lineup_clicks_seasonEntryId_fkey" FOREIGN KEY ("seasonEntryId") REFERENCES "season_entries"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
