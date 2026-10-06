@@ -1,6 +1,5 @@
-import { SiteFavicon } from "@/components/product/SiteFavicon";
+import { LineupTile } from "./LineupTile";
 import { Icon } from "@/components/ui/Icon";
-import { CATEGORY_COLORS, CATEGORY_LABELS } from "@/lib/competition/constants";
 import type { ProductCategory } from "@/generated/prisma";
 import { EnterButton } from "@/components/entry/EnterButton";
 
@@ -41,7 +40,7 @@ export function LineupField({
   const pct = Math.round((filled / capacity) * 100);
 
   return (
-    <div className="border-border bg-surface/90 shadow-showcase rounded-[24px] border p-4 backdrop-blur sm:p-6">
+    <div className="card-depth rounded-[24px] p-4 sm:p-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-subtle text-xs font-semibold tracking-wide uppercase">{seasonName} lineup</p>
@@ -58,33 +57,16 @@ export function LineupField({
       </div>
 
       <div className="bg-muted mt-4 h-2 overflow-hidden rounded-full" role="progressbar" aria-valuenow={filled} aria-valuemin={0} aria-valuemax={capacity} aria-label="Spots filled">
-        <div
-          className="h-full rounded-full"
-          style={{
-            width: `${Math.max(pct, 2)}%`,
-            background: "linear-gradient(90deg, var(--color-primary), color-mix(in oklab, var(--color-primary) 55%, var(--color-accent)))",
-          }}
-        />
+        <div className="bg-primary h-full rounded-full" style={{ width: `${Math.max(pct, 2)}%` }} />
       </div>
 
       <ul className="mt-5 grid grid-cols-8 gap-1.5 sm:gap-2 md:grid-cols-16">
         {Array.from({ length: capacity }, (_, index) => {
           const entry = entries[index];
           if (entry) {
-            const colors = CATEGORY_COLORS[entry.category];
             return (
               <li key={entry.id}>
-                <a
-                  href={entry.href}
-                  target="_blank"
-                  rel="noopener noreferrer nofollow sponsored"
-                  title={`${entry.name} · ${CATEGORY_LABELS[entry.category]}`}
-                  className="group relative flex aspect-square items-center justify-center rounded-[10px] transition-transform duration-200 hover:-translate-y-0.5 hover:scale-105"
-                  style={{ backgroundColor: colors.tint, boxShadow: `inset 0 0 0 1px color-mix(in oklab, ${colors.ink} 22%, transparent)` }}
-                >
-                  <SiteFavicon name={entry.name} siteUrl={entry.url} logoUrl={entry.logoUrl} className="size-[62%] rounded-[7px] border-0 bg-transparent" />
-                  <span className="sr-only">{entry.name}</span>
-                </a>
+                <LineupTile entry={entry} />
               </li>
             );
           }

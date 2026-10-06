@@ -56,7 +56,7 @@ export function PresenceCounter({ initial }: { initial: Presence }) {
 
   // Two pills that sit beside the hero's status pill, so "how full" and "how
   // busy" read as one row at the very top.
-  const pill = "border-border bg-surface/80 text-subtle inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[13px] backdrop-blur";
+  const pill = "glass-card text-subtle inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px]";
   return (
     <>
       <span className={pill}>

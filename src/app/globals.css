@@ -133,6 +133,16 @@
   --shadow-showcase:
     0 1px 0 rgb(26 25 23 / 0.04),
     0 24px 70px -20px rgb(26 25 23 / 0.16);
+  /* Cards: stacked layers — a contact shadow, a near one and a far, soft one —
+     which is what reads as depth rather than as a smudge under the box. */
+  --shadow-card:
+    0 1px 2px rgb(26 25 23 / 0.05),
+    0 6px 16px -4px rgb(26 25 23 / 0.07),
+    0 22px 44px -18px rgb(26 25 23 / 0.12);
+  --shadow-card-hover:
+    0 2px 4px rgb(26 25 23 / 0.05),
+    0 14px 28px -8px rgb(26 25 23 / 0.12),
+    0 34px 64px -20px rgb(26 25 23 / 0.2);
 
   /* --- Motion ----------------------------------------------------------
      One easing for anything entering, one for anything answering a pointer.
@@ -211,6 +221,16 @@
   --shadow-showcase:
     0 0 0 1px rgb(255 255 255 / 0.07),
     0 24px 70px -20px rgb(0 0 0 / 0.75);
+  --shadow-card:
+    inset 0 1px 0 rgb(255 255 255 / 0.04),
+    0 1px 2px rgb(0 0 0 / 0.4),
+    0 8px 20px -6px rgb(0 0 0 / 0.45),
+    0 24px 48px -18px rgb(0 0 0 / 0.6);
+  --shadow-card-hover:
+    inset 0 1px 0 rgb(255 255 255 / 0.06),
+    0 2px 4px rgb(0 0 0 / 0.45),
+    0 16px 32px -8px rgb(0 0 0 / 0.55),
+    0 36px 70px -20px rgb(0 0 0 / 0.7);
 }
 
 /* --- Glass ------------------------------------------------------------- *
@@ -451,71 +471,25 @@
 
   /* --- Atmosphere ------------------------------------------------------ *
    * The page used to be two colours on beige and read as unfinished. These
-   * add depth without adding noise: a blue and a coral glow behind the hero,
+   * add depth without adding noise: an interactive dot grid behind the hero,
    * a faint dot grid that fades out, and a lift on things you can pick.
-   * Gradients live only here, on backgrounds — never on text or controls. */
+   * Flat colour only: no gradients and no glows anywhere on the site. */
 
   .hero-atmosphere {
     position: relative;
     isolation: isolate;
   }
 
-  .hero-atmosphere::before {
-    content: "";
+  /* `HeroField` draws the dot grid that answers the cursor. It reaches up
+     under the floating nav so the grid starts at the top of the window. */
+  .hero-field {
     position: absolute;
-    inset: -6rem 0 0;
+    top: -6rem;
+    left: 0;
     z-index: -1;
+    width: 100%;
+    height: calc(100% + 6rem);
     pointer-events: none;
-    background:
-      radial-gradient(38rem 24rem at 50% 0%, color-mix(in oklab, var(--color-primary) 16%, transparent), transparent 70%),
-      radial-gradient(26rem 18rem at 88% 40%, color-mix(in oklab, var(--color-accent) 12%, transparent), transparent 70%),
-      radial-gradient(24rem 18rem at 8% 70%, color-mix(in oklab, var(--cat-productivity-ink) 10%, transparent), transparent 70%);
-  }
-
-  .hero-atmosphere::after {
-    content: "";
-    position: absolute;
-    inset: -6rem 0 0;
-    z-index: -1;
-    pointer-events: none;
-    background-image: radial-gradient(circle at center, var(--color-border-strong) 1px, transparent 1.2px);
-    background-size: 24px 24px;
-    mask-image: radial-gradient(ellipse 60% 55% at 50% 30%, #000 20%, transparent 75%);
-    opacity: 0.55;
-  }
-
-  /* The glows drift slowly, so the hero feels alive without anything moving
-     enough to read as an animation. */
-  .hero-atmosphere::before {
-    animation: hero-drift 18s ease-in-out infinite alternate;
-  }
-
-  /* Pointer light: a glow under the cursor plus a second, primary-coloured
-     dot grid revealed only around it, so the grid "lights up" as you move. */
-  .hero-glow {
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 400ms ease;
-    background:
-      radial-gradient(22rem 22rem at var(--mx, 50%) var(--my, 30%), color-mix(in oklab, var(--color-primary) 10%, transparent), transparent 70%);
-  }
-
-  .hero-glow::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background-image: radial-gradient(circle at center, var(--color-primary) 1.3px, transparent 1.6px);
-    background-size: 24px 24px;
-    background-position: 0 6rem;
-    mask-image: radial-gradient(9rem 9rem at var(--mx, 50%) var(--my, 30%), #000, transparent 75%);
-    opacity: 0.7;
-  }
-
-  .hero-glow[data-on] {
-    opacity: 1;
   }
 
   /* A hand-drawn stroke under the headline's second line that draws itself in. */
@@ -583,7 +557,7 @@
   /* The hero headline. Sized for its half of a two-column hero rather than
      the full width: large on a desktop, and never wider than its column. */
   .hero-title {
-    font-size: clamp(2.5rem, 1rem + 3.3vw, 4.25rem);
+    font-size: clamp(2.5rem, 1rem + 3vw, 3.9rem);
     line-height: 1.02;
     letter-spacing: -0.04em;
   }
@@ -602,27 +576,68 @@
     letter-spacing: 0.01em;
   }
 
-  /* The primary action glows in its own colour, so it is the first thing the
-     eye lands on without being made bigger or louder. */
+  /* The primary action: a flat fill and a neutral lift, no coloured glow. */
   .btn-primary {
     background: var(--color-primary);
     box-shadow:
       0 1px 0 rgb(255 255 255 / 0.18) inset,
-      0 6px 18px -6px color-mix(in oklab, var(--color-primary) 70%, transparent);
+      var(--shadow-xs);
   }
 
+  /* A card with depth: hairline edge plus the layered card shadow. */
+  .card-depth {
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-card);
+  }
+
+  /* A card you can pick: it rests with depth and rises toward the pointer —
+     the shadow grows as it lifts, as if it left the page — then settles back
+     down slightly when pressed. */
   .card-lift {
+    box-shadow: var(--shadow-card);
     transition:
-      transform var(--dur-base) var(--ease-out),
-      box-shadow var(--dur-base) var(--ease-out),
-      border-color var(--dur-base) var(--ease-out);
+      transform 320ms var(--ease-out),
+      box-shadow 320ms var(--ease-out),
+      border-color 320ms var(--ease-out);
   }
 
   @media (hover: hover) {
     .card-lift:hover {
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-md);
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-card-hover);
       border-color: var(--color-border-strong);
+    }
+  }
+
+  .card-lift:active {
+    transform: translateY(-1px);
+    transition-duration: 120ms;
+  }
+
+  /* A taken lineup spot in its own logo's colour (`--brand`), as solid
+     pastels: a pale fill and a slightly deeper edge, no coloured glow. */
+  .lineup-tile {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 1;
+    border-radius: 10px;
+    background: color-mix(in oklab, var(--brand) 16%, var(--color-surface));
+    box-shadow:
+      inset 0 0 0 1.5px color-mix(in oklab, var(--brand) 38%, var(--color-surface)),
+      var(--shadow-xs);
+    transition:
+      transform 240ms var(--ease-out),
+      box-shadow 240ms var(--ease-out);
+  }
+
+  @media (hover: hover) {
+    .lineup-tile:hover {
+      transform: translateY(-3px);
+      box-shadow:
+        inset 0 0 0 1.5px color-mix(in oklab, var(--brand) 55%, var(--color-surface)),
+        var(--shadow-card);
     }
   }
 
@@ -641,10 +656,11 @@
     border-radius: 22px;
     border: 1px solid var(--color-border);
     background: var(--color-surface);
+    box-shadow: var(--shadow-card);
     transition:
-      transform var(--dur-base) var(--ease-out),
-      box-shadow var(--dur-base) var(--ease-out),
-      border-color var(--dur-base) var(--ease-out);
+      transform 320ms var(--ease-out),
+      box-shadow 320ms var(--ease-out),
+      border-color 320ms var(--ease-out);
   }
 
   .spotlight-card::before,
@@ -660,22 +676,18 @@
 
   .spotlight-card::before {
     z-index: -1;
-    background: radial-gradient(340px circle at var(--x) var(--y), color-mix(in oklab, var(--glow) 14%, transparent), transparent 60%);
+    background: color-mix(in oklab, var(--glow) 6%, transparent);
   }
 
   .spotlight-card::after {
     z-index: 2;
-    padding: 1.5px;
-    background: radial-gradient(220px circle at var(--x) var(--y), color-mix(in oklab, var(--glow) 85%, transparent), transparent 70%);
-    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-    -webkit-mask-composite: xor;
-    mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--glow) 40%, transparent);
   }
 
   @media (hover: hover) {
     .spotlight-card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 18px 40px -18px color-mix(in oklab, var(--glow) 45%, transparent), var(--shadow-sm);
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-card-hover);
     }
 
     .spotlight-card:hover::before,
@@ -697,16 +709,6 @@
     isolation: isolate;
     background: var(--color-primary);
     color: var(--color-primary-foreground);
-  }
-
-  .band::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    background:
-      radial-gradient(30rem 20rem at 100% 0%, color-mix(in oklab, var(--color-accent) 45%, transparent), transparent 70%),
-      radial-gradient(26rem 18rem at 0% 100%, rgb(255 255 255 / 0.16), transparent 70%);
   }
 
   /* A slot that is being paid for right now: diagonal hatching. */
@@ -855,6 +857,27 @@
     }
   }
 
+  /* Frosted cards for what sits on the hero's dot grid: the grid shows
+     through, softened, so the card reads as a pane over the page rather than
+     a hole in it. `--tint` makes a pastel pane; it defaults to the surface. */
+  .glass-card {
+    border: 1px solid color-mix(in oklab, var(--color-border) 85%, transparent);
+    background-color: color-mix(in oklab, var(--tint, var(--color-surface)) 68%, transparent);
+    box-shadow: 0 1px 0 rgb(255 255 255 / 0.5) inset, var(--shadow-xs);
+    -webkit-backdrop-filter: blur(10px) saturate(150%);
+    backdrop-filter: blur(10px) saturate(150%);
+  }
+
+  :root[data-theme="dark"] .glass-card {
+    box-shadow: 0 1px 0 rgb(255 255 255 / 0.05) inset, var(--shadow-xs);
+  }
+
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .glass-card {
+      background-color: var(--tint, var(--color-surface));
+    }
+  }
+
   /* --- Navigation ------------------------------------------------------ *
    *
    * The bar is a floating pane, not a band across the top. At the top of the
@@ -932,13 +955,7 @@
      hard stub a plain border leaves. */
   .rule-fade {
     height: 1px;
-    background: linear-gradient(
-      to right,
-      transparent,
-      var(--color-border) 12%,
-      var(--color-border) 88%,
-      transparent
-    );
+    background: var(--color-border);
   }
 
   /* --- Motion ---------------------------------------------------------- *
@@ -1031,11 +1048,6 @@
   }
 }
 
-@keyframes hero-drift {
-  from { transform: translate3d(0, 0, 0) scale(1); }
-  to { transform: translate3d(2%, 1.5rem, 0) scale(1.06); }
-}
-
 @keyframes hero-draw {
   to { stroke-dashoffset: 0; }
 }
@@ -1067,13 +1079,852 @@
   }
 }
 
+/* --- Hero stream showcase ----------------------------------------------
+   Two Mac windows in one stage, driven by `data-phase` on `.hs-root`:
+   the site fills its 32 spots, recedes, and a YouTube live player rises
+   with the featured tiles landing on its rails. Sizes come from the stage
+   itself (a size container), so the picture scales as one piece. */
+.hs-scene {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  container-type: size;
+  perspective: 1600px;
+  --bar: 30px;
+  --pad: clamp(8px, 2.4cqw, 18px);
+  --gap: clamp(4px, 1.3cqw, 10px);
+}
+
+.hs-window {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-showcase);
+  transform-origin: 50% 60%;
+  transition:
+    transform 760ms var(--ease-soft),
+    opacity 560ms var(--ease-soft);
+  will-change: transform, opacity;
+}
+
+.hs-bar {
+  position: relative;
+  display: flex;
+  flex: none;
+  align-items: center;
+  height: var(--bar);
+  padding: 0 11px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-elevated);
+}
+
+.hs-lights {
+  display: flex;
+  gap: 6px;
+}
+
+.hs-lights i {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: #ff5f57;
+  box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.14);
+}
+.hs-lights i:nth-child(2) { background: #febc2e; }
+.hs-lights i:nth-child(3) { background: #28c840; }
+
+.hs-url {
+  position: absolute;
+  left: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: 40%;
+  height: 19px;
+  padding: 0 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-surface);
+  color: var(--color-subtle);
+  font-size: 10.5px;
+  font-weight: 500;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+/* A logo tile: the real mark on a plain card. */
+.hs-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 24%;
+  background: var(--color-surface);
+  box-shadow: inset 0 0 0 1px var(--color-border);
+  color: var(--color-foreground);
+}
+
+/* Window one: the site — the 32 spots and nothing else. */
+.hs-site-body {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  padding: var(--pad);
+  background: var(--color-background);
+}
+
+.hs-grid {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: var(--gap);
+  width: min(100%, calc((100cqh - var(--bar) - 2 * var(--pad) - 3 * var(--gap)) / 4 * 8 + 7 * var(--gap)));
+}
+
+.hs-tile {
+  display: flex;
+  aspect-ratio: 1;
+  border-radius: 24%;
+  outline: 1px dashed var(--color-border-strong);
+  outline-offset: -1px;
+  transition:
+    transform 300ms var(--ease-out),
+    outline-color 300ms var(--ease-out);
+}
+
+/* Window two: the live player. */
+.hs-stream {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(7%) scale(1.04) rotateX(-7deg);
+}
+
+.hs-stream-body {
+  display: flex;
+  flex: 1;
+  gap: var(--gap);
+  min-height: 0;
+  padding: var(--pad);
+}
+
+/* The video area: the lineup's rails either side, the stream between them.
+   A size container, so five rail cards always fit its height exactly. */
+.hs-video {
+  display: flex;
+  flex: 1;
+  gap: var(--gap);
+  min-height: 0;
+  padding: 0 clamp(8px, 1.6cqw, 12px);
+  container-type: size;
+}
+
+.hs-rail {
+  --rail: calc((100cqh - 4 * var(--gap)) / 5);
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: var(--gap);
+  width: var(--rail);
+}
+
+/* Logos on the dark player sit on white cards, like an overlay. */
+.hs-player .hs-mark {
+  background: #fff;
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.06);
+  color: #1f1d1b;
+}
+
+.hs-player .hs-slot { outline-color: rgb(255 255 255 / 0.2); }
+
+.hs-slot {
+  display: flex;
+  width: var(--rail);
+  height: var(--rail);
+  border-radius: 24%;
+  outline: 1px dashed var(--color-border-strong);
+  outline-offset: -1px;
+  transition:
+    transform 360ms var(--ease-out),
+    outline-color 360ms var(--ease-out),
+    outline-offset 360ms var(--ease-out);
+}
+
+.hs-player {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #0f0f0f;
+  color: #fff;
+  font-size: clamp(9px, 1.7cqw, 12px);
+}
+
+.hs-player-head {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  padding: clamp(6px, 1.4cqw, 10px);
+}
+
+.hs-avatar {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: clamp(18px, 3.6cqw, 26px);
+  height: clamp(18px, 3.6cqw, 26px);
+  border-radius: 999px;
+  background: #ff0033;
+  color: #fff;
+}
+
+/* The screen share: the featured product's page, as the stream shows it. */
+.hs-share {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 6px;
+  background: #fff;
+  color: #1f1d1b;
+  animation: hs-share-in 560ms var(--ease-out) both;
+}
+
+.hs-share-bar {
+  position: relative;
+  display: flex;
+  flex: none;
+  align-items: center;
+  height: clamp(14px, 3cqw, 20px);
+  padding: 0 7px;
+  background: #f1f1f1;
+  border-bottom: 1px solid #e3e3e3;
+}
+
+.hs-share-dots {
+  display: flex;
+  gap: 3px;
+}
+
+.hs-share-dots i {
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: #d4d4d4;
+}
+
+.hs-share-url {
+  position: absolute;
+  left: 50%;
+  max-width: 60%;
+  overflow: hidden;
+  padding: 1px 10px;
+  border-radius: 4px;
+  background: #fff;
+  color: #6b6b6b;
+  font-size: 0.8em;
+  text-overflow: ellipsis;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.hs-share-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  padding: 6px;
+  text-align: center;
+}
+
+.hs-share-mark {
+  width: clamp(30px, 11cqw, 76px);
+  height: clamp(30px, 11cqw, 76px);
+  background: #fff;
+  box-shadow: inset 0 0 0 1px #e6e0da;
+  color: #1f1d1b;
+}
+
+.hs-share-name {
+  max-width: 100%;
+  margin-top: 0.6em;
+  overflow: hidden;
+  font-size: 1.5em;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hs-share-tag {
+  margin-top: 0.4em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #fde8ea;
+  color: #cc0029;
+  font-size: 0.85em;
+  font-weight: 600;
+}
+
+.hs-controls {
+  flex: none;
+  padding: clamp(6px, 1.4cqw, 10px) clamp(8px, 1.6cqw, 12px) clamp(5px, 1.2cqw, 9px);
+}
+
+.hs-scrub {
+  position: relative;
+  display: block;
+  height: 3px;
+  border-radius: 2px;
+  background: #ff0033;
+}
+
+.hs-scrub span {
+  position: absolute;
+  top: 50%;
+  right: -1px;
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: #ff0033;
+  transform: translateY(-50%);
+}
+
+.hs-controls-row {
+  display: flex;
+  align-items: center;
+  gap: clamp(6px, 1.6cqw, 12px);
+  margin-top: clamp(5px, 1.2cqw, 8px);
+  font-weight: 500;
+}
+
+.hs-glyph {
+  width: clamp(11px, 2.4cqw, 16px);
+  height: clamp(11px, 2.4cqw, 16px);
+  flex: none;
+}
+
+.hs-live-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+@container (max-width: 420px) {
+  .hs-player-head span span:last-child { display: none; }
+  .hs-share-tag { display: none; }
+  .hs-url { font-size: 9.5px; }
+}
+
+/* The tiles in flight sit above both windows. */
+.hs-flight {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.hs-flyer {
+  position: absolute;
+  display: flex;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+
+/* Under the windows: a step caption, then the channel's numbers. */
+.hs-caption {
+  position: relative;
+  max-width: 34rem;
+  height: 56px;
+  margin: 16px auto 0;
+}
+
+.hs-caption-step,
+.hs-caption-stats {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(8px);
+  transition:
+    opacity 480ms var(--ease-soft),
+    transform 480ms var(--ease-soft),
+    border-color var(--dur-base) var(--ease-out);
+}
+
+.hs-caption-step[data-on],
+.hs-caption-stats[data-on] {
+  opacity: 1;
+  pointer-events: auto;
+  transform: none;
+}
+
+.hs-caption-step {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.hs-caption-stats {
+  display: grid;
+  grid-template-columns: auto repeat(3, minmax(0, 1fr));
+  align-items: center;
+  gap: 12px;
+  padding: 0 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface);
+}
+
+.hs-caption-stats:hover { border-color: var(--color-border-strong); }
+
+.hs-stat-brand {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.hs-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding-left: 12px;
+  border-left: 1px solid var(--color-border);
+}
+
+@media (max-width: 480px) {
+  .hs-scene { aspect-ratio: 4 / 3; }
+  .hs-stat-brand span { display: none; }
+  .hs-caption-stats { gap: 8px; padding: 0 10px; }
+  .hs-stat { padding-left: 8px; }
+}
+
+/* --- The phases --- */
+.hs-root[data-phase="fill"] .hs-tile .hs-mark {
+  animation: hs-pop 440ms var(--ease-out) both;
+  animation-delay: calc(450ms + var(--i) * 45ms);
+}
+
+/* The dashed slot only shows while the lineup is filling. */
+.hs-root:not([data-phase="fill"]) .hs-tile { outline-color: transparent; }
+
+.hs-root[data-phase="pick"] .hs-featured {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  transform: translateY(-2px) scale(1.06);
+}
+
+.hs-root:is([data-phase="fly"], [data-phase="live"], [data-phase="out"]) .hs-site {
+  opacity: 0;
+  transform: translateY(-5%) scale(0.84) rotateX(12deg);
+}
+
+.hs-root:is([data-phase="fly"], [data-phase="live"], [data-phase="out"]) .hs-featured .hs-mark {
+  opacity: 0;
+}
+
+.hs-root:is([data-phase="fly"], [data-phase="live"]) .hs-stream {
+  opacity: 1;
+  pointer-events: auto;
+  transform: none;
+  transition-delay: 160ms;
+}
+
+.hs-root[data-phase="out"] .hs-stream {
+  opacity: 0;
+  transform: scale(0.97);
+  transition-duration: 520ms;
+}
+
+.hs-slot .hs-mark { opacity: 0; }
+
+.hs-root:is([data-phase="live"], [data-phase="out"]) .hs-slot {
+  outline-color: transparent;
+}
+
+.hs-root:is([data-phase="live"], [data-phase="out"]) .hs-slot .hs-mark { opacity: 1; }
+
+.hs-root[data-phase] .hs-slot[data-on] {
+  outline: 2px solid #ff0033;
+  outline-offset: 2px;
+  transform: scale(1.06);
+}
+
+@keyframes hs-pop {
+  0% { opacity: 0; transform: translateY(35%) scale(0.4); }
+  60% { opacity: 1; transform: scale(1.08); }
+  100% { opacity: 1; transform: none; }
+}
+
+@keyframes hs-share-in {
+  from { opacity: 0.35; transform: translateX(14px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Rail cards turn over to the next product: two faces, one rotation. */
+.hs-slot { perspective: 500px; }
+
+.hs-card {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 620ms var(--ease-soft);
+}
+
+.hs-face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  backface-visibility: hidden;
+}
+
+.hs-face-back { transform: rotateY(180deg); }
+
+.hs-root:not([data-phase="live"]) .hs-card { transition: none; }
+
+/* Margin notes beside the stage, in the gutters only a wide window has. */
+.hs-stage { position: relative; }
+
+.hs-note { display: none; }
+
+@media (min-width: 1280px) {
+  .hs-note {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 160px;
+    font-size: 1.125rem;
+    font-weight: 600;
+    line-height: 1.25;
+    /* Shantell's Informal axis turns it from a rounded sans into marker
+       handwriting; a little Bounce lets the baseline wander like a pen. */
+    font-variation-settings: "INFM" 100, "BNCE" 45;
+    opacity: 0.35;
+    pointer-events: none;
+    transition:
+      opacity 500ms var(--ease-soft),
+      color 500ms var(--ease-soft);
+  }
+
+  .hs-note[data-on] {
+    color: var(--color-foreground);
+    opacity: 1;
+  }
+
+  .hs-note-left {
+    top: 22%;
+    right: calc(100% + 20px);
+    align-items: flex-end;
+    text-align: right;
+    --note-ink: var(--color-primary);
+  }
+
+  .hs-note-right {
+    top: 46%;
+    left: calc(100% + 20px);
+    align-items: flex-start;
+    --note-ink: #ff0033;
+  }
+
+  .hs-note-right .hs-note-arrow { transform: scaleX(-1); }
+}
+
+.hs-note-arrow {
+  width: 92px;
+  height: 47px;
+  fill: none;
+  stroke: var(--note-ink);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.hs-note-arrow path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 700ms var(--ease-out) 150ms;
+}
+
+.hs-note[data-on] .hs-note-arrow path { stroke-dashoffset: 0; }
+
+
+/* --- Hero podium: the logo's three bars as first, second and third. --- */
+/* No card: the bars stand straight on the page, on a hairline floor. */
+.podium {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: end;
+  gap: 12px;
+  border-bottom: 1.5px solid var(--color-border-strong);
+}
+
+.podium-tile {
+  background: var(--color-surface);
+  box-shadow:
+    inset 0 -2px 0 rgb(26 25 23 / 0.05),
+    0 0 0 1px var(--color-border),
+    0 2px 3px rgb(26 25 23 / 0.06),
+    0 8px 14px -6px rgb(26 25 23 / 0.14);
+  color: var(--color-foreground);
+}
+
+/* First place wears a gold crown, tipped onto the corner of its logo. */
+.podium-crown {
+  position: absolute;
+  top: -22px;
+  right: -16px;
+  z-index: 1;
+  display: flex;
+  color: #b7791f;
+  transform: rotate(18deg);
+  animation: podium-crown 560ms var(--ease-out) 1050ms both;
+}
+
+.podium-crown svg { fill: var(--color-gold); }
+
+/* First place stands forward: a lit top edge, a shaded base and stacked
+   drop shadows make the tile read as a raised block, not a glow. */
+.podium-tile-first {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.9),
+    inset 0 -3px 0 rgb(26 25 23 / 0.07),
+    0 0 0 1px var(--color-border-strong),
+    0 2px 3px rgb(26 25 23 / 0.1),
+    0 10px 18px -6px rgb(26 25 23 / 0.2),
+    0 22px 34px -16px rgb(26 25 23 / 0.28);
+  transform: translateY(-2px);
+}
+
+.podium-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+}
+
+.podium-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  max-width: 100%;
+  margin-bottom: 10px;
+  animation: podium-drop 520ms var(--ease-out) both;
+}
+
+.podium-open {
+  border: 1.5px dashed var(--color-border-strong);
+  color: var(--color-subtle);
+  background: color-mix(in oklab, var(--color-surface) 60%, transparent);
+}
+
+.podium-name {
+  max-width: 100%;
+  margin-top: 6px;
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.podium-meta {
+  color: var(--color-subtle);
+  font-size: 11px;
+}
+
+.podium-step {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  max-width: 7.5rem;
+  padding-top: 10px;
+  border-radius: 14px 14px 0 0;
+  /* Solid blocks: a lit top edge and a shaded foot. */
+  box-shadow:
+    inset 0 2px 0 rgb(255 255 255 / 0.28),
+    inset 0 -12px 0 rgb(26 25 23 / 0.07),
+    0 14px 24px -14px rgb(26 25 23 / 0.35);
+  font-size: 1.75rem;
+  font-weight: 800;
+  line-height: 1;
+  transform-origin: bottom;
+  animation: podium-rise 720ms var(--ease-out) both;
+  transition: translate var(--dur-base) var(--ease-out);
+}
+
+@media (hover: hover) {
+  .podium-col:hover .podium-step { translate: 0 -4px; }
+}
+
+@keyframes podium-rise {
+  from { transform: scaleY(0); }
+  to { transform: none; }
+}
+
+@keyframes podium-crown {
+  0% { opacity: 0; transform: translateY(-14px) rotate(-12deg); }
+  70% { opacity: 1; transform: translateY(2px) rotate(22deg); }
+  100% { opacity: 1; transform: rotate(18deg); }
+}
+
+@keyframes podium-drop {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* --- Lineup card: a pastel card on a little stack. ----------------------- *
+ * `--brand` is the product's logo colour; every tint is a solid mix of it
+ * into the surface, so the card is pastel in light mode and muted in dark. */
+.lineup-card {
+  --rx: 0deg;
+  --ry: 0deg;
+  position: relative;
+  isolation: isolate;
+  display: block;
+  height: 100%;
+  perspective: 900px;
+}
+
+/* The two sheets behind the card. */
+.lineup-card::before,
+.lineup-card::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  border-radius: 22px;
+  transition: transform 420ms var(--ease-out);
+}
+
+.lineup-card::before {
+  inset: 8px 10px -8px;
+  border: 1px solid color-mix(in oklab, var(--brand) 34%, var(--color-surface));
+  background: color-mix(in oklab, var(--brand) 24%, var(--color-surface));
+}
+
+.lineup-card::after {
+  inset: 16px 22px -15px;
+  z-index: -2;
+  border: 1px solid color-mix(in oklab, var(--brand) 22%, var(--color-surface));
+  background: color-mix(in oklab, var(--brand) 14%, var(--color-surface));
+}
+
+.lineup-card-face {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 20px;
+  border: 1px solid color-mix(in oklab, var(--brand) 26%, var(--color-surface));
+  border-radius: 22px;
+  background: color-mix(in oklab, var(--brand) 9%, var(--color-surface));
+  box-shadow: var(--shadow-card);
+  transform: rotateX(var(--rx)) rotateY(var(--ry));
+  transition:
+    transform 320ms var(--ease-out),
+    box-shadow 320ms var(--ease-out);
+}
+
+.lineup-card-logo {
+  background: #fff;
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--brand) 22%, var(--color-border)),
+    0 6px 12px -6px rgb(26 25 23 / 0.25);
+  transition: transform 320ms var(--ease-out);
+}
+
+.lineup-card-spot {
+  flex: none;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--brand) 20%, var(--color-surface));
+  color: color-mix(in oklab, var(--brand) 55%, var(--color-foreground));
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* The product's own words lead, with a solid pastel marker stroke. */
+.lineup-card-tagline {
+  display: -webkit-box;
+  margin-top: 18px;
+  overflow: hidden;
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.32;
+  letter-spacing: -0.015em;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.lineup-card-tagline span {
+  text-decoration-line: underline;
+  text-decoration-color: color-mix(in oklab, var(--brand) 46%, var(--color-surface));
+  text-decoration-thickness: 0.4em;
+  text-underline-offset: -0.22em;
+  text-decoration-skip-ink: none;
+}
+
+.lineup-card-chip {
+  padding: 2px 8px;
+  border: 1px solid color-mix(in oklab, var(--brand) 30%, var(--color-surface));
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: color-mix(in oklab, var(--brand) 55%, var(--color-foreground));
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.lineup-card-go {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: var(--color-foreground);
+  color: var(--color-background);
+  transition: transform 320ms var(--ease-out);
+}
+
+@media (hover: hover) {
+  .lineup-card:hover .lineup-card-face {
+    transform: translateY(-6px) rotateX(var(--rx)) rotateY(var(--ry));
+    box-shadow: var(--shadow-card-hover);
+  }
+
+  .lineup-card:hover::before { transform: translateY(4px) rotate(-2.5deg); }
+  .lineup-card:hover::after { transform: translateY(8px) rotate(3deg); }
+  .lineup-card:hover .lineup-card-logo { transform: scale(1.06) rotate(-4deg); }
+  .lineup-card:hover .lineup-card-go { transform: rotate(-45deg); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .pulse-dot,
   /* Dropping the name rather than the duration leaves each bar on its
      authored attributes, which is the resolved logo rather than a frozen
      frame of the loop. */
   .logo-bar,
-  .hero-atmosphere::before,
   .num-tick {
     animation: none;
   }
@@ -1082,6 +1933,15 @@
     animation: none;
     stroke-dashoffset: 0;
   }
+
+  /* The hero showcase never loops: it rests on the finished stream. */
+  .hs-site,
+  .hs-caption-step { opacity: 0 !important; }
+  .hs-stream,
+  .hs-caption-stats,
+  .hs-slot .hs-mark { opacity: 1 !important; transform: none !important; pointer-events: auto !important; }
+  .hs-slot { outline-color: transparent; }
+  .hs-note-arrow path { stroke-dashoffset: 0; }
 
   /* Entrances resolve to their finished state rather than never arriving. */
   .reveal {

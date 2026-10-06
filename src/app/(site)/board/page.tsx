@@ -105,7 +105,7 @@ function EmptyBoard({ reason }: { reason: string }) {
         <p className="text-subtle text-sm">{reason}</p>
         <div className="mt-5">
           <EnterButton className={buttonClass("primary", "sm")}>
-            Enter. Earn your spot.
+            Claim your spot
           </EnterButton>
         </div>
       </Panel>

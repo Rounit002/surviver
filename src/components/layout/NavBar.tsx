@@ -100,7 +100,7 @@ export function NavBar({ ticker }: { ticker?: ReactNode }) {
             <ThemeToggle />
             <div className="hidden sm:block">
               <EnterButton className={buttonClass("primary", "sm")}>
-                Enter. Earn your spot.
+                Claim your spot
               </EnterButton>
             </div>
 
@@ -159,7 +159,7 @@ export function NavBar({ ticker }: { ticker?: ReactNode }) {
           </nav>
           <div className="border-border mt-2 border-t pt-2">
             <EnterButton className={buttonClass("primary", "md", "w-full")}>
-              Enter. Earn your spot.
+              Claim your spot
             </EnterButton>
           </div>
         </div>

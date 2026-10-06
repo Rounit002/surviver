@@ -41,7 +41,7 @@ export function ProductCard({
   return (
     <article
       className={cn(
-        "bg-surface hover:border-border-strong flex items-center gap-3 rounded-[14px] border p-3.5 transition-colors duration-150 sm:gap-4 sm:px-4",
+        "card-lift bg-surface flex items-center gap-3 rounded-[14px] border p-3.5 sm:gap-4 sm:px-4",
         rank === 1 ? "border-amber-400/50" : "border-border",
         className,
       )}

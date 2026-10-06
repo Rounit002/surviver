@@ -78,7 +78,7 @@ export default async function DashboardPage(props: PageProps<"/dashboard">) {
             </p>
             <div className="mt-5">
               <EnterButton className={buttonClass("primary", "sm")}>
-                Enter. Earn your spot.
+                Claim your spot
               </EnterButton>
             </div>
           </PanelBody>

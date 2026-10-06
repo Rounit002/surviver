@@ -1,14 +1,16 @@
 import { pageMetadata } from "@/lib/seo";
 export const metadata = pageMetadata("/");
 import Link from "next/link";
+import type { CSSProperties } from "react";
 import { CategoryBar } from "@/components/layout/CategoryBar";
 import { QuickEntry } from "@/components/entry/QuickEntry";
 import { PresenceCounter } from "@/components/layout/PresenceCounter";
 import { LineupField } from "@/components/competition/LineupField";
 import { ProductCard } from "@/components/product/ProductCard";
-import { HeroRanking } from "@/components/home/HeroRanking";
-import { HeroGlow } from "@/components/home/HeroGlow";
-import { ExtraReachCards, ExtraReachStrip } from "@/components/home/ExtraReach";
+import { HeroStreamShowcase } from "@/components/home/HeroStreamShowcase";
+import { HeroField } from "@/components/home/HeroField";
+import { HeroPodium } from "@/components/home/HeroPodium";
+import { ExtraReachCards } from "@/components/home/ExtraReach";
 import { UpcomingProductList } from "@/components/product/UpcomingProductList";
 import { buttonClass } from "@/components/ui/Button";
 import { Countdown } from "@/components/ui/Countdown";
@@ -59,17 +61,18 @@ export default async function HomePage() {
   const capacity = (open ?? season)?.capacity ?? FIELD_SIZE;
   const price = open ? formatMoney(open.entryPriceCents, open.currency) : null;
   const serverNow = new Date().toISOString();
-  const podium = (standings?.rows ?? []).slice(0, 4);
+  const podium = (standings?.rows ?? []).slice(0, 3).map((row) => ({ id: row.entryId, name: row.product.name, url: row.product.url, logoUrl: row.product.logoUrl, clicks: row.verifiedVisits }));
+  const showcase = (round ? rows.map((row) => ({ id: row.entryId, product: row.product })) : lineup).map(({ id, product }) => ({ id, name: product.name, url: product.url, logoUrl: product.logoUrl, category: product.category }));
 
   return (
     <>
       {/* ---------------------------------------------------------------- *
           Hero
        * ---------------------------------------------------------------- */}
-      <section className="hero-atmosphere section-hero pb-12">
-        <HeroGlow />
+      <section className="hero-atmosphere section-hero overflow-x-clip pb-12">
+        <HeroField />
         <div className="shell">
-          <div className="grid items-center gap-12 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-14">
+          <div className="grid items-center gap-12 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:gap-16">
             {/* Left: the offer, said once and plainly. */}
             <div className="flex flex-col items-center text-center lg:items-start lg:text-left">
               <Reveal>
@@ -102,7 +105,7 @@ export default async function HomePage() {
               </Reveal>
 
               <Reveal delay={150}>
-                <p className="text-subtle mt-5 max-w-md text-lg leading-relaxed">
+                <p className="text-subtle mt-4 max-w-md text-base leading-relaxed sm:text-lg">
                   Every product stays live all season. Real visitors decide the rank.
                 </p>
               </Reveal>
@@ -113,19 +116,19 @@ export default async function HomePage() {
 
               <Reveal delay={260}>
                 <ul className="mt-5 flex flex-wrap justify-center gap-2 lg:justify-start">
-                  {[price ? `${price} flat` : "One flat fee", "Live all season", "No bidding"].map((label) => (
-                    <li key={label} className="border-border bg-surface inline-flex items-center gap-1.5 rounded-[10px] border px-3 py-1.5 text-[13px] font-semibold">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-primary" aria-hidden>
+                  {[
+                    { label: price ? `${price} flat` : "One flat fee", tint: "var(--cat-dev-tools-tint)", ink: "var(--cat-dev-tools-ink)" },
+                    { label: "Live all season", tint: "var(--cat-productivity-tint)", ink: "var(--cat-productivity-ink)" },
+                    { label: "No bidding", tint: "var(--cat-design-tint)", ink: "var(--cat-design-ink)" },
+                  ].map(({ label, tint, ink }) => (
+                    <li key={label} className="glass-card inline-flex items-center gap-1.5 rounded-[10px] px-3 py-1.5 text-[13px] font-semibold" style={{ "--tint": tint } as CSSProperties}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={ink} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                         <path d="M5 12.5l4.5 4.5L19 7.5" />
                       </svg>
                       {label}
                     </li>
                   ))}
                 </ul>
-              </Reveal>
-
-              <Reveal delay={310}>
-                <ExtraReachStrip className="mt-6" />
                 {round ? (
                   <p className="text-subtle mt-4 text-[13px]">
                     Ends in{" "}
@@ -135,11 +138,22 @@ export default async function HomePage() {
               </Reveal>
             </div>
 
-            {/* Right: what the board looks like. */}
-            <Reveal delay={200} className="mx-auto w-full max-w-md lg:max-w-none">
-              <HeroRanking rows={podium} live={Boolean(round)} />
+            {/* Right: the podium — the logo's three bars, holding the top three. */}
+            <Reveal delay={240} className="mx-auto w-full max-w-sm lg:max-w-[23rem]">
+              <HeroPodium
+                top={podium}
+                live={Boolean(round)}
+                seasonName={(lineupSeason ?? season)?.name ?? "Season"}
+                capacity={capacity}
+                filled={lineup.length}
+              />
             </Reveal>
           </div>
+
+          {/* Below it, the offer as a picture: register here, get featured on stream. */}
+          <Reveal delay={320} className="mx-auto mt-12 w-full max-w-4xl">
+            <HeroStreamShowcase entries={showcase} capacity={capacity} />
+          </Reveal>
 
           {lineupSeason && !round ? (
             <Reveal delay={340} className="mt-16">
@@ -215,7 +229,7 @@ export default async function HomePage() {
             </div>
 
             {activity.length ? (
-              <aside className="border-border bg-surface h-fit rounded-[20px] border p-5">
+              <aside className="card-depth h-fit rounded-[20px] p-5">
                 <h3 className="flex items-center gap-2 text-sm font-semibold">
                   <span className="pulse-dot bg-live size-1.5 rounded-full" />
                   Activity
@@ -297,7 +311,7 @@ export default async function HomePage() {
               <EnterButton
                 className="inline-flex min-h-12 items-center gap-2 rounded-[12px] bg-white px-5.5 text-[15px] font-semibold text-[#1f1d1b] shadow-lg transition-transform duration-150 hover:-translate-y-px"
               >
-                Enter. Earn your spot.
+                Claim your spot
                 <Icon name="arrow" width="16" height="16" />
               </EnterButton>
               <Link

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { DM_Sans, Geist_Mono } from "next/font/google";
+import { DM_Sans, Geist_Mono, Shantell_Sans } from "next/font/google";
 import "./globals.css";
 import { headers } from "next/headers";
 import { SOCIAL_CARD } from "@/lib/seo";
@@ -14,6 +14,16 @@ const dmSans = DM_Sans({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  display: "swap",
+});
+
+/* Shantell Sans — a marker face drawn for annotation — only for the hero's
+   margin notes (`.hand`). Its Informal and Bounce axes are what make it read
+   as handwriting rather than as a rounded sans. */
+const shantell = Shantell_Sans({
+  variable: "--font-hand",
+  subsets: ["latin"],
+  axes: ["INFM", "BNCE"],
   display: "swap",
 });
 
@@ -75,7 +85,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       // theme first and correcting it in view. Scoped to this element only:
       // it does not cover any descendant.
       suppressHydrationWarning
-      className={`${dmSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${dmSans.variable} ${geistMono.variable} ${shantell.variable} h-full antialiased`}
     >
       {/* The doodle wallpaper is parked, not deleted: the background is plain
           for now. `DoodleField` and its `.doodle-*` rules in `globals.css` are

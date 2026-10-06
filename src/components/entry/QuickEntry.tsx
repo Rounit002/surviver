@@ -33,7 +33,7 @@ export function QuickEntry({ available, full = false, priceLabel }: { available:
         event.preventDefault();
         if (available) openEntry(url);
       }}
-      className="border-border bg-surface shadow-sm mx-auto flex w-full flex-col gap-2 rounded-[16px] border p-2 md:flex-row md:items-center"
+      className="glass-card mx-auto flex w-full flex-col gap-2 rounded-[16px] border p-2 md:flex-row md:items-center"
     >
       <div className="relative min-w-0 flex-1">
         <Icon name="globe" width={17} className="text-subtle pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2" />
@@ -58,7 +58,7 @@ export function QuickEntry({ available, full = false, priceLabel }: { available:
           disabled={!available}
           className="btn-primary text-primary-foreground flex h-11 flex-1 cursor-pointer items-center justify-center gap-2 rounded-[11px] px-5 text-sm font-semibold transition-[filter,transform] duration-150 hover:brightness-110 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50 md:flex-none"
         >
-          {available ? "Enter. Earn your spot." : full ? "All spots filled" : "Opening soon"}
+          {available ? "Claim your spot" : full ? "All spots filled" : "Opening soon"}
           <Icon name="arrow" width={15} />
         </button>
       </div>

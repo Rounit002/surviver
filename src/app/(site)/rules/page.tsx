@@ -61,7 +61,7 @@ export default async function RulesPage() {
       </ol>
 
       <EnterButton className="text-primary mt-8 inline-block text-sm font-semibold hover:underline">
-        Enter. Earn your spot. →
+        Claim your spot →
       </EnterButton>
     </article>
   );

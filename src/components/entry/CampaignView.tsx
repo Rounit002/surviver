@@ -182,7 +182,7 @@ export function PendingState({ status, showFinish, testMode = false }: { status:
       {showFinish && status === "AWAITING_PAYMENT" ? (
         <div className="mt-4">
           <EnterButton className={buttonClass("primary", "sm")}>
-            Enter. Earn your spot.
+            Claim your spot
           </EnterButton>
         </div>
       ) : null}
