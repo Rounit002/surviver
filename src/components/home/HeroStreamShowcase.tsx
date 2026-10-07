@@ -38,7 +38,7 @@ import {
   type SimpleIcon,
 } from "simple-icons";
 import { SiteFavicon } from "@/components/product/SiteFavicon";
-import { BrandIcon, SOCIAL_LINKS } from "@/components/ui/BrandIcon";
+import { BrandIcon, SOCIAL_LINKS, STREAM_STATS } from "@/components/ui/BrandIcon";
 import type { ProductCategory } from "@/generated/prisma";
 import { cn } from "@/lib/cn";
 
@@ -49,18 +49,6 @@ export type ShowcaseEntry = {
   logoUrl: string | null;
   category: ProductCategory;
 };
-
-/**
- * Channel numbers shown under the stream window. They are a claim about the
- * real channel, so keep them true. Read from youtube.com/@rounieee/streams on
- * 2026-10-06: 8.03K subscribers; the last 29 streams averaged 13.4K views and
- * all fell within four weeks.
- */
-const STREAM_STATS = [
-  { label: "Subscribers", value: 8030 },
-  { label: "Avg views / stream", value: 13400 },
-  { label: "Live streams / month", value: 29 },
-] as const;
 
 /**
  * Real SaaS marks (Simple Icons, CC0 artwork) that fill the slots real entries

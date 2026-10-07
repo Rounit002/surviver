@@ -51,7 +51,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Surviver.lol — 32 SaaS spots, ranked by real clicks",
     description:
-      "32 spots, one flat fee. Every product stays live all season and real clicks decide the rank.",
+      "32 spots, one flat fee. Every product stays live all season, gets shown on YouTube Live, and real clicks decide the rank.",
     siteName: "Surviver.lol",
     type: "website",
     images: [SOCIAL_CARD],
@@ -61,7 +61,7 @@ export const metadata: Metadata = {
     images: [SOCIAL_CARD],
     title: "Surviver.lol — 32 SaaS spots, ranked by real clicks",
     description:
-      "32 spots, one flat fee. Every product stays live all season and real clicks decide the rank.",
+      "32 spots, one flat fee. Every product stays live all season, gets shown on YouTube Live, and real clicks decide the rank.",
   },
 };
 

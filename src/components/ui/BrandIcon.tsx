@@ -28,3 +28,15 @@ export const SOCIAL_LINKS = {
   youtube: "https://www.youtube.com/@rounieee",
   discord: "https://discord.gg/PeEbj4CB7U",
 } as const;
+
+/**
+ * Channel numbers shown under the hero's stream window and on the social card.
+ * They are a claim about the real channel, so keep them true.
+ * Read from youtube.com/@rounieee/streams on 2026-10-06: 8.03K subscribers;
+ * the last 29 streams averaged 13.4K views and all fell within four weeks.
+ */
+export const STREAM_STATS = [
+  { label: "Subscribers", value: 8030 },
+  { label: "Avg views / stream", value: 13400 },
+  { label: "Live streams / month", value: 29 },
+] as const;
