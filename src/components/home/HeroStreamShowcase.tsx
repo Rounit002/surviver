@@ -108,7 +108,7 @@ const compact = new Intl.NumberFormat("en", { notation: "compact", maximumSignif
  * Real lineup entries take the first slots and the stream features them first;
  * the rest are real SaaS marks.
  */
-export function HeroStreamShowcase({ entries, capacity }: { entries: ShowcaseEntry[]; capacity: number }) {
+export function HeroStreamShowcase({ entries, capacity, subscribers }: { entries: ShowcaseEntry[]; capacity: number; subscribers?: number }) {
   const items: Item[] = Array.from({ length: capacity }, (_, i) => {
     const entry = entries[i];
     if (entry) return { key: entry.id, kind: "entry", name: entry.name, entry };
@@ -386,7 +386,7 @@ export function HeroStreamShowcase({ entries, capacity }: { entries: ShowcaseEnt
           </span>
           {STREAM_STATS.map((stat) => (
             <span key={stat.label} className="hs-stat">
-              <CountUp value={stat.value} active={landed} />
+              <CountUp value={stat.label === "Subscribers" && subscribers ? subscribers : stat.value} active={landed} />
               <span className="text-subtle text-[11px] leading-tight">{stat.label}</span>
             </span>
           ))}

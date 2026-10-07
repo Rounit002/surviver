@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { ImageResponse } from "next/og";
 import { siDiscord, siYoutube } from "simple-icons";
 import { STREAM_STATS } from "@/components/ui/BrandIcon";
+import { getSubscriberCount } from "@/lib/youtube";
 import { FIELD_SIZE } from "@/lib/competition/constants";
 
 /**
@@ -21,13 +22,14 @@ import { FIELD_SIZE } from "@/lib/competition/constants";
  *
  * Flat fills and neutral layered shadows only: no gradients, no glows.
  *
- * Built once at build time (force-static), from code rather than a PNG in
+ * Built at build time and refreshed daily (so the subscriber count follows the
+ * channel), from code rather than a PNG in
  * /public, so the numbers on the card come from the same FIELD_SIZE and
  * STREAM_STATS the site uses and cannot drift from the product again. When
  * the card changes, bump `SOCIAL_CARD_VERSION` in `lib/seo.ts` so X and
  * LinkedIn fetch it afresh instead of serving their cached copy.
  */
-export const dynamic = "force-static";
+export const revalidate = 86400;
 
 const font = (weight: number) =>
   readFile(join(process.cwd(), "node_modules/@fontsource/dm-sans/files", `dm-sans-latin-${weight}-normal.woff`));
@@ -43,8 +45,8 @@ const STAGE = "#1f1d1b";
 const YT_RED = "#ff0033";
 const SHADOW = "0 1px 0 rgba(255,255,255,0.9) inset, 0 2px 4px rgba(31,29,27,0.06), 0 14px 28px -10px rgba(31,29,27,0.18), 0 36px 64px -28px rgba(31,29,27,0.26)";
 
-const compact = new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 });
-const [subscribers, avgViews] = STREAM_STATS;
+const compact = new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 2 });
+const [, monthlyViews] = STREAM_STATS;
 
 // The podium inside the stream, drawn like the hero's: the logo's three bars,
 // tall in the middle. Abstract marks only — this is a picture of the format,
@@ -91,7 +93,8 @@ function Rail({ tiles, on }: { tiles: string[][]; on: number }) {
 }
 
 export async function GET() {
-  const [medium, bold, heavy] = await Promise.all([font(500), font(700), font(800)]);
+  const [medium, bold, heavy, subscriberCount] = await Promise.all([font(500), font(700), font(800), getSubscriberCount()]);
+  const subscribers = { label: "Subscribers", value: subscriberCount };
 
   return new ImageResponse(
     (
@@ -138,7 +141,7 @@ export async function GET() {
             {[
               { label: "$29 flat", tint: "#e4edfb", ink: BLUE },
               { label: "No bidding", tint: "#eeeafb", ink: "#544a8c" },
-              { label: "Live all season", tint: "#ddefeb", ink: "#2c6055" },
+              { label: "Live every season", tint: "#ddefeb", ink: "#2c6055" },
             ].map(({ label, tint, ink }) => (
               <div key={label} style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 16px", borderRadius: 12, background: tint, color: INK, fontSize: 21, fontWeight: 700 }}>
                 <Tick color={ink} />
@@ -219,10 +222,10 @@ export async function GET() {
 
           {/* The channel's real numbers, and the Discord shout-out */}
           <div style={{ display: "flex", alignItems: "center", gap: 18, padding: "12px 18px", borderRadius: 18, background: "#ffffff", border: `2px solid ${HAIRLINE}` }}>
-            {[subscribers, avgViews].map((stat) => (
+            {[subscribers, monthlyViews].map((stat) => (
               <div key={stat.label} style={{ display: "flex", alignItems: "baseline", gap: 7 }}>
                 <span style={{ fontSize: 24, fontWeight: 800 }}>{compact.format(stat.value)}</span>
-                <span style={{ fontSize: 16, fontWeight: 600, color: SUBTLE }}>{stat.label === "Subscribers" ? "subscribers" : "avg views"}</span>
+                <span style={{ fontSize: 16, fontWeight: 600, color: SUBTLE }}>{stat.label === "Subscribers" ? "subscribers" : "monthly views"}</span>
               </div>
             ))}
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginLeft: "auto", fontSize: 16, fontWeight: 700 }}>

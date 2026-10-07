@@ -9,7 +9,7 @@ export const SITE_URL = "https://surviver.lol";
  * keeps the URL keeps showing the old picture. Bump `version` whenever the
  * card changes; the route ignores the query, the crawlers do not.
  */
-const SOCIAL_CARD_VERSION = "2026-10-07";
+const SOCIAL_CARD_VERSION = "2026-10-07c";
 export const SOCIAL_CARD = {
   url: `/social-card.png?v=${SOCIAL_CARD_VERSION}`,
   width: 1200,

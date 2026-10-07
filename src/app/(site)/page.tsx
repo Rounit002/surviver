@@ -8,6 +8,8 @@ import { PresenceCounter } from "@/components/layout/PresenceCounter";
 import { LineupField } from "@/components/competition/LineupField";
 import { ProductCard } from "@/components/product/ProductCard";
 import { HeroStreamShowcase } from "@/components/home/HeroStreamShowcase";
+import { AudienceWord } from "@/components/home/AudienceWord";
+import { getSubscriberCount } from "@/lib/youtube";
 import { HeroField } from "@/components/home/HeroField";
 import { HeroPodium } from "@/components/home/HeroPodium";
 import { ExtraReachCards } from "@/components/home/ExtraReach";
@@ -37,11 +39,12 @@ export const dynamic = "force-dynamic";
  * call to action. Every number is read from the database.
  */
 export default async function HomePage() {
-  const [season, open, visitor, presence] = await Promise.all([
+  const [season, open, visitor, presence, subscribers] = await Promise.all([
     getCurrentSeason(),
     getOpenSeason(),
     getVisitorContext(),
     readPresence(),
+    getSubscriberCount(),
   ]);
   const summary = open ? await getSeasonSummary(open) : null;
   const round = season ? await getActiveRound(season.id) : null;
@@ -105,8 +108,11 @@ export default async function HomePage() {
               </Reveal>
 
               <Reveal delay={150}>
-                <p className="text-subtle mt-4 max-w-md text-base leading-relaxed sm:text-lg">
-                  Every product stays live all season. Real visitors decide the rank.
+                <p className="hero-audience mt-4 max-w-lg text-lg leading-snug font-bold sm:text-xl">
+                  Every product featured live on stream, in front of{" "}
+                  <span className="hero-audience-mark">
+                    400K monthly <AudienceWord />
+                  </span>
                 </p>
               </Reveal>
 
@@ -118,7 +124,7 @@ export default async function HomePage() {
                 <ul className="mt-5 flex flex-wrap justify-center gap-2 lg:justify-start">
                   {[
                     { label: price ? `${price} flat` : "One flat fee", tint: "var(--cat-dev-tools-tint)", ink: "var(--cat-dev-tools-ink)" },
-                    { label: "Live all season", tint: "var(--cat-productivity-tint)", ink: "var(--cat-productivity-ink)" },
+                    { label: "Live every season", tint: "var(--cat-productivity-tint)", ink: "var(--cat-productivity-ink)" },
                     { label: "No bidding", tint: "var(--cat-design-tint)", ink: "var(--cat-design-ink)" },
                   ].map(({ label, tint, ink }) => (
                     <li key={label} className="glass-card inline-flex items-center gap-1.5 rounded-[10px] px-3 py-1.5 text-[13px] font-semibold" style={{ "--tint": tint } as CSSProperties}>
@@ -152,7 +158,7 @@ export default async function HomePage() {
 
           {/* Below it, the offer as a picture: register here, get featured on stream. */}
           <Reveal delay={320} className="mx-auto mt-12 w-full max-w-4xl">
-            <HeroStreamShowcase entries={showcase} capacity={capacity} />
+            <HeroStreamShowcase entries={showcase} capacity={capacity} subscribers={subscribers} />
           </Reveal>
 
           {lineupSeason && !round ? (

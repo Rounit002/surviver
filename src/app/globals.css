@@ -1079,6 +1079,37 @@
   }
 }
 
+/* --- Hero audience line: the reach claim, in ink, with a rotating word. --- */
+.hero-audience {
+  color: var(--color-foreground);
+  letter-spacing: -0.01em;
+}
+
+.hero-audience-mark {
+  display: inline-block;
+  padding: 0 0.3em;
+  border-radius: 8px;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  white-space: nowrap;
+}
+
+.audience-word-current {
+  display: inline-block;
+  animation: audience-in 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes audience-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.45em);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 /* --- Hero stream showcase ----------------------------------------------
    Two Mac windows in one stage, driven by `data-phase` on `.hs-root`:
    the site fills its 32 spots, recedes, and a YouTube live player rises

@@ -32,11 +32,13 @@ export const SOCIAL_LINKS = {
 /**
  * Channel numbers shown under the hero's stream window and on the social card.
  * They are a claim about the real channel, so keep them true.
- * Read from youtube.com/@rounieee/streams on 2026-10-06: 8.03K subscribers;
- * the last 29 streams averaged 13.4K views and all fell within four weeks.
+ * Subscribers are a fallback only: the live count comes from `lib/youtube.ts`
+ * (8.03K read from youtube.com/@rounieee on 2026-10-06). Monthly
+ * views are the owner's figure (~400K, 2026-10-07), consistent with 29 streams
+ * a month averaging ~13.4K views each.
  */
 export const STREAM_STATS = [
   { label: "Subscribers", value: 8030 },
-  { label: "Avg views / stream", value: 13400 },
+  { label: "Monthly views", value: 400000 },
   { label: "Live streams / month", value: 29 },
 ] as const;
