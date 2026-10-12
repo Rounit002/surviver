@@ -2,7 +2,6 @@ import { pageMetadata } from "@/lib/seo";
 import Link from "next/link";
 import { Icon } from "@/components/ui/Icon";
 import { FIELD_SIZE } from "@/lib/competition/constants";
-import { headers } from "next/headers";
 export const metadata = pageMetadata("/how-it-works");
 
 const STEPS = [
@@ -15,7 +14,7 @@ const STEPS = [
   },
   {
     n: "02",
-    title: "Season starts at 32",
+    title: `Season starts when all ${FIELD_SIZE} spots fill`,
     text: `Nothing is ranked until all ${FIELD_SIZE} spots are paid. Then the board goes live for everyone at once.`,
     tone: "var(--cat-productivity-tint)",
     ink: "var(--cat-productivity-ink)",
@@ -36,7 +35,19 @@ const FAQS = [
   },
   {
     question: "Where can I submit my SaaS product for discovery?",
-    answer: "You can submit your SaaS product to an open Surviver.lol season. Once the entry is approved and the field fills, it appears on the public discovery board for the entire season.",
+    answer: "You can submit your SaaS product to an open Surviver.lol season. Once payment is confirmed, it joins the public lineup. The discovery board goes live when all spots are filled, and listings stay up for the full season.",
+  },
+  {
+    question: "Can I launch an AI tool or developer product here?",
+    answer: "Yes. Open seasons accept SaaS products, AI tools, startups, and developer products. Once payment is confirmed, the product joins the public lineup and appears on the discovery board when its season goes live.",
+  },
+  {
+    question: "Is Surviver.lol a Product Hunt alternative?",
+    answer: "It is another product launch and discovery channel, with season-long listings and rankings based on verified clicks. It is not a replacement for launch communities, and a listing does not guarantee traffic or customers.",
+  },
+  {
+    question: "Will a listing guarantee visitors or customers?",
+    answer: "No. Products receive the same season-long placement rules, but visitor numbers, clicks, signups, and sales are not guaranteed. Rankings reflect verified visitor clicks, not paid position.",
   },
   {
     question: "How are products ranked?",
@@ -48,24 +59,14 @@ const FAQS = [
   },
 ] as const;
 
-export default async function HowItWorksPage() {
-  const nonce = (await headers()).get("x-nonce") ?? undefined;
+export default function HowItWorksPage() {
   return (
     <article className="shell section">
-      <script nonce={nonce} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        mainEntity: FAQS.map(({ question, answer }) => ({
-          "@type": "Question",
-          name: question,
-          acceptedAnswer: { "@type": "Answer", text: answer },
-        })),
-      }).replace(/</g, "\\u003c") }} />
       <div className="max-w-2xl">
         <p className="eyebrow">How it works</p>
-        <h1 className="text-title mt-3 font-semibold">Real clicks are the score.</h1>
+        <h1 className="text-title mt-3 font-semibold">Launch your SaaS with season-long visibility.</h1>
         <p className="text-subtle text-lead mt-3">
-          A fixed field of {FIELD_SIZE}. Equal exposure. Every product is live for the whole season.
+          Submit your SaaS, AI tool, startup, or developer product for a season of discovery. All {FIELD_SIZE} spots launch together, rankings follow verified visitor clicks, and every listing stays live for the full season.
         </p>
       </div>
 

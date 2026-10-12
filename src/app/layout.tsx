@@ -39,15 +39,6 @@ export const metadata: Metadata = {
     "Launch and promote your SaaS, AI tool, or startup to real visitors. 32 products compete on equal terms and rank by verified clicks all season.",
   applicationName: "Surviver.lol",
   category: "technology",
-  keywords: [
-    "SaaS launch platform",
-    "SaaS product discovery",
-    "submit SaaS product",
-    "promote SaaS",
-    "startup launch platform",
-    "AI tool directory",
-    "SaaS leaderboard",
-  ],
   openGraph: {
     title: "Surviver.lol — 32 SaaS spots, ranked by real clicks",
     description:

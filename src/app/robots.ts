@@ -6,7 +6,9 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/api/", "/dashboard", "/entry/", "/enter/checkout/", "/go/", "/login", "/rally/", "/signup"],
+      // Let crawlers read the noindex metadata on auth and dashboard pages.
+      // Secret capability links, redirects, checkout and API routes remain blocked.
+      disallow: ["/api/", "/entry/", "/enter/checkout/", "/go/", "/rally/"],
     },
     sitemap: `${SITE_URL}/sitemap.xml`,
     host: SITE_URL,

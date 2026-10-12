@@ -30,3 +30,16 @@ Render's dashboard reports that the Free service sleeps with inactivity and that
 Sources: [Google canonical guidance](https://developers.google.com/search/docs/crawling-indexing/consolidate-duplicate-urls), [Search Console setup](https://developers.google.com/search/docs/monitor-debug/search-console-start), [Google spam policies](https://developers.google.com/search/docs/essentials/spam-policies#link-spam).
 
 Indexing and rankings are Google's decisions; a sitemap and verification improve discovery and diagnosis but do not guarantee inclusion.
+
+## Search intent to cover
+
+Search Console's three-month preset displays 46 impressions and 14 clicks, but its chart and date-range fields both show September 13–October 10, 2026. Treat 46 as the visible latest-28-day total; the UI did not confirm a full-quarter total. The visible queries are branded variants (`survivor lol`, `surviver`, and `survivor login`). This is a small baseline, not enough data to claim keyword demand or ranking gains.
+
+Use the existing home, discovery board, and how-it-works pages to answer these relevant query families in plain language:
+
+- Product launch: launch a SaaS product, SaaS launch platform, startup launch platform, launch a software product.
+- Promotion and discovery: promote a SaaS product, get a startup discovered, discover new SaaS products, new AI tools, indie software discovery.
+- Submission: submit a SaaS product, submit an AI tool, list a developer tool, startup product submission.
+- Comparison: Product Hunt alternative, product launch directory, startup launch site. Describe Surviver.lol's actual season-long format and avoid claiming equivalence or guaranteed reach.
+
+These are intent hypotheses, not measured search volumes. Review Search Console's query and page reports monthly, then expand only themes that earn relevant impressions and that the product can genuinely satisfy. Do not manufacture misspelled query variants or synonym pages: Google ignores the meta-keywords tag, and unnatural keyword lists, doorway pages, and low-value scaled pages can violate its spam policies.

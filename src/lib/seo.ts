@@ -23,7 +23,7 @@ export const publicPages = [
   { path: "/seasons", title: "SaaS Launch Seasons & Results", description: "Browse current and past SaaS launch seasons, product lineups, verified click rankings, winners, and permanent competition results." },
   { path: "/survivors", title: "Top SaaS Products & Season Winners", description: "Discover winning SaaS products, AI tools, and startups that earned the most visitor interest in previous Surviver.lol seasons." },
   { path: "/enter", title: "Submit Your SaaS, AI Tool or Startup", description: "Submit your SaaS product, AI tool, startup, or developer product for season-long discovery and ranking by verified visitor clicks." },
-  { path: "/how-it-works", title: "How the SaaS Launch Platform Works", description: "Learn how to launch and promote a SaaS product on Surviver.lol: 32 equal spots, season-long visibility, and rankings based on verified clicks." },
+  { path: "/how-it-works", title: "How a SaaS Launch Season Works", description: "Learn how to submit and promote a SaaS product, AI tool, startup, or developer product with season-long visibility and rankings based on verified visitor clicks." },
   { path: "/rules", title: "Rules", description: "Surviver.lol rules for entries, what counts as a click, ranking, Rally referrals, refunds, and season survivors." },
   { path: "/privacy", title: "Privacy Policy", description: "Learn how Surviver.lol handles campaign information, payments, analytics, essential cookies, and requests concerning personal information." },
   { path: "/terms", title: "Terms of Service", description: "Review Surviver.lol terms for product submissions, promotional placements, moderation, entry fees, rankings, and refunds." },
@@ -40,7 +40,6 @@ export function pageMetadata(path: string, title?: string, description?: string)
   return {
     title: resolvedTitle,
     description: resolvedDescription,
-    keywords: ["SaaS launch platform", "SaaS product discovery", "submit SaaS product", "promote SaaS", "startup launch platform", "AI tool directory"],
     alternates: { canonical: `${SITE_URL}${path === "/" ? "" : path}` },
     openGraph: {
       title: resolvedTitle, description: resolvedDescription, url: `${SITE_URL}${path}`,
