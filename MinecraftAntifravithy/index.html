@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Minecraft Java Edition - Pure WebGL Voxel Engine</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #000;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Minecraft", monospace;
+    }
+    #canvas-container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+    }
+    #gl-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+    #hud-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      pointer-events: none;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+    #crosshair {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 16px;
+      height: 16px;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+    #crosshair::before, #crosshair::after {
+      content: '';
+      position: absolute;
+      background: rgba(255, 255, 255, 0.85);
+      mix-blend-mode: difference;
+    }
+    #crosshair::before {
+      top: 7px;
+      left: 0;
+      width: 16px;
+      height: 2px;
+    }
+    #crosshair::after {
+      top: 0;
+      left: 7px;
+      width: 2px;
+      height: 16px;
+    }
+    #ui-instructions {
+      position: absolute;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.65);
+      border: 2px solid #555;
+      padding: 8px 16px;
+      border-radius: 4px;
+      color: #fff;
+      font-size: 13px;
+      letter-spacing: 0.5px;
+      pointer-events: none;
+      text-align: center;
+      transition: opacity 0.5s ease;
+    }
+    #error-modal {
+      display: none;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #2a1515;
+      border: 2px solid #f44;
+      padding: 24px;
+      color: #fff;
+      max-width: 500px;
+      z-index: 1000;
+      border-radius: 6px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <canvas id="gl-canvas"></canvas>
+    <canvas id="hud-canvas"></canvas>
+    <div id="crosshair"></div>
+    <div id="ui-instructions">Click screen to lock mouse. WASD to move, Space (jump/double-tap fly), Shift (sneak/sink), LMB (mine), RMB (place), 1-9/Wheel (hotbar), T (time)</div>
+    <div id="error-modal"></div>
+  </div>
+
+  <script type="module">
+    import { Vec3 } from './src/engine/math.js';
+    import { Renderer } from './src/engine/renderer.js';
+    import { ChunkSection, buildMesh, deleteMesh, BLOCK_IDS } from './src/engine/mesher.js';
+    import { TILE_SLOTS } from './src/engine/atlas.js';
+    import { WorldManager, DIMENSION, BLOCK } from './src/world/world.js';
+    import { igniteNetherPortal, validateNetherPortalFrame, prepareEndSpawnPlatform, findOrCreateNetherPortal } from './src/world/portals.js';
+    import { FirstPersonController } from './src/physics/controller.js';
+    import { castRay } from './src/physics/raycast.js';
+    import { BlockBreakingManager, markBlockAndNeighborsDirty } from './src/physics/interaction.js';
+
+    const glCanvas = document.getElementById('gl-canvas');
+    const hudCanvas = document.getElementById('hud-canvas');
+    const hudCtx = hudCanvas.getContext('2d');
+    const instructions = document.getElementById('ui-instructions');
+
+    let renderer;
+    try {
+      renderer = new Renderer(glCanvas);
+    } catch (err) {
+      const modal = document.getElementById('error-modal');
+      modal.style.display = 'block';
+      modal.textContent = 'WebGL Initialization Failed: ' + err.message;
+      throw err;
+    }
+
+    // ========================================================================
+    // Responsive Canvas Resize
+    // ========================================================================
+    function handleResize() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+
+      glCanvas.width = Math.round(w * dpr);
+      glCanvas.height = Math.round(h * dpr);
+      hudCanvas.width = Math.round(w * dpr);
+      hudCanvas.height = Math.round(h * dpr);
+
+      renderer.gl.viewport(0, 0, glCanvas.width, glCanvas.height);
+    }
+    window.addEventListener('resize', handleResize);
+    handleResize();
+
+    // ========================================================================
+    // Live Multi-Dimension World Generation & Chunk Mesh Management
+    // ========================================================================
+    const worldManager = new WorldManager(12345);
+    worldManager.atlas = renderer.atlas;
+    const sections = [];
+    let portalCooldown = false;
+
+    // Construct an initial ignited Nether Portal frame in Overworld at (10, 64, 12)
+    function buildInitialNetherPortal() {
+      for (let x = 10; x <= 13; x++) {
+        worldManager.setBlock(x, 64, 12, BLOCK.OBSIDIAN, DIMENSION.OVERWORLD);
+        worldManager.setBlock(x, 68, 12, BLOCK.OBSIDIAN, DIMENSION.OVERWORLD);
+      }
+      for (let y = 65; y <= 67; y++) {
+        worldManager.setBlock(10, y, 12, BLOCK.OBSIDIAN, DIMENSION.OVERWORLD);
+        worldManager.setBlock(13, y, 12, BLOCK.OBSIDIAN, DIMENSION.OVERWORLD);
+        worldManager.setBlock(11, y, 12, BLOCK.NETHER_PORTAL, DIMENSION.OVERWORLD);
+        worldManager.setBlock(12, y, 12, BLOCK.NETHER_PORTAL, DIMENSION.OVERWORLD);
+      }
+    }
+    buildInitialNetherPortal();
+
+    // First-person physics controller & block interaction manager
+    const controller = new FirstPersonController(worldManager, { x: 8.5, y: 66.0, z: 8.5 });
+    const interactionManager = new BlockBreakingManager(worldManager);
+
+    // Refresh meshes for the currently active dimension around player camera
+    function refreshDimensionChunks(targetDim) {
+      sections.length = 0;
+      renderer.setDimension(targetDim);
+
+      const centerCX = Math.floor(controller.pos.x / 16);
+      const centerCZ = Math.floor(controller.pos.z / 16);
+
+      const radius = 2;
+      for (let dz = -radius; dz <= radius; dz++) {
+        for (let dx = -radius; dx <= radius; dx++) {
+          const chunk = worldManager.getChunk(centerCX + dx, centerCZ + dz, targetDim);
+          if (!chunk) continue;
+          for (let cy = 0; cy < 16; cy++) {
+            const sec = chunk.sections[cy];
+            if (!sec || sec.empty) continue;
+            if (!sec.mesh || sec.dirty) {
+              if (sec.mesh) {
+                deleteMesh(renderer.gl, sec.mesh, renderer.isWebGL2, renderer.vaoExt);
+                sec.mesh = null;
+              }
+              buildMesh(renderer.gl, sec, worldManager, renderer.atlas, renderer.isWebGL2, renderer.vaoExt);
+              sec.dirty = false;
+            }
+            if (sec.mesh) {
+              sections.push(sec);
+            }
+          }
+        }
+      }
+    }
+
+    // Dynamic incremental re-meshing for modified chunk sections
+    function updateDirtySections() {
+      const targetDim = worldManager.currentDimension;
+      const centerCX = Math.floor(controller.pos.x / 16);
+      const centerCZ = Math.floor(controller.pos.z / 16);
+      const radius = 2;
+
+      let anyDirtied = false;
+      for (let dz = -radius; dz <= radius; dz++) {
+        for (let dx = -radius; dx <= radius; dx++) {
+          const chunk = worldManager.getChunk(centerCX + dx, centerCZ + dz, targetDim);
+          if (!chunk) continue;
+          for (let cy = 0; cy < 16; cy++) {
+            const sec = chunk.sections[cy];
+            if (sec && sec.dirty) {
+              anyDirtied = true;
+              if (sec.mesh) {
+                deleteMesh(renderer.gl, sec.mesh, renderer.isWebGL2, renderer.vaoExt);
+                sec.mesh = null;
+              }
+              if (!sec.empty) {
+                buildMesh(renderer.gl, sec, worldManager, renderer.atlas, renderer.isWebGL2, renderer.vaoExt);
+              }
+              sec.dirty = false;
+            }
+          }
+        }
+      }
+
+      if (anyDirtied) {
+        sections.length = 0;
+        for (let dz = -radius; dz <= radius; dz++) {
+          for (let dx = -radius; dx <= radius; dx++) {
+            const chunk = worldManager.getChunk(centerCX + dx, centerCZ + dz, targetDim);
+            if (!chunk) continue;
+            for (let cy = 0; cy < 16; cy++) {
+              const sec = chunk.sections[cy];
+              if (sec && sec.mesh && !sec.empty) {
+                sections.push(sec);
+              }
+            }
+          }
+        }
+      }
+    }
+
+    refreshDimensionChunks(DIMENSION.OVERWORLD);
+
+    async function switchDimensionWithTransition(targetDim) {
+      const curPos = { x: controller.pos.x, y: controller.pos.y, z: controller.pos.z };
+      const newPos = await worldManager.switchDimension(targetDim, curPos);
+      controller.pos.x = newPos.x;
+      controller.pos.y = newPos.y;
+      controller.pos.z = newPos.z;
+      controller.vel.x = 0;
+      controller.vel.y = 0;
+      controller.vel.z = 0;
+      refreshDimensionChunks(targetDim);
+      console.log(`Switched to dimension ${targetDim} at position (${newPos.x.toFixed(1)}, ${newPos.y.toFixed(1)}, ${newPos.z.toFixed(1)})`);
+    }
+
+    // ========================================================================
+    // Interactive Input Controls
+    // ========================================================================
+    const keys = {};
+    let isMouseDownLeft = false;
+    let isMouseDownRight = false;
+    let timeToggleIndex = 0;
+    let activeHotbarSlot = 0;
+
+    // Hotbar item configuration with placeable blocks and tools
+    const hotbarSlots = [
+      { name: 'Grass Block', id: BLOCK.GRASS, tile: TILE_SLOTS.grass_side, count: 64 },
+      { name: 'Dirt', id: BLOCK.DIRT, tile: TILE_SLOTS.dirt, count: 64 },
+      { name: 'Stone', id: BLOCK.STONE, tile: TILE_SLOTS.stone, count: 64 },
+      { name: 'Cobblestone', id: BLOCK.COBBLESTONE, tile: TILE_SLOTS.cobblestone, count: 64 },
+      { name: 'Oak Log', id: BLOCK.OAK_LOG, tile: TILE_SLOTS.oak_log_side, count: 64 },
+      { name: 'Sand', id: BLOCK.SAND, tile: TILE_SLOTS.sand, count: 64 },
+      { name: 'Obsidian', id: BLOCK.OBSIDIAN, tile: TILE_SLOTS.obsidian, count: 64 },
+      { name: 'Glowstone', id: BLOCK.GLOWSTONE, tile: TILE_SLOTS.glowstone, count: 64 },
+      { name: 'Netherrack', id: BLOCK.NETHERRACK, tile: TILE_SLOTS.netherrack, count: 64 }
+    ];
+
+    window.addEventListener('keydown', (e) => {
+      keys[e.code] = true;
+
+      // Dimension toggles: 1 = Overworld, 2 = Nether, 3 = The End (when not in pointer lock or Alt+Digit)
+      if (e.altKey && e.key === '1') {
+        switchDimensionWithTransition(DIMENSION.OVERWORLD);
+      } else if (e.altKey && e.key === '2') {
+        switchDimensionWithTransition(DIMENSION.NETHER);
+      } else if (e.altKey && e.key === '3') {
+        switchDimensionWithTransition(DIMENSION.THE_END);
+      }
+
+      // Hotbar selection keys 1..9
+      if (!e.altKey && e.key >= '1' && e.key <= '9') {
+        activeHotbarSlot = parseInt(e.key, 10) - 1;
+      }
+
+      // Time of day toggle: T
+      if (e.key === 't' || e.key === 'T') {
+        timeToggleIndex = (timeToggleIndex + 1) % 3;
+        const lights = [1.0, 0.45, 0.08]; // Midday, Sunset/Dusk, Night
+        renderer.setSunlight(lights[timeToggleIndex]);
+      }
+
+      // Space double-tap for creative flight toggle
+      if (e.code === 'Space' && !e.repeat) {
+        controller.handleSpacePress();
+      }
+    });
+
+    window.addEventListener('keyup', (e) => {
+      keys[e.code] = false;
+    });
+
+    // Pointer Lock Mouse Look
+    let isPointerLocked = false;
+    glCanvas.addEventListener('click', () => {
+      glCanvas.requestPointerLock();
+    });
+
+    document.addEventListener('pointerlockchange', () => {
+      isPointerLocked = document.pointerLockElement === glCanvas;
+      if (isPointerLocked) {
+        instructions.style.opacity = '0';
+      } else {
+        instructions.style.opacity = '1';
+        isMouseDownLeft = false;
+        isMouseDownRight = false;
+        interactionManager.stopMining();
+      }
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!isPointerLocked) return;
+      controller.handleMouseMove(e.movementX, e.movementY);
+    });
+
+    window.addEventListener('mousedown', (e) => {
+      if (!isPointerLocked) return;
+      if (e.button === 0) {
+        isMouseDownLeft = true;
+      } else if (e.button === 2) {
+        isMouseDownRight = true;
+      }
+    });
+
+    window.addEventListener('mouseup', (e) => {
+      if (e.button === 0) {
+        isMouseDownLeft = false;
+        interactionManager.stopMining();
+      } else if (e.button === 2) {
+        isMouseDownRight = false;
+      }
+    });
+
+    window.addEventListener('contextmenu', (e) => {
+      e.preventDefault(); // Suppress context menu for right-click block placement
+    });
+
+    // Mouse wheel selects hotbar slots
+    window.addEventListener('wheel', (e) => {
+      if (e.deltaY > 0) {
+        activeHotbarSlot = (activeHotbarSlot + 1) % 9;
+      } else if (e.deltaY < 0) {
+        activeHotbarSlot = (activeHotbarSlot + 8) % 9;
+      }
+    });
+
+    // ========================================================================
+    // Canvas 2D Survival HUD Overlay
+    // ========================================================================
+    function drawHUD(targetHit, damageStage) {
+      const w = hudCanvas.width;
+      const h = hudCanvas.height;
+      hudCtx.clearRect(0, 0, w, h);
+
+      // Scale HUD relative to viewport height
+      const hudScale = Math.max(2, Math.floor(h / 360));
+      const centerX = Math.floor(w / 2);
+      const bottomY = h - 20 * hudScale;
+
+      // 1. Survival Hotbar (9 slots)
+      const slotSize = 20 * hudScale;
+      const hotbarWidth = 9 * slotSize;
+      const hotbarX = centerX - Math.floor(hotbarWidth / 2);
+      const hotbarY = bottomY - slotSize;
+
+      hudCtx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+      hudCtx.fillRect(hotbarX - 2, hotbarY - 2, hotbarWidth + 4, slotSize + 4);
+
+      for (let i = 0; i < 9; i++) {
+        const sx = hotbarX + i * slotSize;
+        const sy = hotbarY;
+
+        // Slot border
+        hudCtx.strokeStyle = (i === activeHotbarSlot) ? '#fff' : '#444';
+        hudCtx.lineWidth = (i === activeHotbarSlot) ? 3 : 1;
+        hudCtx.strokeRect(sx + 1, sy + 1, slotSize - 2, slotSize - 2);
+
+        // Draw item preview from atlas canvas
+        if (renderer.atlas && renderer.atlas.canvas && hotbarSlots[i].tile !== undefined) {
+          const itemTile = hotbarSlots[i].tile;
+          const col = itemTile % 16;
+          const row = Math.floor(itemTile / 16);
+          const iconPadding = 3 * hudScale;
+          const iconSize = slotSize - iconPadding * 2;
+
+          hudCtx.drawImage(
+            renderer.atlas.canvas,
+            col * 16, row * 16, 16, 16,
+            sx + iconPadding, sy + iconPadding, iconSize, iconSize
+          );
+        }
+
+        // Draw stack count
+        if (hotbarSlots[i].count > 0) {
+          hudCtx.fillStyle = '#ffffff';
+          hudCtx.font = `bold ${10 * (hudScale / 2)}px monospace`;
+          hudCtx.fillText(`${hotbarSlots[i].count}`, sx + slotSize - 14 * (hudScale / 2), sy + slotSize - 3);
+        }
+      }
+
+      // 2. Health Hearts (10 hearts)
+      const heartsY = hotbarY - 22 * hudScale;
+      const heartsX = hotbarX;
+      for (let i = 0; i < 10; i++) {
+        const hx = heartsX + i * (9 * hudScale);
+        hudCtx.fillStyle = '#ff2222';
+        hudCtx.fillRect(hx, heartsY, 7 * hudScale, 7 * hudScale);
+      }
+
+      // 3. Hunger Shanks (10 shanks)
+      const hungerX = hotbarX + hotbarWidth - 10 * (9 * hudScale);
+      for (let i = 0; i < 10; i++) {
+        const fx = hungerX + i * (9 * hudScale);
+        hudCtx.fillStyle = '#c87832';
+        hudCtx.fillRect(fx, heartsY, 7 * hudScale, 7 * hudScale);
+      }
+
+      // 4. Debug Diagnostics (top-left)
+      hudCtx.fillStyle = '#ffffff';
+      hudCtx.font = `${11 * (hudScale / 2)}px monospace`;
+      hudCtx.textBaseline = 'top';
+      const stats = renderer.stats;
+      const dimName = renderer.dimension === 0 ? 'Overworld' : (renderer.dimension === -1 ? 'The Nether' : 'The End');
+      const timeName = timeToggleIndex === 0 ? 'Day' : (timeToggleIndex === 1 ? 'Sunset' : 'Night');
+
+      hudCtx.fillText(`Minecraft Java Edition (Pure WebGL / Vanilla JS)`, 16, 16);
+      hudCtx.fillText(`FPS: ${stats.fps} | Frame: ${stats.frameTime.toFixed(1)}ms | Chunks: ${stats.chunksRendered}/${stats.chunksTotal}`, 16, 32);
+      hudCtx.fillText(`Dimension: ${dimName} | Time: ${timeName} (Sun: ${renderer.sunlight.toFixed(2)})`, 16, 48);
+      hudCtx.fillText(`Pos: (${controller.pos.x.toFixed(2)}, ${controller.pos.y.toFixed(2)}, ${controller.pos.z.toFixed(2)})`, 16, 64);
+      hudCtx.fillText(`State: Ground=${controller.onGround} | Fly=${controller.isFlying} | Sneak=${controller.isSneaking} | Water=${controller.inWater}`, 16, 80);
+      hudCtx.fillText(`Hotbar: [${activeHotbarSlot + 1}] ${hotbarSlots[activeHotbarSlot].name} (${hotbarSlots[activeHotbarSlot].count})`, 16, 96);
+      if (targetHit && targetHit.hit) {
+        hudCtx.fillText(`Target: Block ${targetHit.blockId} at (${targetHit.blockPos.x}, ${targetHit.blockPos.y}, ${targetHit.blockPos.z}) Dist: ${targetHit.distance.toFixed(2)}m`, 16, 112);
+        if (damageStage >= 0) {
+          hudCtx.fillText(`Mining Crack Stage: ${damageStage}/9`, 16, 128);
+        }
+      }
+    }
+
+    // ========================================================================
+    // Main 60 FPS Game Loop
+    // ========================================================================
+    let lastTime = performance.now();
+
+    function gameLoop(time) {
+      const dt = Math.min((time - lastTime) / 1000, 0.1);
+      lastTime = time;
+
+      // 1. Gather input state
+      const input = {
+        forward: keys['KeyW'] || false,
+        backward: keys['KeyS'] || false,
+        left: keys['KeyA'] || false,
+        right: keys['KeyD'] || false,
+        jump: keys['Space'] || false,
+        sneak: keys['ShiftLeft'] || keys['ShiftRight'] || false,
+        sprint: keys['ControlLeft'] || keys['ControlRight'] || false
+      };
+
+      // 2. Physics & Kinematics simulation tick
+      controller.update(dt, input);
+
+      // 3. Synchronize camera with player controller
+      const eyePos = controller.eyePosition;
+      renderer.camera.position[0] = eyePos.x;
+      renderer.camera.position[1] = eyePos.y;
+      renderer.camera.position[2] = eyePos.z;
+      renderer.camera.yaw = controller.yaw;
+      renderer.camera.pitch = controller.pitch;
+      renderer.camera.updateVectors();
+
+      // 4. Portal Collision & Dimension Teleportation
+      const curBlock = worldManager.getBlock(
+        Math.floor(controller.pos.x),
+        Math.floor(controller.pos.y),
+        Math.floor(controller.pos.z),
+        worldManager.currentDimension
+      );
+
+      if (curBlock === BLOCK.NETHER_PORTAL) {
+        if (!portalCooldown) {
+          portalCooldown = true;
+          const nextDim = worldManager.currentDimension === DIMENSION.OVERWORLD ? DIMENSION.NETHER : DIMENSION.OVERWORLD;
+          switchDimensionWithTransition(nextDim).then(() => {
+            setTimeout(() => { portalCooldown = false; }, 3000);
+          });
+        }
+      } else if (curBlock === BLOCK.END_PORTAL) {
+        if (!portalCooldown) {
+          portalCooldown = true;
+          const nextDim = worldManager.currentDimension === DIMENSION.THE_END ? DIMENSION.OVERWORLD : DIMENSION.THE_END;
+          switchDimensionWithTransition(nextDim).then(() => {
+            setTimeout(() => { portalCooldown = false; }, 3000);
+          });
+        }
+      }
+
+      // 5. Amanatides-Woo 3D DDA Raymarch for block targeting
+      const lookDir = controller.getLookDirection();
+      const rayHit = castRay(worldManager, eyePos, lookDir, 5.0);
+
+      let highlightObj = null;
+      let damageObj = null;
+      let currentDamageStage = -1;
+
+      if (rayHit && rayHit.hit) {
+        highlightObj = rayHit.blockPos;
+        const heldItem = hotbarSlots[activeHotbarSlot];
+
+        // Left-Click Mining
+        if (isMouseDownLeft) {
+          const mineRes = interactionManager.update(dt, rayHit, heldItem);
+          if (mineRes.broken) {
+            // Block successfully broken: add drop to inventory
+            if (mineRes.dropItem > 0) {
+              const existingSlot = hotbarSlots.find(s => s.id === mineRes.dropItem);
+              if (existingSlot) {
+                existingSlot.count++;
+              } else {
+                const emptySlot = hotbarSlots.find(s => s.count <= 0);
+                if (emptySlot) {
+                  emptySlot.id = mineRes.dropItem;
+                  emptySlot.count = 1;
+                }
+              }
+            }
+            updateDirtySections();
+          } else if (mineRes.stage >= 0) {
+            currentDamageStage = mineRes.stage;
+            damageObj = {
+              x: rayHit.blockPos.x,
+              y: rayHit.blockPos.y,
+              z: rayHit.blockPos.z,
+              stage: mineRes.stage
+            };
+          }
+        } else {
+          interactionManager.stopMining();
+        }
+
+        // Right-Click Block Placement
+        if (isMouseDownRight && heldItem && heldItem.count > 0 && heldItem.id > 0) {
+          const placed = interactionManager.tryPlaceBlock(rayHit, heldItem, controller.playerAABB);
+          if (placed) {
+            updateDirtySections();
+          }
+        }
+      } else {
+        interactionManager.stopMining();
+      }
+
+      // 6. 3D Scene Multi-Pass Render
+      renderer.render(sections, highlightObj, damageObj);
+
+      // 7. 2D Survival HUD Render
+      drawHUD(rayHit, currentDamageStage);
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    requestAnimationFrame(gameLoop);
+  </script>
+</body>
+</html>

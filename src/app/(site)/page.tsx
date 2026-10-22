@@ -11,7 +11,6 @@ import { HeroStreamShowcase } from "@/components/home/HeroStreamShowcase";
 import { AudienceWord } from "@/components/home/AudienceWord";
 import { getSubscriberCount } from "@/lib/youtube";
 import { HeroField } from "@/components/home/HeroField";
-import { HeroPodium } from "@/components/home/HeroPodium";
 import { ExtraReachCards } from "@/components/home/ExtraReach";
 import { UpcomingProductList } from "@/components/product/UpcomingProductList";
 import { buttonClass } from "@/components/ui/Button";
@@ -33,9 +32,8 @@ export const dynamic = "force-dynamic";
 /**
  * The landing page.
  *
- * Hero, then the thing everyone is watching: during registration that is the
- * 32-slot lineup filling up; once the season is live it is the top three by
- * clicks. Then the board itself, the format in three cards, and one closing
+ * A centred hero, then the stream showcase and, during registration, the
+ * 32-slot lineup filling up. Then the board itself, the format in three cards, and one closing
  * call to action. Every number is read from the database.
  */
 export default async function HomePage() {
@@ -64,7 +62,6 @@ export default async function HomePage() {
   const capacity = (open ?? season)?.capacity ?? FIELD_SIZE;
   const price = open ? formatMoney(open.entryPriceCents, open.currency) : null;
   const serverNow = new Date().toISOString();
-  const podium = (standings?.rows ?? []).slice(0, 3).map((row) => ({ id: row.entryId, name: row.product.name, url: row.product.url, logoUrl: row.product.logoUrl, clicks: row.verifiedVisits }));
   const showcase = (round ? rows.map((row) => ({ id: row.entryId, product: row.product })) : lineup).map(({ id, product }) => ({ id, name: product.name, url: product.url, logoUrl: product.logoUrl, category: product.category }));
 
   return (
@@ -75,84 +72,71 @@ export default async function HomePage() {
       <section className="hero-atmosphere section-hero overflow-x-clip pb-12">
         <HeroField />
         <div className="shell">
-          <div className="grid items-center gap-12 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:gap-16">
-            {/* Left: the offer, said once and plainly. */}
-            <div className="flex flex-col items-center text-center lg:items-start lg:text-left">
-              <Reveal>
-                <div className="flex flex-wrap items-center justify-center gap-2 lg:justify-start">
-                  <span className="bg-primary-soft text-primary inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[13px] font-semibold">
-                    <span className={round ? "pulse-dot bg-live size-2 rounded-full" : "bg-live size-2 rounded-full"} />
-                    {round
-                      ? `${season?.name} is live`
-                      : open
-                        ? full
-                          ? "Field full · starting soon"
-                          : `${summary?.remaining ?? capacity} of ${capacity} spots open`
-                        : "Next season opening soon"}
-                  </span>
-                  <PresenceCounter initial={presence} />
-                </div>
-              </Reveal>
+          {/* The offer, said once and plainly. */}
+          <div className="flex flex-col items-center text-center">
+            <Reveal>
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <span className="bg-primary-soft text-primary inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[13px] font-semibold">
+                  <span className={round ? "pulse-dot bg-live size-2 rounded-full" : "bg-live size-2 rounded-full"} />
+                  {round
+                    ? `${season?.name} is live`
+                    : open
+                      ? full
+                        ? "Field full · starting soon"
+                        : `${summary?.remaining ?? capacity} of ${capacity} spots open`
+                      : "Next season opening soon"}
+                </span>
+                <PresenceCounter initial={presence} />
+              </div>
+            </Reveal>
 
-              <Reveal delay={90}>
-                <h1 className="hero-title mt-6 font-extrabold">
-                  {capacity} SaaS spots.
-                  <br />
-                  <span className="hero-underline text-primary">
-                    Ranked by clicks.
-                    <svg viewBox="0 0 300 16" preserveAspectRatio="none" aria-hidden>
-                      <path d="M4 11C60 4 120 3 170 6s90 5 126-1" pathLength="1" />
+            <Reveal delay={90}>
+              <h1 className="hero-title mt-6 font-extrabold">
+                {capacity} SaaS spots.
+                <br />
+                <span className="hero-underline text-primary">
+                  Ranked by clicks.
+                  <svg viewBox="0 0 300 16" preserveAspectRatio="none" aria-hidden>
+                    <path d="M4 11C60 4 120 3 170 6s90 5 126-1" pathLength="1" />
+                  </svg>
+                </span>
+              </h1>
+            </Reveal>
+
+            <Reveal delay={150}>
+              <p className="hero-audience mt-4 max-w-xl text-lg leading-snug font-bold sm:text-xl">
+                Every product featured live on stream, in front of{" "}
+                <span className="hero-audience-mark">
+                  400K monthly <AudienceWord />
+                </span>
+              </p>
+            </Reveal>
+
+            <Reveal delay={210} className="mt-8 w-full max-w-xl">
+              <QuickEntry available={available} full={full} priceLabel={price ?? undefined} />
+            </Reveal>
+
+            <Reveal delay={260}>
+              <ul className="mt-5 flex flex-wrap justify-center gap-2">
+                {[
+                  { label: price ? `${price} flat` : "One flat fee", tint: "var(--cat-dev-tools-tint)", ink: "var(--cat-dev-tools-ink)" },
+                  { label: "Live every season", tint: "var(--cat-productivity-tint)", ink: "var(--cat-productivity-ink)" },
+                  { label: "No bidding", tint: "var(--cat-design-tint)", ink: "var(--cat-design-ink)" },
+                ].map(({ label, tint, ink }) => (
+                  <li key={label} className="glass-card inline-flex items-center gap-1.5 rounded-[10px] px-3 py-1.5 text-[13px] font-semibold" style={{ "--tint": tint } as CSSProperties}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={ink} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                      <path d="M5 12.5l4.5 4.5L19 7.5" />
                     </svg>
-                  </span>
-                </h1>
-              </Reveal>
-
-              <Reveal delay={150}>
-                <p className="hero-audience mt-4 max-w-lg text-lg leading-snug font-bold sm:text-xl">
-                  Every product featured live on stream, in front of{" "}
-                  <span className="hero-audience-mark">
-                    400K monthly <AudienceWord />
-                  </span>
+                    {label}
+                  </li>
+                ))}
+              </ul>
+              {round ? (
+                <p className="text-subtle mt-4 text-[13px]">
+                  Ends in{" "}
+                  <Countdown endsAt={round.endAt.toISOString()} serverNow={serverNow} size="sm" className="text-[13px]" />
                 </p>
-              </Reveal>
-
-              <Reveal delay={210} className="mt-8 w-full max-w-xl">
-                <QuickEntry available={available} full={full} priceLabel={price ?? undefined} />
-              </Reveal>
-
-              <Reveal delay={260}>
-                <ul className="mt-5 flex flex-wrap justify-center gap-2 lg:justify-start">
-                  {[
-                    { label: price ? `${price} flat` : "One flat fee", tint: "var(--cat-dev-tools-tint)", ink: "var(--cat-dev-tools-ink)" },
-                    { label: "Live every season", tint: "var(--cat-productivity-tint)", ink: "var(--cat-productivity-ink)" },
-                    { label: "No bidding", tint: "var(--cat-design-tint)", ink: "var(--cat-design-ink)" },
-                  ].map(({ label, tint, ink }) => (
-                    <li key={label} className="glass-card inline-flex items-center gap-1.5 rounded-[10px] px-3 py-1.5 text-[13px] font-semibold" style={{ "--tint": tint } as CSSProperties}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={ink} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                        <path d="M5 12.5l4.5 4.5L19 7.5" />
-                      </svg>
-                      {label}
-                    </li>
-                  ))}
-                </ul>
-                {round ? (
-                  <p className="text-subtle mt-4 text-[13px]">
-                    Ends in{" "}
-                    <Countdown endsAt={round.endAt.toISOString()} serverNow={serverNow} size="sm" className="text-[13px]" />
-                  </p>
-                ) : null}
-              </Reveal>
-            </div>
-
-            {/* Right: the podium — the logo's three bars, holding the top three. */}
-            <Reveal delay={240} className="mx-auto w-full max-w-sm lg:max-w-[23rem]">
-              <HeroPodium
-                top={podium}
-                live={Boolean(round)}
-                seasonName={(lineupSeason ?? season)?.name ?? "Season"}
-                capacity={capacity}
-                filled={lineup.length}
-              />
+              ) : null}
             </Reveal>
           </div>
 

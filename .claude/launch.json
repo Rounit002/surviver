@@ -4,8 +4,22 @@
     {
       "name": "surviver",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
       "port": 3000
+    },
+    {
+      "name": "f1-viewer",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "f1-car/web",
+        "run",
+        "dev"
+      ],
+      "port": 5177
     }
   ]
 }

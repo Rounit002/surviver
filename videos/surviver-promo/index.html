@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1080, height=1920">
+    <title>Surviver.lol — 400K monthly views</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      @font-face { font-family: "DM Sans"; src: url("assets/fonts/dm-sans-latin-500-normal.woff2") format("woff2"); font-weight: 500; }
+      @font-face { font-family: "DM Sans"; src: url("assets/fonts/dm-sans-latin-700-normal.woff2") format("woff2"); font-weight: 700; }
+      @font-face { font-family: "DM Sans"; src: url("assets/fonts/dm-sans-latin-800-normal.woff2") format("woff2"); font-weight: 800; }
+      @font-face { font-family: "DM Sans"; src: url("assets/fonts/dm-sans-latin-900-normal.woff2") format("woff2"); font-weight: 900; }
+
+      :root {
+        --ground: #fffdfa;
+        --ink: #1f1d1b;
+        --subtle: #5f5a55;
+        --blue: #3b76e1;
+        --blue-soft: #e4edfb;
+        --coral: #e0603f;
+        --coral-soft: #fdeee8;
+        --hair: #ece6df;
+        --stage: #1f1d1b;
+        --yt: #ff0033;
+        --live: #009f31;
+        --shadow: 0 2px 4px rgba(31, 29, 27, 0.06), 0 18px 36px -12px rgba(31, 29, 27, 0.2), 0 48px 80px -36px rgba(31, 29, 27, 0.28);
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--ground); }
+      #root {
+        position: relative; width: 100%; height: 100%; overflow: hidden;
+        background: var(--ground); color: var(--ink);
+        font-family: "DM Sans", sans-serif;
+      }
+      .clip { position: absolute; inset: 0; }
+      .layer { position: absolute; inset: 0; }
+      .w { display: inline-block; }
+      .blue { color: var(--blue); }
+      .coral { color: var(--coral); }
+
+      /* ---------- background: flat dot grid ---------- */
+      #grid { position: absolute; left: -60px; top: -60px; width: 1200px; height: 2040px; }
+
+      /* ---------- brand bug ---------- */
+      #bug-in { position: absolute; top: 150px; left: 0; right: 0; display: flex; justify-content: center; }
+      .bug { display: flex; align-items: center; gap: 14px; padding: 10px 22px 10px 10px; border-radius: 999px; background: #ffffff; border: 3px solid var(--hair); }
+      .bug span { font-size: 30px; font-weight: 800; letter-spacing: -0.5px; }
+      .mark { display: flex; align-items: flex-end; justify-content: center; gap: 5px; border-radius: 12px; background: var(--blue); }
+      .mark i { display: block; border-radius: 3px; }
+      .mark.sm { width: 46px; height: 46px; padding-bottom: 11px; }
+      .mark.sm i { width: 7px; }
+      .mark.sm i:nth-child(1), .mark.sm i:nth-child(3) { height: 12px; background: #ffb49c; }
+      .mark.sm i:nth-child(2) { height: 24px; background: #ffffff; }
+
+      /* ---------- scene 1: the launch nobody saw ---------- */
+      #s1-title { position: absolute; top: 300px; left: 90px; width: 900px; font-size: 96px; font-weight: 900; line-height: 1.12; letter-spacing: -3px; }
+      .post { position: absolute; top: 560px; left: 100px; width: 880px; padding: 40px; border-radius: 40px; background: #ffffff; border: 3px solid var(--hair); box-shadow: var(--shadow); }
+      .post-head { display: flex; align-items: center; gap: 22px; }
+      .avatar { width: 88px; height: 88px; border-radius: 999px; background: var(--blue-soft); color: var(--blue); display: flex; align-items: center; justify-content: center; font-size: 40px; font-weight: 900; }
+      .post-name { font-size: 36px; font-weight: 800; }
+      .post-handle { font-size: 28px; font-weight: 500; color: var(--subtle); }
+      .post-body { margin-top: 26px; font-size: 38px; font-weight: 500; line-height: 1.3; }
+      .preview { margin-top: 26px; display: flex; align-items: center; gap: 26px; padding: 26px; border-radius: 26px; background: #f6f3ee; }
+      .ptile { width: 110px; height: 110px; border-radius: 28px; background: var(--coral-soft); display: flex; align-items: center; justify-content: center; flex: none; }
+      .ptile i { display: block; width: 44px; height: 44px; border-radius: 13px; background: var(--coral); }
+      .pbars { display: flex; flex-direction: column; gap: 14px; }
+      .pbars b { font-size: 34px; font-weight: 800; }
+      .pbars s { display: block; width: 360px; height: 16px; border-radius: 8px; background: #e6e0da; text-decoration: none; }
+      .stats { margin-top: 30px; display: flex; gap: 76px; font-size: 34px; font-weight: 700; color: var(--subtle); }
+      .stat { position: relative; display: flex; align-items: center; gap: 12px; }
+      #views { color: var(--ink); }
+      #users-n { display: inline-block; }
+      .hl { position: relative; display: inline-block; isolation: isolate; padding: 0 20px; color: #ffffff; }
+      .hl-bg { position: absolute; left: 0; right: 0; top: 6px; bottom: 0; border-radius: 20px; background: var(--coral); z-index: -1; transform-origin: left center; }
+      .rt { position: relative; background: #ffffff; }
+      .rt svg { position: absolute; left: 22px; top: 22px; }
+      .row .lg { background: #ffffff !important; border: 3px solid #ece6df; }
+      .bname { font-size: 34px; font-weight: 800; letter-spacing: -0.5px; }
+      #views-ring { position: absolute; left: -18px; right: -20px; top: -12px; bottom: -12px; border-radius: 999px; border: 5px solid var(--coral); }
+      #s1-punch { position: absolute; top: 1330px; left: 90px; width: 900px; font-size: 84px; font-weight: 900; line-height: 1.14; letter-spacing: -2.5px; }
+
+      /* ---------- scene 2: what if 400K ---------- */
+      #s2-kicker { position: absolute; top: 300px; left: 0; right: 0; text-align: center; font-size: 76px; font-weight: 800; letter-spacing: -2px; color: var(--subtle); }
+      #field { position: absolute; top: 470px; left: 120px; width: 840px; height: 840px; }
+      .dot { position: absolute; width: 24px; height: 24px; border-radius: 999px; background: var(--blue); }
+      #counter-wrap { position: absolute; top: 790px; left: 0; right: 0; display: flex; justify-content: center; }
+      #counter { padding: 18px 56px; border-radius: 48px; background: #ffffff; border: 4px solid var(--hair); box-shadow: var(--shadow); font-size: 180px; font-weight: 900; letter-spacing: -6px; line-height: 1; color: var(--coral); font-variant-numeric: tabular-nums; }
+      #s2-label { position: absolute; top: 1355px; left: 0; right: 0; text-align: center; font-size: 84px; font-weight: 900; letter-spacing: -2.5px; }
+      #s2-note { position: absolute; top: 1470px; left: 0; right: 0; text-align: center; font-size: 32px; font-weight: 700; color: var(--subtle); }
+
+      /* ---------- scene 3: live on stream ---------- */
+      #s3-head { position: absolute; top: 250px; left: 80px; right: 80px; display: flex; align-items: center; justify-content: space-between; }
+      #s3-head h2 { font-size: 78px; font-weight: 900; letter-spacing: -2.5px; white-space: nowrap; }
+      .days { display: flex; gap: 8px; }
+      #month { padding: 12px 22px; border-radius: 18px; background: var(--blue); color: #ffffff; white-space: nowrap; font-size: 34px; font-weight: 900; letter-spacing: -0.5px; }
+      .day { width: 52px; height: 52px; border-radius: 14px; background: #f1ede7; color: var(--subtle); font-size: 22px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+      .player { position: absolute; top: 400px; left: 70px; width: 940px; padding: 18px; border-radius: 40px; background: #ffffff; border: 3px solid var(--hair); box-shadow: var(--shadow); }
+      .pbar { display: flex; align-items: center; gap: 10px; padding: 4px 8px 16px; }
+      .pbar i { width: 16px; height: 16px; border-radius: 999px; display: block; }
+      .url { margin-left: 14px; display: flex; align-items: center; gap: 10px; padding: 8px 18px; border-radius: 12px; background: #f4f1ec; color: var(--subtle); font-size: 26px; font-weight: 700; }
+      .stage { position: relative; height: 560px; border-radius: 26px; background: var(--stage); overflow: hidden; }
+      .live { position: absolute; top: 24px; left: 24px; display: flex; align-items: center; gap: 10px; padding: 8px 16px; border-radius: 10px; background: var(--yt); color: #fff; font-size: 26px; font-weight: 900; letter-spacing: 1px; }
+      .live i { width: 11px; height: 11px; border-radius: 999px; background: #fff; display: block; }
+      .reach { position: absolute; top: 26px; right: 24px; padding: 8px 16px; border-radius: 10px; background: rgba(255, 255, 255, 0.14); color: #fff; font-size: 26px; font-weight: 800; }
+      .rail { position: absolute; top: 112px; display: flex; flex-direction: column; gap: 20px; }
+      .rail.l { left: 34px; } .rail.r { right: 34px; }
+      .rt { width: 92px; height: 92px; border-radius: 24px; display: flex; align-items: center; justify-content: center; }
+      .rt i { width: 36px; height: 36px; border-radius: 11px; display: block; }
+      #spot { position: absolute; top: 120px; left: 245px; width: 414px; padding: 34px; border-radius: 34px; background: #ffffff; display: flex; flex-direction: column; align-items: center; gap: 18px; }
+      #spot .ptile { width: 140px; height: 140px; border-radius: 36px; background: var(--blue-soft); }
+      #spot .ptile i { width: 56px; height: 56px; border-radius: 16px; background: var(--blue); }
+      #spot b { font-size: 50px; font-weight: 900; letter-spacing: -1.5px; }
+      #spot em { font-style: normal; font-size: 26px; font-weight: 800; color: var(--yt); display: flex; align-items: center; gap: 8px; }
+      #spot em i { width: 10px; height: 10px; border-radius: 999px; background: var(--yt); display: block; }
+      .ctrl { display: flex; flex-direction: column; gap: 12px; padding: 18px 10px 4px; }
+      .scrub { height: 8px; border-radius: 4px; background: var(--yt); }
+      #s3-count { position: absolute; top: 1150px; left: 0; right: 0; text-align: center; font-size: 58px; font-weight: 900; letter-spacing: -1.5px; }
+      #chips { position: absolute; top: 1260px; left: 0; right: 0; display: flex; justify-content: center; gap: 18px; }
+      .chip { padding: 16px 32px; border-radius: 22px; font-size: 50px; font-weight: 900; letter-spacing: -1px; }
+      #s3-line { position: absolute; top: 1385px; left: 0; right: 0; text-align: center; font-size: 56px; font-weight: 800; letter-spacing: -1.5px; }
+
+      /* ---------- scene 4: no bidding, real clicks ---------- */
+      #s4-title { position: absolute; top: 250px; left: 0; right: 0; text-align: center; font-size: 120px; font-weight: 900; letter-spacing: -4px; }
+      #bid { position: absolute; top: 410px; left: 0; right: 0; display: flex; justify-content: center; }
+      .bidbtn { position: relative; padding: 18px 40px; border-radius: 20px; background: #f1ede7; color: var(--subtle); font-size: 44px; font-weight: 800; }
+      #strike { position: absolute; left: -16px; right: -16px; top: 46%; height: 10px; border-radius: 5px; background: var(--coral); transform-origin: left center; }
+      .board { position: absolute; top: 540px; left: 80px; width: 920px; height: 830px; padding: 28px; border-radius: 40px; background: #ffffff; border: 3px solid var(--hair); box-shadow: var(--shadow); }
+      .bhead { display: flex; justify-content: space-between; align-items: center; padding: 0 6px 18px; }
+      .bhead b { font-size: 40px; font-weight: 900; }
+      .bhead span { display: flex; align-items: center; gap: 12px; font-size: 28px; font-weight: 800; color: var(--live); }
+      .bhead span i { width: 13px; height: 13px; border-radius: 999px; background: var(--live); display: block; }
+      .tag { margin-left: 12px; padding: 4px 12px; border-radius: 8px; background: #f1ede7; color: var(--subtle); font-size: 22px; font-weight: 800; }
+      .ranks { position: absolute; left: 28px; top: 112px; display: flex; flex-direction: column; gap: 16px; }
+      .rk { width: 76px; height: 124px; border-radius: 22px; display: flex; align-items: center; justify-content: center; font-size: 36px; font-weight: 900; }
+      .rows { position: absolute; left: 120px; right: 28px; top: 112px; height: 700px; }
+      .row { position: absolute; left: 0; right: 0; height: 124px; padding: 0 26px; border-radius: 22px; background: #faf8f5; border: 3px solid transparent; display: flex; align-items: center; gap: 22px; }
+      .row .lg { width: 76px; height: 76px; border-radius: 20px; display: flex; align-items: center; justify-content: center; flex: none; }
+      .row .lg i { width: 30px; height: 30px; border-radius: 9px; display: block; }
+      .row .meta { flex: 1; display: flex; flex-direction: column; gap: 14px; }
+      .row .nm { width: 230px; height: 18px; border-radius: 9px; background: #2a2724; opacity: 0.8; }
+      .row .track { height: 14px; border-radius: 7px; background: #ece7e1; }
+      .row .fill { width: 100%; height: 14px; border-radius: 7px; background: #b9c9e8; transform-origin: left center; }
+      #you { background: #f3f7fe; border-color: var(--blue); }
+      #you .nmtxt { font-size: 40px; font-weight: 900; color: var(--blue); letter-spacing: -1px; }
+      #you .fill { background: var(--blue); }
+      #crown { position: absolute; right: 26px; top: 24px; }
+      #s4-line { position: absolute; top: 1400px; left: 0; right: 0; display: flex; justify-content: center; align-items: center; gap: 20px; font-size: 62px; font-weight: 900; letter-spacing: -2px; }
+      #season { padding: 10px 26px; border-radius: 18px; background: #ddefeb; color: #2c6055; font-size: 46px; }
+
+      /* ---------- scene 5: end card ---------- */
+      #price { position: absolute; top: 200px; left: 0; right: 0; text-align: center; font-size: 290px; font-weight: 900; letter-spacing: -12px; line-height: 1.12; }
+      #price-sub { position: absolute; top: 545px; left: 0; right: 0; text-align: center; font-size: 46px; font-weight: 800; color: var(--subtle); }
+      #slots { position: absolute; top: 665px; left: 0; right: 0; display: flex; flex-direction: column; align-items: center; gap: 20px; }
+      .slotgrid { display: grid; grid-template-columns: repeat(8, 76px); gap: 12px; }
+      .slot { width: 76px; height: 76px; border-radius: 18px; border: 4px solid #d9e3f6; background: #f5f8fe; }
+      #slots b { font-size: 62px; font-weight: 900; letter-spacing: -2px; }
+      #lockup { position: absolute; top: 1205px; left: 0; right: 0; display: flex; justify-content: center; align-items: center; gap: 24px; }
+      .mark.lg { width: 112px; height: 112px; border-radius: 30px; gap: 11px; padding-bottom: 26px; }
+      .mark.lg i { width: 17px; }
+      .mark.lg i:nth-child(1), .mark.lg i:nth-child(3) { height: 28px; background: #ffb49c; }
+      .mark.lg i:nth-child(2) { height: 58px; background: #ffffff; }
+      #lockup span { font-size: 104px; font-weight: 900; letter-spacing: -3.5px; }
+      #cta { position: absolute; top: 1380px; left: 0; right: 0; display: flex; justify-content: center; }
+      #cta div { padding: 30px 60px; border-radius: 28px; background: var(--blue); color: #ffffff; font-size: 54px; font-weight: 900; letter-spacing: -1px; box-shadow: 0 2px 0 rgba(255,255,255,0.35) inset, 0 20px 40px -16px rgba(31, 29, 27, 0.4); }
+      #reach { position: absolute; top: 1535px; left: 0; right: 0; display: flex; justify-content: center; align-items: center; gap: 16px; font-size: 34px; font-weight: 800; color: var(--subtle); }
+    </style>
+  </head>
+  <body>
+    <div data-hf-id="hf-u8r3" id="root" data-composition-id="main" data-start="0" data-width="1080" data-height="1920" data-duration="27.5">
+      <!-- Background: flat dot grid, slow drift -->
+      <div data-hf-id="hf-rwu2" id="bg" class="clip" data-start="0" data-duration="27.5" data-track-index="0">
+        <svg data-hf-id="hf-4a07" id="grid" viewBox="0 0 1200 2040" aria-hidden="true">
+          <defs data-hf-id="hf-mh0t">
+            <pattern data-hf-id="hf-c8ic" id="dots" width="48" height="48" patternUnits="userSpaceOnUse">
+              <circle data-hf-id="hf-g2hm" cx="24" cy="24" r="3.2" fill="#e4ddd3" />
+            </pattern>
+          </defs>
+          <rect data-hf-id="hf-5s6x" width="1200" height="2040" fill="url(#dots)" />
+        </svg>
+      </div>
+
+      <!-- Brand bug: small, constant, creator-style -->
+      <div data-hf-id="hf-j2n4" id="bug" class="clip" data-start="0" data-duration="21.3" data-track-index="1">
+        <div data-hf-id="hf-05xr" id="bug-in">
+          <div data-hf-id="hf-jg3q" class="bug"><div data-hf-id="hf-1dyt" class="mark sm"><i data-hf-id="hf-wt6k"></i><i data-hf-id="hf-zeb8"></i><i data-hf-id="hf-y7e5"></i></div><span data-hf-id="hf-oce9">surviver<span data-hf-id="hf-x4n4" class="blue">.lol</span></span></div>
+        </div>
+      </div>
+
+      <!-- Scene 1: the launch nobody saw -->
+      <section data-hf-id="hf-vp5n" id="s1" class="clip" data-start="0" data-duration="3.0" data-track-index="2">
+        <div data-hf-id="hf-n0b3" id="s1-in" class="layer">
+          <h1 data-hf-id="hf-f60y" id="s1-title"><span data-hf-id="hf-lrhv" class="w">You</span> <span data-hf-id="hf-le9m" class="w">launched</span> <span data-hf-id="hf-kxir" class="w">your</span> <span data-hf-id="hf-12hu" class="w">SaaS…</span></h1>
+          <div data-hf-id="hf-v1du" class="post" id="post">
+            <div data-hf-id="hf-ysvt" class="post-head">
+              <div data-hf-id="hf-5xbq" class="avatar">Y</div>
+              <div data-hf-id="hf-yeow">
+                <div data-hf-id="hf-jlhp" class="post-name">You</div>
+                <div data-hf-id="hf-j0x9" class="post-handle">@yoursaas · 2h</div>
+              </div>
+            </div>
+            <div data-hf-id="hf-rbpd" class="post-body">6 months of building. It's finally live. Go try it →</div>
+            <div data-hf-id="hf-47cs" class="preview">
+              <div data-hf-id="hf-aw1g" class="ptile"><i data-hf-id="hf-ylp6"></i></div>
+              <div data-hf-id="hf-wz2m" class="pbars"><b data-hf-id="hf-8fj5">yoursaas.com</b><s data-hf-id="hf-dljm"></s></div>
+            </div>
+            <div data-hf-id="hf-rhep" class="stats">
+              <div data-hf-id="hf-xa0m" class="stat">
+                <div data-hf-id="hf-o71c" id="views-ring"></div>
+                <svg data-hf-id="hf-svat" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+                <span data-hf-id="hf-m0js" id="views"><b id="users-n">0</b> users</span>
+              </div>
+              <div data-hf-id="hf-tx7e" class="stat">
+                <svg data-hf-id="hf-73qh" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path data-hf-id="hf-za1k" d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8z" /></svg>
+                <span data-hf-id="hf-hdrd">2</span>
+              </div>
+              <div data-hf-id="hf-ubif" class="stat">
+                <svg data-hf-id="hf-8ank" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path data-hf-id="hf-en1d" d="M17 1l4 4-4 4" /><path data-hf-id="hf-saql" d="M3 11V9a4 4 0 0 1 4-4h14" /><path data-hf-id="hf-6i4q" d="M7 23l-4-4 4-4" /><path data-hf-id="hf-aq3u" d="M21 13v2a4 4 0 0 1-4 4H3" /></svg>
+                <span data-hf-id="hf-i6df">0</span>
+              </div>
+            </div>
+          </div>
+          <div data-hf-id="hf-yb2m" id="s1-punch"><span class="w">…and</span> <span class="w">got</span> <span class="hl"><span class="hl-bg" id="hl-bg"></span><span class="w">ZERO</span> <span class="w">users.</span></span></div>
+        </div>
+      </section>
+
+      <!-- Scene 2: what if it got 400,000 views a month -->
+      <section data-hf-id="hf-zhxq" id="s2" class="clip" data-start="2.73" data-duration="4.4" data-track-index="3">
+        <div data-hf-id="hf-uddq" id="s2-in" class="layer">
+          <div data-hf-id="hf-i7t6" id="s2-kicker">What if it got…</div>
+          <div data-hf-id="hf-q02b" id="field"></div>
+          <div data-hf-id="hf-v3nk" id="counter-wrap"><div data-hf-id="hf-m3lg" id="counter">0</div></div>
+          <div data-hf-id="hf-4rjv" id="s2-label">views <span data-hf-id="hf-z0k8" class="blue">a month.</span></div>
+          <div data-hf-id="hf-ihor" id="s2-note">1 dot = 1,000 views · on our live stream</div>
+        </div>
+      </section>
+
+      <!-- Scene 3: every day, live on stream, to the right people -->
+      <section data-hf-id="hf-tt5p" id="s3" class="clip" data-start="6.93" data-duration="10.4" data-track-index="4">
+        <div data-hf-id="hf-3sg1" id="s3-in" class="layer">
+          <div data-hf-id="hf-ktpi" id="s3-head">
+            <h2 data-hf-id="hf-ez0e">Register once.</h2>
+            <div id="month">1 month on stream</div>
+          </div>
+          <div data-hf-id="hf-x5ta" class="player" id="player">
+            <div data-hf-id="hf-gixj" class="pbar">
+              <i data-hf-id="hf-soml" style="background:#ff5f57"></i><i data-hf-id="hf-l5hl" style="background:#febc2e"></i><i data-hf-id="hf-om0b" style="background:#28c840"></i>
+              <div data-hf-id="hf-kgpc" class="url"><svg data-hf-id="hf-zfx0" width="30" height="30" viewBox="0 0 24 24"><path data-hf-id="hf-klrm" id="yt-path" fill="#FF0000" d="" /></svg>youtube.com/@rounieee</div>
+            </div>
+            <div data-hf-id="hf-tan6" class="stage">
+              <div data-hf-id="hf-j8vw" class="live"><i data-hf-id="hf-0l8b"></i>LIVE</div>
+              <div data-hf-id="hf-0g6v" class="reach">400K monthly views</div>
+              <div data-hf-id="hf-a7cx" class="rail l" id="rail-l"></div>
+              <div data-hf-id="hf-dqyd" class="rail r" id="rail-r"></div>
+              <div data-hf-id="hf-y9ed" id="spot">
+                <div data-hf-id="hf-cki4" class="ptile"><i data-hf-id="hf-0zjc"></i></div>
+                <b data-hf-id="hf-yv7i">Your SaaS</b>
+                <em data-hf-id="hf-jw6a"><i data-hf-id="hf-zsm9"></i>ON STREAM NOW</em>
+              </div>
+            </div>
+            <div data-hf-id="hf-8jgr" class="ctrl"><div data-hf-id="hf-s1sk" class="scrub" id="scrub"></div></div>
+          </div>
+          <div data-hf-id="hf-mumr" id="s3-count"><span class="blue">Your product</span> · live on stream</div>
+          <div data-hf-id="hf-f8d2" id="chips">
+            <div data-hf-id="hf-ofsx" class="chip" style="background:#e4edfb;color:#375688">devs</div>
+            <div data-hf-id="hf-442a" class="chip" style="background:#fdeee4;color:#a4532b">founders</div>
+            <div data-hf-id="hf-s35v" class="chip" style="background:#ddefeb;color:#2c6055">students</div>
+          </div>
+          <div data-hf-id="hf-99hi" id="s3-line"><span data-hf-id="hf-mh6o" class="w">who</span> <span data-hf-id="hf-6o4t" class="w">actually</span> <span data-hf-id="hf-9xvv" class="w">use</span> <span data-hf-id="hf-qn8i" class="w blue">AI</span> <span data-hf-id="hf-9ezf" class="w blue">tools.</span></div>
+        </div>
+      </section>
+
+      <!-- Scene 4: no bidding, real clicks set the rank -->
+      <section data-hf-id="hf-fgl9" id="s4" class="clip" data-start="17.23" data-duration="4.2" data-track-index="5">
+        <div data-hf-id="hf-ysmo" id="s4-in" class="layer">
+          <div data-hf-id="hf-arud" id="s4-title">No bidding.</div>
+          <div data-hf-id="hf-0ahy" id="bid"><div data-hf-id="hf-ktjr" class="bidbtn">Outbid them · $$$<div data-hf-id="hf-5g0v" id="strike"></div></div></div>
+          <div data-hf-id="hf-df3a" class="board" id="board">
+            <div data-hf-id="hf-kq3s" class="bhead"><div data-hf-id="hf-l1iu" style="display:flex;align-items:center"><b data-hf-id="hf-p9vd">Live ranking</b><span data-hf-id="hf-zi6f" class="tag">example</span></div><span data-hf-id="hf-mzdf"><i data-hf-id="hf-06xa"></i>LIVE</span></div>
+            <div data-hf-id="hf-f3kd" class="ranks">
+              <div data-hf-id="hf-7242" class="rk" style="background:#fff4d6;color:#b7791f">1</div>
+              <div data-hf-id="hf-dsnx" class="rk" style="background:#eef1f5;color:#55607a">2</div>
+              <div data-hf-id="hf-9894" class="rk" style="background:#fdeee4;color:#a4532b">3</div>
+              <div data-hf-id="hf-kkrc" class="rk" style="background:#f4f1ec;color:#67625d">4</div>
+              <div data-hf-id="hf-k6gb" class="rk" style="background:#f4f1ec;color:#67625d">5</div>
+            </div>
+            <div data-hf-id="hf-hnc7" class="rows">
+              <div data-hf-id="hf-dhwz" class="row" id="r0" style="top:0px"><div data-hf-id="hf-i6tc" class="lg" style="background:#ddefeb"><i data-hf-id="hf-6lj9" style="background:#2c6055"></i></div><div data-hf-id="hf-puvz" class="meta"><div data-hf-id="hf-l113" class="nm"></div><div data-hf-id="hf-64lp" class="track"><div data-hf-id="hf-xqbw" class="fill" style="transform:scaleX(0.86)"></div></div></div></div>
+              <div data-hf-id="hf-9glz" class="row" id="r1" style="top:140px"><div data-hf-id="hf-73co" class="lg" style="background:#eeeafb"><i data-hf-id="hf-8s6h" style="background:#544a8c"></i></div><div data-hf-id="hf-zjfj" class="meta"><div data-hf-id="hf-944n" class="nm" style="width:190px"></div><div data-hf-id="hf-gav5" class="track"><div data-hf-id="hf-fj2r" class="fill" style="transform:scaleX(0.72)"></div></div></div></div>
+              <div data-hf-id="hf-aktv" class="row" id="r2" style="top:280px"><div data-hf-id="hf-u84t" class="lg" style="background:#fbe8df"><i data-hf-id="hf-0rsx" style="background:#9a4c31"></i></div><div data-hf-id="hf-z54i" class="meta"><div data-hf-id="hf-ahzl" class="nm" style="width:260px"></div><div data-hf-id="hf-hhs8" class="track"><div data-hf-id="hf-lnae" class="fill" style="transform:scaleX(0.6)"></div></div></div></div>
+              <div data-hf-id="hf-k8zm" class="row" id="r3" style="top:420px"><div data-hf-id="hf-yio0" class="lg" style="background:#fff4d6"><i data-hf-id="hf-0zvs" style="background:#b7791f"></i></div><div data-hf-id="hf-yqth" class="meta"><div data-hf-id="hf-3jms" class="nm" style="width:210px"></div><div data-hf-id="hf-h3h7" class="track"><div data-hf-id="hf-sp9i" class="fill" style="transform:scaleX(0.48)"></div></div></div></div>
+              <div data-hf-id="hf-tsfj" class="row" id="you" style="top:560px"><div data-hf-id="hf-8zmg" class="lg" style="background:#e4edfb"><i data-hf-id="hf-wz4f" style="background:#375688"></i></div><div data-hf-id="hf-1iyo" class="meta"><div data-hf-id="hf-s60m" class="nmtxt">Your SaaS</div><div data-hf-id="hf-f3y2" class="track"><div data-hf-id="hf-vmus" class="fill" id="you-fill"></div></div></div>
+                <svg data-hf-id="hf-i3v8" id="crown" width="64" height="64" viewBox="0 0 24 24" fill="#f2b632" stroke="#d99a16" stroke-width="1.2" stroke-linejoin="round"><path data-hf-id="hf-dms7" d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z" /></svg>
+              </div>
+            </div>
+          </div>
+          <div data-hf-id="hf-enlr" id="s4-line"><span data-hf-id="hf-atvj">Real clicks set the rank,</span><span data-hf-id="hf-uzyp" id="season">all month</span></div>
+        </div>
+      </section>
+
+      <!-- Scene 5: end card -->
+      <section data-hf-id="hf-nrf8" id="s5" class="clip" data-start="21.33" data-duration="6.15" data-track-index="6">
+        <div data-hf-id="hf-vb6z" id="s5-in" class="layer">
+          <div data-hf-id="hf-8dm1" id="price">$29</div>
+          <div data-hf-id="hf-kvpr" id="price-sub">flat · a full month on stream · no bidding</div>
+          <div data-hf-id="hf-1eyg" id="slots">
+            <div data-hf-id="hf-ar32" class="slotgrid" id="slotgrid"></div>
+            <b data-hf-id="hf-d6bl">Only <span data-hf-id="hf-fmpx" class="blue">32 spots</span>.</b>
+          </div>
+          <div data-hf-id="hf-mlav" id="lockup"><div data-hf-id="hf-xu9p" class="mark lg" id="bigmark"><i data-hf-id="hf-26gf"></i><i data-hf-id="hf-2krg"></i><i data-hf-id="hf-oz7w"></i></div><span data-hf-id="hf-7hzp">surviver<span data-hf-id="hf-e4l4" class="blue">.lol</span></span></div>
+          <div data-hf-id="hf-l401" id="cta"><div data-hf-id="hf-zud3">Claim your spot →</div></div>
+          <div data-hf-id="hf-u6x1" id="reach">
+            <svg data-hf-id="hf-ko12" width="40" height="40" viewBox="0 0 24 24"><path data-hf-id="hf-mys3" class="yt-icon" fill="#FF0000" d="" /></svg>Live on stream
+            <span data-hf-id="hf-fcth" style="opacity:.5">·</span>
+            <svg data-hf-id="hf-r1uy" width="40" height="40" viewBox="0 0 24 24"><path data-hf-id="hf-bx4i" id="dc-path" fill="#5865F2" d="" /></svg>Discord shout-out
+          </div>
+        </div>
+      </section>
+
+      <!-- Audio -->
+      <audio id="vo" src="assets/audio/vo.wav" data-start="0" data-duration="26.16" data-track-index="10" data-volume="1"></audio>
+      <audio id="music" src="assets/audio/music-a.mp3" data-start="2.68" data-duration="24.8" data-track-index="11"
+        data-automation='{"version":1,"lanes":[{"target":"volume","points":[{"t":0,"v":0},{"t":0.6,"v":0.2},{"t":18.3,"v":0.2},{"t":18.8,"v":0.32},{"t":23.3,"v":0.32},{"t":24.8,"v":0}]}]}'></audio>
+      <audio id="sfx-pop-1" src="assets/audio/sfx-pop.mp3" data-start="0.3" data-duration="0.4" data-track-index="13" data-volume="0.35"></audio>
+      <audio id="sfx-pop-2" src="assets/audio/sfx-pop.mp3" data-start="1.85" data-duration="0.4" data-track-index="13" data-volume="0.45"></audio>
+      <audio id="sfx-whoosh-1" src="assets/audio/sfx-whoosh.mp3" data-start="2.33" data-duration="1.2" data-track-index="14" data-volume="0.4"></audio>
+      <audio id="sfx-counter" src="assets/audio/sfx-counter.mp3" data-start="3.43" data-duration="1.15" data-track-index="15"
+        data-automation='{"version":1,"lanes":[{"target":"volume","points":[{"t":0,"v":0.18},{"t":1.0,"v":0.22},{"t":1.15,"v":0}]}]}'></audio>
+      <audio id="sfx-impact-1" src="assets/audio/sfx-riser-impact.mp3" data-start="4.08" data-duration="2" data-track-index="16" data-volume="0.55"></audio>
+      <audio id="sfx-whoosh-2" src="assets/audio/sfx-whoosh.mp3" data-start="6.53" data-duration="1.2" data-track-index="14" data-volume="0.4"></audio>
+      <audio id="sfx-pop-3" src="assets/audio/sfx-pop.mp3" data-start="10.83" data-duration="0.4" data-track-index="13" data-volume="0.45"></audio>
+      <audio id="sfx-pop-4" src="assets/audio/sfx-pop.mp3" data-start="12.89" data-duration="0.4" data-track-index="13" data-volume="0.4"></audio>
+      <audio id="sfx-pop-5" src="assets/audio/sfx-pop.mp3" data-start="13.49" data-duration="0.4" data-track-index="13" data-volume="0.4"></audio>
+      <audio id="sfx-pop-6" src="assets/audio/sfx-pop.mp3" data-start="14.43" data-duration="0.4" data-track-index="13" data-volume="0.4"></audio>
+      <audio id="sfx-whoosh-3" src="assets/audio/sfx-whoosh.mp3" data-start="16.83" data-duration="1.2" data-track-index="14" data-volume="0.4"></audio>
+      <audio id="sfx-impact-2" src="assets/audio/sfx-riser-impact.mp3" data-start="19.33" data-duration="2" data-track-index="16" data-volume="0.4"></audio>
+      <audio id="sfx-whoosh-4" src="assets/audio/sfx-whoosh.mp3" data-start="20.93" data-duration="1.2" data-track-index="14" data-volume="0.4"></audio>
+      <audio id="sfx-pop-7" src="assets/audio/sfx-pop.mp3" data-start="22.83" data-duration="0.4" data-track-index="13" data-volume="0.35"></audio>
+      <audio id="sfx-sting" src="assets/audio/sting-b.mp3" data-start="24.38" data-duration="2.48" data-track-index="17" data-volume="0.5"></audio>
+      <audio id="sfx-pop-8" src="assets/audio/sfx-pop.mp3" data-start="25.08" data-duration="0.4" data-track-index="13" data-volume="0.35"></audio>
+    </div>
+
+    <script>
+      // Brand marks (Simple Icons, official colours).
+      const YT = "M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z";
+      const DC = "M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z";
+      document.getElementById("yt-path").setAttribute("d", YT);
+      document.querySelectorAll(".yt-icon").forEach((p) => p.setAttribute("d", YT));
+      document.getElementById("dc-path").setAttribute("d", DC);
+
+      // Scene 2 dot field: 20 x 20 = 400 dots, one per 1,000 monthly views.
+      const field = document.getElementById("field");
+      const dots = [];
+      for (let r = 0; r < 20; r++) {
+        for (let c = 0; c < 20; c++) {
+          const d = document.createElement("div");
+          d.className = "dot";
+          d.style.left = c * 42 + 9 + "px";
+          d.style.top = r * 42 + 9 + "px";
+          d.dataset.dist = String(Math.hypot(c - 9.5, r - 9.5));
+          field.appendChild(d);
+          dots.push(d);
+        }
+      }
+      dots.sort((a, b) => Number(a.dataset.dist) - Number(b.dataset.dist));
+
+      // Scene 3 side rails: tiles that flip through the lineup.
+      const PASTELS = [
+        ["#fff4d6", "#b7791f"], ["#eef1f5", "#55607a"], ["#ddefeb", "#2c6055"], ["#eeeafb", "#544a8c"],
+        ["#fdeee4", "#a4532b"], ["#e4edfb", "#375688"], ["#fbe8df", "#9a4c31"], ["#e3f5e8", "#2d7a45"],
+      ];
+      // Real SaaS marks (Simple Icons) for the stream rails and the example ranking.
+      const BRANDS = [{"t":"Notion","h":"000000","p":"M4.459 4.208c.746.606 1.026.56 2.428.466l13.215-.793c.28 0 .047-.28-.046-.326L17.86 1.968c-.42-.326-.981-.7-2.055-.607L3.01 2.295c-.466.046-.56.28-.374.466zm.793 3.08v13.904c0 .747.373 1.027 1.214.98l14.523-.84c.841-.046.935-.56.935-1.167V6.354c0-.606-.233-.933-.748-.887l-15.177.887c-.56.047-.747.327-.747.933zm14.337.745c.093.42 0 .84-.42.888l-.7.14v10.264c-.608.327-1.168.514-1.635.514-.748 0-.935-.234-1.495-.933l-4.577-7.186v6.952L12.21 19s0 .84-1.168.84l-3.222.186c-.093-.186 0-.653.327-.746l.84-.233V9.854L7.822 9.76c-.094-.42.14-1.026.793-1.073l3.456-.233 4.764 7.279v-6.44l-1.215-.139c-.093-.514.28-.887.747-.933zM1.936 1.035l13.31-.98c1.634-.14 2.055-.047 3.082.7l4.249 2.986c.7.513.934.653.934 1.213v16.378c0 1.026-.373 1.634-1.68 1.726l-15.458.934c-.98.047-1.448-.093-1.962-.747l-3.129-4.06c-.56-.747-.793-1.306-.793-1.96V2.667c0-.839.374-1.54 1.447-1.632z"},{"t":"Figma","h":"F24E1E","p":"M15.852 8.981h-4.588V0h4.588c2.476 0 4.49 2.014 4.49 4.49s-2.014 4.491-4.49 4.491zM12.735 7.51h3.117c1.665 0 3.019-1.355 3.019-3.019s-1.355-3.019-3.019-3.019h-3.117V7.51zm0 1.471H8.148c-2.476 0-4.49-2.014-4.49-4.49S5.672 0 8.148 0h4.588v8.981zm-4.587-7.51c-1.665 0-3.019 1.355-3.019 3.019s1.354 3.02 3.019 3.02h3.117V1.471H8.148zm4.587 15.019H8.148c-2.476 0-4.49-2.014-4.49-4.49s2.014-4.49 4.49-4.49h4.588v8.98zM8.148 8.981c-1.665 0-3.019 1.355-3.019 3.019s1.355 3.019 3.019 3.019h3.117V8.981H8.148zM8.172 24c-2.489 0-4.515-2.014-4.515-4.49s2.014-4.49 4.49-4.49h4.588v4.441c0 2.503-2.047 4.539-4.563 4.539zm-.024-7.51a3.023 3.023 0 0 0-3.019 3.019c0 1.665 1.365 3.019 3.044 3.019 1.705 0 3.093-1.376 3.093-3.068v-2.97H8.148zm7.704 0h-.098c-2.476 0-4.49-2.014-4.49-4.49s2.014-4.49 4.49-4.49h.098c2.476 0 4.49 2.014 4.49 4.49s-2.014 4.49-4.49 4.49zm-.097-7.509c-1.665 0-3.019 1.355-3.019 3.019s1.355 3.019 3.019 3.019h.098c1.665 0 3.019-1.355 3.019-3.019s-1.355-3.019-3.019-3.019h-.098z"},{"t":"Stripe","h":"635BFF","p":"M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-6.99-2.109l-.9 5.555C5.175 22.99 8.385 24 11.714 24c2.641 0 4.843-.624 6.328-1.813 1.664-1.305 2.525-3.236 2.525-5.732 0-4.128-2.524-5.851-6.594-7.305h.003z"},{"t":"Linear","h":"5E6AD2","p":"M2.886 4.18A11.982 11.982 0 0 1 11.99 0C18.624 0 24 5.376 24 12.009c0 3.64-1.62 6.903-4.18 9.105L2.887 4.18ZM1.817 5.626l16.556 16.556c-.524.33-1.075.62-1.65.866L.951 7.277c.247-.575.537-1.126.866-1.65ZM.322 9.163l14.515 14.515c-.71.172-1.443.282-2.195.322L0 11.358a12 12 0 0 1 .322-2.195Zm-.17 4.862 9.823 9.824a12.02 12.02 0 0 1-9.824-9.824Z"},{"t":"Supabase","h":"3FCF8E","p":"M11.9 1.036c-.015-.986-1.26-1.41-1.874-.637L.764 12.05C-.33 13.427.65 15.455 2.409 15.455h9.579l.113 7.51c.014.985 1.259 1.408 1.873.636l9.262-11.653c1.093-1.375.113-3.403-1.645-3.403h-9.642z"},{"t":"Zapier","h":"FF4F00","p":"M4.157 0A4.151 4.151 0 0 0 0 4.161v15.678A4.151 4.151 0 0 0 4.157 24h15.682A4.152 4.152 0 0 0 24 19.839V4.161A4.152 4.152 0 0 0 19.839 0H4.157Zm10.61 8.761h.03a.577.577 0 0 1 .23.038.585.585 0 0 1 .201.124.63.63 0 0 1 .162.431.612.612 0 0 1-.162.435.58.58 0 0 1-.201.128.58.58 0 0 1-.23.042.529.529 0 0 1-.235-.042.585.585 0 0 1-.332-.328.559.559 0 0 1-.038-.235.613.613 0 0 1 .17-.431.59.59 0 0 1 .405-.162Zm2.853 1.572c.03.004.061.004.095.004.325-.011.646.064.937.219.238.144.431.355.552.609.128.279.189.582.185.888v.193a2 2 0 0 1 0 .219h-2.498c.003.227.075.45.204.642a.78.78 0 0 0 .646.265.714.714 0 0 0 .484-.136.642.642 0 0 0 .23-.318l.915.257a1.398 1.398 0 0 1-.28.537c-.14.159-.321.284-.521.355a2.234 2.234 0 0 1-.836.136 1.923 1.923 0 0 1-1.001-.245 1.618 1.618 0 0 1-.665-.703 2.221 2.221 0 0 1-.227-1.036 1.95 1.95 0 0 1 .48-1.398 1.9 1.9 0 0 1 1.3-.488Zm-9.607.023c.162.004.325.026.48.079.207.065.4.174.563.314.26.302.393.692.366 1.088v2.276H8.53l-.109-.711h-.065c-.064.163-.155.31-.272.439a1.122 1.122 0 0 1-.374.264 1.023 1.023 0 0 1-.453.083 1.334 1.334 0 0 1-.866-.264.965.965 0 0 1-.329-.801.993.993 0 0 1 .076-.431 1.02 1.02 0 0 1 .242-.363 1.478 1.478 0 0 1 1.043-.303h.952v-.181a.696.696 0 0 0-.136-.454.553.553 0 0 0-.438-.154.695.695 0 0 0-.378.086.48.48 0 0 0-.193.254l-.99-.144a1.26 1.26 0 0 1 .257-.563c.14-.174.321-.302.533-.378.261-.091.54-.136.82-.129.053-.003.106-.007.163-.007Zm4.384.007c.174 0 .347.038.506.114.182.083.34.211.458.374.257.423.377.911.351 1.406a2.53 2.53 0 0 1-.355 1.448 1.148 1.148 0 0 1-1.009.517c-.204 0-.401-.045-.582-.136a1.052 1.052 0 0 1-.48-.457 1.298 1.298 0 0 1-.114-.234h-.045l.004 1.784h-1.059v-4.713h.904l.117.805h.057c.068-.208.177-.401.328-.56a1.129 1.129 0 0 1 .843-.344h.076v-.004Zm7.559.084h.903l.113.805h.053a1.37 1.37 0 0 1 .235-.484.813.813 0 0 1 .313-.242.82.82 0 0 1 .39-.076h.234v1.051h-.401a.662.662 0 0 0-.313.008.623.623 0 0 0-.272.155.663.663 0 0 0-.174.26.683.683 0 0 0-.027.314v1.875h-1.054v-3.666Zm-17.515.003h3.262v.896L3.73 13.104l.034.113h1.973l.042.9H2.4v-.9l1.931-1.754-.045-.117H2.441v-.896Zm11.815 0h1.055v3.659h-1.055V10.45Zm3.443.684.019.016a.69.69 0 0 0-.351.045.756.756 0 0 0-.287.204c-.11.155-.174.336-.189.522h1.545c-.034-.526-.257-.787-.74-.787h.003Zm-5.718.163c-.026 0-.057 0-.083.004a.78.78 0 0 0-.31.053.746.746 0 0 0-.257.189 1.016 1.016 0 0 0-.204.695v.064c-.015.257.057.507.204.711a.634.634 0 0 0 .253.196.638.638 0 0 0 .314.061.644.644 0 0 0 .578-.265c.14-.223.204-.48.189-.74a1.216 1.216 0 0 0-.181-.711.677.677 0 0 0-.503-.257Zm-4.509 1.266a.464.464 0 0 0-.268.102.373.373 0 0 0-.114.276c0 .053.008.106.027.155a.375.375 0 0 0 .087.132.576.576 0 0 0 .397.11v.004a.863.863 0 0 0 .563-.182.573.573 0 0 0 .211-.457v-.14h-.903Z"},{"t":"Vercel","h":"000000","p":"m12 1.608 12 20.784H0Z"},{"t":"Shopify","h":"7AB55C","p":"M15.337 23.979l7.216-1.561s-2.604-17.613-2.625-17.73c-.018-.116-.114-.192-.211-.192s-1.929-.136-1.929-.136-1.275-1.274-1.439-1.411c-.045-.037-.075-.057-.121-.074l-.914 21.104h.023zM11.71 11.305s-.81-.424-1.774-.424c-1.447 0-1.504.906-1.504 1.141 0 1.232 3.24 1.715 3.24 4.629 0 2.295-1.44 3.76-3.406 3.76-2.354 0-3.54-1.465-3.54-1.465l.646-2.086s1.245 1.066 2.28 1.066c.675 0 .975-.545.975-.932 0-1.619-2.654-1.694-2.654-4.359-.034-2.237 1.571-4.416 4.827-4.416 1.257 0 1.875.361 1.875.361l-.945 2.715-.02.01zM11.17.83c.136 0 .271.038.405.135-.984.465-2.064 1.639-2.508 3.992-.656.213-1.293.405-1.889.578C7.697 3.75 8.951.84 11.17.84V.83zm1.235 2.949v.135c-.754.232-1.583.484-2.394.736.466-1.777 1.333-2.645 2.085-2.971.193.501.309 1.176.309 2.1zm.539-2.234c.694.074 1.141.867 1.429 1.755-.349.114-.735.231-1.158.366v-.252c0-.752-.096-1.371-.271-1.871v.002zm2.992 1.289c-.02 0-.06.021-.078.021s-.289.075-.714.21c-.423-1.233-1.176-2.37-2.508-2.37h-.115C12.135.209 11.669 0 11.265 0 8.159 0 6.675 3.877 6.21 5.846c-1.194.365-2.063.636-2.16.674-.675.213-.694.232-.772.87-.075.462-1.83 14.063-1.83 14.063L15.009 24l.927-21.166z"},{"t":"Framer","h":"0055FF","p":"M4 0h16v8h-8zM4 8h8l8 8H4zM4 16h8v8z"},{"t":"MailChimp","h":"FFE01B","p":"M11.267 0C6.791-.015-1.82 10.246 1.397 12.964l.79.669a3.88 3.88 0 0 0-.22 1.792c.084.84.518 1.644 1.22 2.266.666.59 1.542.964 2.392.964 1.406 3.24 4.62 5.228 8.386 5.34 4.04.12 7.433-1.776 8.854-5.182.093-.24.488-1.316.488-2.267 0-.956-.54-1.352-.885-1.352-.01-.037-.078-.286-.172-.586-.093-.3-.19-.51-.19-.51.375-.563.382-1.065.332-1.35-.053-.353-.2-.653-.496-.964-.296-.311-.902-.63-1.753-.868l-.446-.124c-.002-.019-.024-1.053-.043-1.497-.014-.32-.042-.822-.197-1.315-.186-.668-.508-1.253-.911-1.627 1.112-1.152 1.806-2.422 1.804-3.511-.003-2.095-2.576-2.729-5.746-1.416l-.672.285A678.22 678.22 0 0 0 12.7.504C12.304.159 11.817.002 11.267 0zm.073.873c.166 0 .322.019.465.058.297.084 1.28 1.224 1.28 1.224s-1.826 1.013-3.52 2.426c-2.28 1.757-4.005 4.311-5.037 7.082-.811.158-1.526.618-1.963 1.253-.261-.218-.748-.64-.834-.804-.698-1.326.761-3.902 1.781-5.357C5.834 3.44 9.37.867 11.34.873zm3.286 3.273c.04-.002.06.05.028.074-.143.11-.299.26-.413.414a.04.04 0 0 0 .031.064c.659.004 1.587.235 2.192.574.041.023.012.103-.034.092-.915-.21-2.414-.369-3.97.01-1.39.34-2.45.863-3.224 1.426-.04.028-.086-.023-.055-.06.896-1.035 1.999-1.935 2.987-2.44.034-.018.07.019.052.052-.079.143-.23.447-.278.678-.007.035.032.063.062.042.615-.42 1.684-.868 2.622-.926zm3.023 3.205l.056.001a.896.896 0 0 1 .456.146c.534.355.61 1.216.638 1.845.015.36.059 1.229.074 1.478.034.571.184.651.487.751.17.057.33.098.563.164.706.198 1.125.4 1.39.658.157.162.23.333.253.497.083.608-.472 1.36-1.942 2.041-1.607.746-3.557.935-4.904.785l-.471-.053c-1.078-.145-1.693 1.247-1.046 2.201.417.615 1.552 1.015 2.688 1.015 2.604 0 4.605-1.111 5.35-2.072a.987.987 0 0 0 .06-.085c.036-.055.006-.085-.04-.054-.608.416-3.31 2.069-6.2 1.571 0 0-.351-.057-.672-.182-.255-.1-.788-.344-.853-.891 2.333.72 3.801.039 3.801.039a.072.072 0 0 0 .042-.072.067.067 0 0 0-.074-.06s-1.911.283-3.718-.378c.197-.64.72-.408 1.51-.345a11.045 11.045 0 0 0 3.647-.394c.818-.234 1.892-.697 2.727-1.356.281.618.38 1.299.38 1.299s.219-.04.4.073c.173.106.299.326.213.895-.176 1.063-.628 1.926-1.387 2.72a5.714 5.714 0 0 1-1.666 1.244c-.34.18-.704.334-1.087.46-2.863.935-5.794-.093-6.739-2.3a3.545 3.545 0 0 1-.189-.522c-.403-1.455-.06-3.2 1.008-4.299.065-.07.132-.153.132-.256 0-.087-.055-.179-.102-.243-.374-.543-1.669-1.466-1.409-3.254.187-1.284 1.31-2.189 2.357-2.135.089.004.177.01.266.015.453.027.85.085 1.223.1.625.028 1.187-.063 1.853-.618.225-.187.405-.35.71-.401.028-.005.092-.028.215-.028zm.022 2.18a.42.42 0 0 0-.06.005c-.335.054-.347.468-.228 1.04.068.32.187.595.32.765.175-.02.343-.022.498 0 .089-.205.104-.557.024-.942-.112-.535-.261-.872-.554-.868zm-3.66 1.546a1.724 1.724 0 0 0-1.016.326c-.16.117-.311.28-.29.378.008.032.031.056.088.063.131.015.592-.217 1.122-.25.374-.023.684.094.923.2.239.104.386.173.443.113.037-.038.026-.11-.031-.204-.118-.192-.36-.387-.618-.497a1.601 1.601 0 0 0-.621-.129zm4.082.81c-.171-.003-.313.186-.317.42-.004.236.131.43.303.432.172.003.314-.185.318-.42.004-.236-.132-.429-.304-.432zm-3.58.172c-.05 0-.102.002-.155.008-.311.05-.483.152-.593.247-.094.082-.152.173-.152.237a.075.075 0 0 0 .075.076c.07 0 .228-.063.228-.063a1.98 1.98 0 0 1 1.001-.104c.157.018.23.027.265-.026.01-.016.022-.049-.01-.1-.063-.103-.311-.269-.66-.275zm2.26.4c-.127 0-.235.051-.283.148-.075.154.035.363.246.466.21.104.443.063.52-.09.075-.155-.035-.364-.246-.467a.542.542 0 0 0-.237-.058zm-11.635.024c.048 0 .098 0 .149.003.73.04 1.806.6 2.052 2.19.217 1.41-.128 2.843-1.449 3.069-.123.02-.248.029-.374.026-1.22-.033-2.539-1.132-2.67-2.435-.145-1.44.591-2.548 1.894-2.811.117-.024.252-.04.398-.042zm-.07.927a1.144 1.144 0 0 0-.847.364c-.38.418-.439.988-.366 1.19.027.073.07.094.1.098.064.008.16-.039.22-.2a1.2 1.2 0 0 0 .017-.052 1.58 1.58 0 0 1 .157-.37.689.689 0 0 1 .955-.199c.266.174.369.5.255.81-.058.161-.154.469-.133.721.043.511.357.717.64.738.274.01.466-.143.515-.256.029-.067.005-.107-.011-.125-.043-.053-.113-.037-.18-.021a.638.638 0 0 1-.16.022.347.347 0 0 1-.294-.148c-.078-.12-.073-.3.013-.504.011-.028.025-.058.04-.092.138-.308.368-.825.11-1.317-.195-.37-.513-.602-.894-.65a1.135 1.135 0 0 0-.138-.01z"},{"t":"Raycast","h":"FF6363","p":"M6.004 15.492v2.504L0 11.992l1.258-1.249Zm2.504 2.504H6.004L12.008 24l1.253-1.253zm14.24-4.747L24 11.997 12.003 0 10.75 1.251 15.491 6h-2.865L9.317 2.692 8.065 3.944l2.06 2.06H8.691v9.31H18v-1.432l2.06 2.06 1.252-1.252-3.312-3.32V8.506ZM6.63 5.372 5.38 6.625l1.342 1.343 1.251-1.253Zm10.655 10.655-1.247 1.251 1.342 1.343 1.253-1.251zM3.944 8.059 2.692 9.31l3.312 3.314v-2.506zm9.936 9.937h-2.504l3.314 3.312 1.25-1.252z"},{"t":"Airtable","h":"18BFFF","p":"M11.992 1.966c-.434 0-.87.086-1.28.257L1.779 5.917c-.503.208-.49.908.012 1.116l8.982 3.558a3.266 3.266 0 0 0 2.454 0l8.982-3.558c.503-.196.503-.908.012-1.116l-8.957-3.694a3.255 3.255 0 0 0-1.272-.257zM23.4 8.056a.589.589 0 0 0-.222.045l-10.012 3.877a.612.612 0 0 0-.38.564v8.896a.6.6 0 0 0 .821.552L23.62 18.1a.583.583 0 0 0 .38-.551V8.653a.6.6 0 0 0-.6-.596zM.676 8.095a.644.644 0 0 0-.48.19C.086 8.396 0 8.53 0 8.69v8.355c0 .442.515.737.908.54l6.27-3.006.307-.147 2.969-1.436c.466-.22.43-.908-.061-1.092L.883 8.138a.57.57 0 0 0-.207-.044z"},{"t":"PostHog","h":"000000","p":"M9.854 14.5 5 9.647.854 5.5A.5.5 0 0 0 0 5.854V8.44a.5.5 0 0 0 .146.353L5 13.647l.147.146L9.854 18.5l.146.147v-.049c.065.03.134.049.207.049h2.586a.5.5 0 0 0 .353-.854L9.854 14.5zm0-5-4-4a.487.487 0 0 0-.409-.144.515.515 0 0 0-.356.21.493.493 0 0 0-.089.288V8.44a.5.5 0 0 0 .147.353l9 9a.5.5 0 0 0 .853-.354v-2.585a.5.5 0 0 0-.146-.354l-5-5zm1-4a.5.5 0 0 0-.854.354V8.44a.5.5 0 0 0 .147.353l4 4a.5.5 0 0 0 .853-.354V9.854a.5.5 0 0 0-.146-.354l-4-4zm12.647 11.515a3.863 3.863 0 0 1-2.232-1.1l-4.708-4.707a.5.5 0 0 0-.854.354v6.585a.5.5 0 0 0 .5.5H23.5a.5.5 0 0 0 .5-.5v-.6c0-.276-.225-.497-.499-.532zm-5.394.032a.8.8 0 1 1 0-1.6.8.8 0 0 1 0 1.6zM.854 15.5a.5.5 0 0 0-.854.354v2.293a.5.5 0 0 0 .5.5h2.293c.222 0 .39-.135.462-.309a.493.493 0 0 0-.109-.545L.854 15.501zM5 14.647.854 10.5a.5.5 0 0 0-.854.353v2.586a.5.5 0 0 0 .146.353L4.854 18.5l.146.147h2.793a.5.5 0 0 0 .353-.854L5 14.647z"},{"t":"HubSpot","h":"FF7A59","p":"M18.164 7.93V5.084a2.198 2.198 0 001.267-1.978v-.067A2.2 2.2 0 0017.238.845h-.067a2.2 2.2 0 00-2.193 2.193v.067a2.196 2.196 0 001.252 1.973l.013.006v2.852a6.22 6.22 0 00-2.969 1.31l.012-.01-7.828-6.095A2.497 2.497 0 104.3 4.656l-.012.006 7.697 5.991a6.176 6.176 0 00-1.038 3.446c0 1.343.425 2.588 1.147 3.607l-.013-.02-2.342 2.343a1.968 1.968 0 00-.58-.095h-.002a2.033 2.033 0 102.033 2.033 1.978 1.978 0 00-.1-.595l.005.014 2.317-2.317a6.247 6.247 0 104.782-11.134l-.036-.005zm-.964 9.378a3.206 3.206 0 113.215-3.207v.002a3.206 3.206 0 01-3.207 3.207z"},{"t":"Webflow","h":"146EF5","p":"m24 4.515-7.658 14.97H9.149l3.205-6.204h-.144C9.566 16.713 5.621 18.973 0 19.485v-6.118s3.596-.213 5.71-2.435H0V4.515h6.417v5.278l.144-.001 2.622-5.277h4.854v5.244h.144l2.72-5.244H24Z"},{"t":"Loom","h":"625DF5","p":"M24 10.665h-7.018l6.078-3.509-1.335-2.312-6.078 3.509 3.508-6.077L16.843.94l-3.508 6.077V0h-2.67v7.018L7.156.94 4.844 2.275l3.509 6.077-6.078-3.508L.94 7.156l6.078 3.509H0v2.67h7.017L.94 16.844l1.335 2.313 6.077-3.508-3.509 6.077 2.312 1.335 3.509-6.078V24h2.67v-7.017l3.508 6.077 2.312-1.335-3.509-6.078 6.078 3.509 1.335-2.313-6.077-3.508h7.017v-2.67H24zm-12 4.966a3.645 3.645 0 1 1 0-7.29 3.645 3.645 0 0 1 0 7.29z"},{"t":"Todoist","h":"E44332","p":"M21 0H3C1.35 0 0 1.35 0 3v3.858s3.854 2.24 4.098 2.38c.31.18.694.177 1.004 0 .26-.147 8.02-4.608 8.136-4.675.279-.161.58-.107.748-.01.164.097.606.348.84.48.232.134.221.502.013.622l-9.712 5.59c-.346.2-.69.204-1.048.002C3.478 10.907.998 9.463 0 8.882v2.02l4.098 2.38c.31.18.694.177 1.004 0 .26-.147 8.02-4.609 8.136-4.676.279-.16.58-.106.748-.008.164.096.606.347.84.48.232.133.221.5.013.62-.208.121-9.288 5.346-9.712 5.59-.346.2-.69.205-1.048.002C3.478 14.951.998 13.506 0 12.926v2.02l4.098 2.38c.31.18.694.177 1.004 0 .26-.147 8.02-4.609 8.136-4.676.279-.16.58-.106.748-.009.164.097.606.348.84.48.232.133.221.502.013.622l-9.712 5.59c-.346.199-.69.204-1.048.001C3.478 18.994.998 17.55 0 16.97V21c0 1.65 1.35 3 3 3h18c1.65 0 3-1.35 3-3V3c0-1.65-1.35-3-3-3z"},{"t":"Clerk","h":"6C47FF","p":"m21.47 20.829-2.881-2.881a.572.572 0 0 0-.7-.084 6.854 6.854 0 0 1-7.081 0 .576.576 0 0 0-.7.084l-2.881 2.881a.576.576 0 0 0-.103.69.57.57 0 0 0 .166.186 12 12 0 0 0 14.113 0 .58.58 0 0 0 .239-.423.576.576 0 0 0-.172-.453Zm.002-17.668-2.88 2.88a.569.569 0 0 1-.701.084A6.857 6.857 0 0 0 8.724 8.08a6.862 6.862 0 0 0-1.222 3.692 6.86 6.86 0 0 0 .978 3.764.573.573 0 0 1-.083.699l-2.881 2.88a.567.567 0 0 1-.864-.063A11.993 11.993 0 0 1 6.771 2.7a11.99 11.99 0 0 1 14.637-.405.566.566 0 0 1 .232.418.57.57 0 0 1-.168.448Zm-7.118 12.261a3.427 3.427 0 1 0 0-6.854 3.427 3.427 0 0 0 0 6.854Z"},{"t":"Netlify","h":"00C7B7","p":"M6.49 19.04h-.23L5.13 17.9v-.23l1.73-1.71h1.2l.15.15v1.2L6.5 19.04ZM5.13 6.31V6.1l1.13-1.13h.23L8.2 6.68v1.2l-.15.15h-1.2L5.13 6.31Zm9.96 9.09h-1.65l-.14-.13v-3.83c0-.68-.27-1.2-1.1-1.23-.42 0-.9 0-1.43.02l-.07.08v4.96l-.14.14H8.9l-.13-.14V8.73l.13-.14h3.7a2.6 2.6 0 0 1 2.61 2.6v4.08l-.13.14Zm-8.37-2.44H.14L0 12.82v-1.64l.14-.14h6.58l.14.14v1.64l-.14.14Zm17.14 0h-6.58l-.14-.14v-1.64l.14-.14h6.58l.14.14v1.64l-.14.14ZM11.05 6.55V1.64l.14-.14h1.65l.14.14v4.9l-.14.14h-1.65l-.14-.13Zm0 15.81v-4.9l.14-.14h1.65l.14.13v4.91l-.14.14h-1.65l-.14-.14Z"},{"t":"Obsidian","h":"7C3AED","p":"M19.355 18.538a68.967 68.959 0 0 0 1.858-2.954.81.81 0 0 0-.062-.9c-.516-.685-1.504-2.075-2.042-3.362-.553-1.321-.636-3.375-.64-4.377a1.707 1.707 0 0 0-.358-1.05l-3.198-4.064a3.744 3.744 0 0 1-.076.543c-.106.503-.307 1.004-.536 1.5-.134.29-.29.6-.446.914l-.31.626c-.516 1.068-.997 2.227-1.132 3.59-.124 1.26.046 2.73.815 4.481.128.011.257.025.386.044a6.363 6.363 0 0 1 3.326 1.505c.916.79 1.744 1.922 2.415 3.5zM8.199 22.569c.073.012.146.02.22.02.78.024 2.095.092 3.16.29.87.16 2.593.64 4.01 1.055 1.083.316 2.198-.548 2.355-1.664.114-.814.33-1.735.725-2.58l-.01.005c-.67-1.87-1.522-3.078-2.416-3.849a5.295 5.295 0 0 0-2.778-1.257c-1.54-.216-2.952.19-3.84.45.532 2.218.368 4.829-1.425 7.531zM5.533 9.938c-.023.1-.056.197-.098.29L2.82 16.059a1.602 1.602 0 0 0 .313 1.772l4.116 4.24c2.103-3.101 1.796-6.02.836-8.3-.728-1.73-1.832-3.081-2.55-3.831zM9.32 14.01c.615-.183 1.606-.465 2.745-.534-.683-1.725-.848-3.233-.716-4.577.154-1.552.7-2.847 1.235-3.95.113-.235.223-.454.328-.664.149-.297.288-.577.419-.86.217-.47.379-.885.46-1.27.08-.38.08-.72-.014-1.043-.095-.325-.297-.675-.68-1.06a1.6 1.6 0 0 0-1.475.36l-4.95 4.452a1.602 1.602 0 0 0-.513.952l-.427 2.83c.672.59 2.328 2.316 3.335 4.711.09.21.175.43.253.653z"},{"t":"Trello","h":"0052CC","p":"M21.147 0H2.853A2.86 2.86 0 000 2.853v18.294A2.86 2.86 0 002.853 24h18.294A2.86 2.86 0 0024 21.147V2.853A2.86 2.86 0 0021.147 0zM10.34 17.287a.953.953 0 01-.953.953h-4a.954.954 0 01-.954-.953V5.38a.953.953 0 01.954-.953h4a.954.954 0 01.953.953zm9.233-5.467a.944.944 0 01-.953.947h-4a.947.947 0 01-.953-.947V5.38a.953.953 0 01.953-.953h4a.954.954 0 01.953.953z"},{"t":"Sentry","h":"362D59","p":"M13.91 2.505c-.873-1.448-2.972-1.448-3.844 0L6.904 7.92a15.478 15.478 0 0 1 8.53 12.811h-2.221A13.301 13.301 0 0 0 5.784 9.814l-2.926 5.06a7.65 7.65 0 0 1 4.435 5.848H2.194a.365.365 0 0 1-.298-.534l1.413-2.402a5.16 5.16 0 0 0-1.614-.913L.296 19.275a2.182 2.182 0 0 0 .812 2.999 2.24 2.24 0 0 0 1.086.288h6.983a9.322 9.322 0 0 0-3.845-8.318l1.11-1.922a11.47 11.47 0 0 1 4.95 10.24h5.915a17.242 17.242 0 0 0-7.885-15.28l2.244-3.845a.37.37 0 0 1 .504-.13c.255.14 9.75 16.708 9.928 16.9a.365.365 0 0 1-.327.543h-2.287c.029.612.029 1.223 0 1.831h2.297a2.206 2.206 0 0 0 1.922-3.31z"},{"t":"Calendly","h":"006BFF","p":"M19.655 14.262c.281 0 .557.023.828.064 0 .005-.005.01-.005.014-.105.267-.234.534-.381.786l-1.219 2.106c-1.112 1.936-3.177 3.127-5.411 3.127h-2.432c-2.23 0-4.294-1.191-5.412-3.127l-1.218-2.106a6.251 6.251 0 0 1 0-6.252l1.218-2.106C6.736 4.832 8.8 3.641 11.035 3.641h2.432c2.23 0 4.294 1.191 5.411 3.127l1.219 2.106c.147.252.271.519.381.786 0 .004.005.009.005.014-.267.041-.543.064-.828.064-1.816 0-2.501-.607-3.291-1.306-.764-.676-1.711-1.517-3.44-1.517h-1.029c-1.251 0-2.387.455-3.2 1.278-.796.805-1.233 1.904-1.233 3.099v1.411c0 1.196.437 2.295 1.233 3.099.813.823 1.949 1.278 3.2 1.278h1.034c1.729 0 2.676-.841 3.439-1.517.791-.703 1.471-1.306 3.287-1.301Zm.005-3.237c.399 0 .794-.036 1.179-.11-.002-.004-.002-.01-.002-.014-.073-.414-.193-.823-.349-1.218.731-.12 1.407-.396 1.986-.819 0-.004-.005-.013-.005-.018-.331-1.085-.832-2.101-1.489-3.03-.649-.915-1.435-1.719-2.331-2.395-1.867-1.398-4.088-2.138-6.428-2.138-1.448 0-2.855.28-4.175.841-1.273.543-2.423 1.315-3.407 2.299S2.878 6.552 2.341 7.83c-.557 1.324-.842 2.726-.842 4.175 0 1.448.281 2.855.842 4.174.542 1.274 1.314 2.423 2.298 3.407s2.129 1.761 3.407 2.299c1.324.556 2.727.841 4.175.841 2.34 0 4.561-.74 6.428-2.137a10.815 10.815 0 0 0 2.331-2.396c.652-.929 1.158-1.949 1.489-3.03 0-.004.005-.014.005-.018-.579-.423-1.255-.699-1.986-.819.161-.395.276-.804.349-1.218.005-.009.005-.014.005-.023.869.166 1.692.506 2.404 1.035.685.505.552 1.075.446 1.416C22.184 20.437 17.619 24 12.221 24c-6.625 0-12-5.375-12-12s5.37-12 12-12c5.398 0 9.963 3.563 11.471 8.464.106.341.239.915-.446 1.421-.717.529-1.535.873-2.404 1.034.128.716.128 1.45 0 2.166-.387-.074-.782-.11-1.182-.11-4.184 0-3.968 2.823-6.736 2.823h-1.029c-1.899 0-3.15-1.357-3.15-3.095v-1.411c0-1.738 1.251-3.094 3.15-3.094h1.034c2.768 0 2.552 2.823 6.731 2.827Z"},{"t":"Asana","h":"F06A6A","p":"M18.78 12.653c-2.882 0-5.22 2.336-5.22 5.22s2.338 5.22 5.22 5.22 5.22-2.34 5.22-5.22-2.336-5.22-5.22-5.22zm-13.56 0c-2.88 0-5.22 2.337-5.22 5.22s2.338 5.22 5.22 5.22 5.22-2.338 5.22-5.22-2.336-5.22-5.22-5.22zm12-6.525c0 2.883-2.337 5.22-5.22 5.22-2.882 0-5.22-2.337-5.22-5.22 0-2.88 2.338-5.22 5.22-5.22 2.883 0 5.22 2.34 5.22 5.22z"},{"t":"Gumroad","h":"FF90E8","p":"M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0Zm-.007 5.12c4.48 0 5.995 3.025 6.064 4.744h-3.239c-.069-.962-.897-2.406-2.896-2.406-2.136 0-3.514 1.857-3.514 4.126 0 2.27 1.378 4.125 3.514 4.125 1.93 0 2.758-1.512 3.103-3.025h-3.103v-1.238h6.509v6.327h-2.855v-3.989c-.207 1.444-1.102 4.264-4.617 4.264-3.516 0-5.584-2.82-5.584-6.326 0-3.645 2.276-6.602 6.618-6.602z"},{"t":"Intercom","h":"6AFDEF","p":"M21 0H3C1.343 0 0 1.343 0 3v18c0 1.658 1.343 3 3 3h18c1.658 0 3-1.342 3-3V3c0-1.657-1.342-3-3-3zm-5.801 4.399c0-.44.36-.8.802-.8.44 0 .8.36.8.8v10.688c0 .442-.36.801-.8.801-.443 0-.802-.359-.802-.801V4.399zM11.2 3.994c0-.44.357-.799.8-.799s.8.359.8.799v11.602c0 .44-.357.8-.8.8s-.8-.36-.8-.8V3.994zm-4 .405c0-.44.359-.8.799-.8.443 0 .802.36.802.8v10.688c0 .442-.36.801-.802.801-.44 0-.799-.359-.799-.801V4.399zM3.199 6c0-.442.36-.8.802-.8.44 0 .799.358.799.8v7.195c0 .441-.359.8-.799.8-.443 0-.802-.36-.802-.8V6zM20.52 18.202c-.123.105-3.086 2.593-8.52 2.593-5.433 0-8.397-2.486-8.521-2.593-.335-.288-.375-.792-.086-1.128.285-.334.79-.375 1.125-.09.047.041 2.693 2.211 7.481 2.211 4.848 0 7.456-2.186 7.479-2.207.334-.289.839-.25 1.128.086.289.336.25.84-.086 1.128zm.281-5.007c0 .441-.36.8-.801.8-.441 0-.801-.36-.801-.8V6c0-.442.361-.8.801-.8.441 0 .801.357.801.8v7.195z"},{"t":"Postman","h":"FF6C37","p":"M13.527.099C6.955-.744.942 3.9.099 10.473c-.843 6.572 3.8 12.584 10.373 13.428 6.573.843 12.587-3.801 13.428-10.374C24.744 6.955 20.101.943 13.527.099zm2.471 7.485a.855.855 0 0 0-.593.25l-4.453 4.453-.307-.307-.643-.643c4.389-4.376 5.18-4.418 5.996-3.753zm-4.863 4.861l4.44-4.44a.62.62 0 1 1 .847.903l-4.699 4.125-.588-.588zm.33.694l-1.1.238a.06.06 0 0 1-.067-.032.06.06 0 0 1 .01-.073l.645-.645.512.512zm-2.803-.459l1.172-1.172.879.878-1.979.426a.074.074 0 0 1-.085-.039.072.072 0 0 1 .013-.093zm-3.646 6.058a.076.076 0 0 1-.069-.083.077.077 0 0 1 .022-.046h.002l.946-.946 1.222 1.222-2.123-.147zm2.425-1.256a.228.228 0 0 0-.117.256l.203.865a.125.125 0 0 1-.211.117h-.003l-.934-.934-.294-.295 3.762-3.758 1.82-.393.874.874c-1.255 1.102-2.971 2.201-5.1 3.268zm5.279-3.428h-.002l-.839-.839 4.699-4.125a.952.952 0 0 0 .119-.127c-.148 1.345-2.029 3.245-3.977 5.091zm3.657-6.46l-.003-.002a1.822 1.822 0 0 1 2.459-2.684l-1.61 1.613a.119.119 0 0 0 0 .169l1.247 1.247a1.817 1.817 0 0 1-2.093-.343zm2.578 0a1.714 1.714 0 0 1-.271.218h-.001l-1.207-1.207 1.533-1.533c.661.72.637 1.832-.054 2.522zM18.855 6.05a.143.143 0 0 0-.053.157.416.416 0 0 1-.053.45.14.14 0 0 0 .023.197.141.141 0 0 0 .084.03.14.14 0 0 0 .106-.05.691.691 0 0 0 .087-.751.138.138 0 0 0-.194-.033z"},{"t":"Resend","h":"000000","p":"M14.679 0c4.648 0 7.413 2.765 7.413 6.434s-2.765 6.434-7.413 6.434H12.33L24 24h-8.245l-8.88-8.44c-.636-.588-.93-1.273-.93-1.86 0-.831.587-1.565 1.713-1.883l4.574-1.224c1.737-.465 2.936-1.81 2.936-3.572 0-2.153-1.761-3.4-3.939-3.4H0V0z"}];
+      const ink = (hex) => {
+        const n = parseInt(hex, 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255;
+        return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.72 ? "#1f1d1b" : "#" + hex;
+      };
+      const logo = (b, size, hidden) =>
+        '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" style="opacity:' + (hidden ? 0 : 1) + '"><path fill="' + ink(b.h) + '" d="' + b.p + '"/></svg>';
+      const railTiles = [];
+      ["rail-l", "rail-r"].forEach((id, side) => {
+        const rail = document.getElementById(id);
+        for (let k = 0; k < 4; k++) {
+          const t = document.createElement("div");
+          t.className = "rt";
+          const slot = side * 4 + k;
+          let html = "";
+          for (let f = 0; f < 5; f++) html += logo(BRANDS[(4 + slot + f * 8) % BRANDS.length], 48, f > 0);
+          t.innerHTML = html;
+          rail.appendChild(t);
+          railTiles.push(t);
+        }
+      });
+      // Example ranking rows: real marks with their names.
+      ["r0", "r1", "r2", "r3"].forEach((id, k) => {
+        const b = BRANDS[k];
+        const row = document.getElementById(id);
+        row.querySelector(".lg").innerHTML = logo(b, 40, false);
+        const nm = row.querySelector(".nm");
+        const label = document.createElement("div");
+        label.className = "bname";
+        label.textContent = b.t;
+        nm.replaceWith(label);
+      });
+
+      // Scene 5: 32 open slots.
+      const slotgrid = document.getElementById("slotgrid");
+      const slots = [];
+      for (let i = 0; i < 32; i++) {
+        const s = document.createElement("div");
+        s.className = "slot";
+        slotgrid.appendChild(s);
+        slots.push(s);
+      }
+
+      const tl = gsap.timeline({ paused: true });
+      const num = new Intl.NumberFormat("en-US");
+
+      // ---------- ambient ----------
+      tl.fromTo("#grid", { y: 0 }, { y: -48 * 4, duration: 27.5, ease: "none" }, 0);
+      tl.fromTo("#bug-in", { opacity: 0, y: -20 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 0.3);
+      tl.to("#bug-in", { opacity: 0, y: -20, duration: 0.3, ease: "power2.in" }, 20.93);
+
+      // ---------- scene 1 (0 – 4.45): the launch with zero users ----------
+      tl.fromTo("#post", { y: 260, scale: 0.92, opacity: 0, rotation: -2 }, { y: 0, scale: 1, opacity: 1, rotation: 0, duration: 0.6, ease: "back.out(1.5)" }, 0.05);
+      const s1w = document.querySelectorAll("#s1-title .w");
+      [0.07, 0.23, 0.62, 0.77].forEach((t, i) => {
+        tl.fromTo(s1w[i], { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.3, ease: "power3.out" }, t);
+      });
+      // The users counter tries to move, and stays at zero.
+      tl.fromTo("#users-n", { y: 0 }, { y: -10, duration: 0.08, ease: "power2.out", yoyo: true, repeat: 3 }, 1.15);
+      tl.fromTo("#views-ring", { scale: 0.6, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3, ease: "back.out(2)" }, 1.85);
+      tl.to("#views", { color: "#e0603f", duration: 0.2 }, 1.85);
+      tl.fromTo("#hl-bg", { scaleX: 0 }, { scaleX: 0.52, duration: 0.18, ease: "power3.out" }, 1.72);
+      tl.to("#hl-bg", { scaleX: 1, duration: 0.18, ease: "power3.out" }, 2.25);
+      const s1p = document.querySelectorAll("#s1-punch .w");
+      [1.42, 1.54, 1.76, 2.27].forEach((t, i) => {
+        tl.fromTo(s1p[i], { y: 46, opacity: 0, scale: 0.9 }, { y: 0, opacity: 1, scale: 1, duration: 0.28, ease: "back.out(1.8)" }, t);
+      });
+      tl.to("#post", { y: 14, rotation: 0.8, duration: 0.4, ease: "sine.inOut" }, 2.3);
+      tl.to("#s1-in", { scale: 1.08, y: -40, opacity: 0, duration: 0.3, ease: "power2.in" }, 2.66);
+
+      // ---------- scene 2 (4.25 – 8.65): what if 400,000 ----------
+      tl.fromTo("#s2-in", { opacity: 0, scale: 0.94 }, { opacity: 1, scale: 1, duration: 0.3, ease: "power2.out" }, 2.73);
+      tl.fromTo("#s2-kicker", { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 0.35, ease: "power3.out" }, 2.93);
+      tl.fromTo("#counter-wrap", { scale: 0.85 }, { scale: 1, duration: 0.3, ease: "back.out(2)" }, 2.78);
+      const cnt = { v: 0 };
+      tl.to(cnt, { v: 400000, duration: 1.15, ease: "power3.in", onUpdate: () => { document.getElementById("counter").textContent = num.format(Math.round(cnt.v)); } }, 3.43);
+      tl.to("#counter", { color: "#3b76e1", duration: 0.25 }, 4.38);
+      tl.fromTo("#counter-wrap", { scale: 1 }, { scale: 1.12, duration: 0.12, ease: "power2.out", yoyo: true, repeat: 1, immediateRender: false }, 4.58);
+      tl.fromTo(dots, { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3, ease: "back.out(2.4)", stagger: { each: 0.0018 } }, 4.18);
+      tl.to(dots, { backgroundColor: "#a9c3f1", duration: 0.6, stagger: { each: 0.001 } }, 5.08);
+      tl.fromTo("#s2-label", { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, ease: "power3.out" }, 5.18);
+      tl.fromTo("#s2-note", { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, ease: "power3.out" }, 5.78);
+      tl.fromTo("#field", { scale: 1 }, { scale: 1.06, duration: 2.6, ease: "none" }, 4.18);
+      tl.to("#s2-in", { y: -80, opacity: 0, duration: 0.35, ease: "power2.in" }, 6.73);
+
+      // ---------- scene 3 (8.45 – 18.85): register once, live for a month ----------
+      tl.fromTo("#s3-in", { opacity: 0 }, { opacity: 1, duration: 0.2 }, 6.93);
+      tl.fromTo("#s3-head h2", { x: -60, opacity: 0 }, { x: 0, opacity: 1, duration: 0.4, ease: "power3.out" }, 7.08);
+      tl.fromTo("#player", { y: 320, opacity: 0, scale: 0.9 }, { y: 0, opacity: 1, scale: 1, duration: 0.6, ease: "power4.out" }, 7.23);
+      tl.fromTo(railTiles, { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3, ease: "back.out(2)", stagger: 0.05 }, 7.78);
+      tl.fromTo("#spot", { y: 260, scale: 0.6, opacity: 0 }, { y: 0, scale: 1, opacity: 1, duration: 0.55, ease: "back.out(1.6)" }, 8.68);
+      tl.fromTo("#scrub", { scaleX: 0.02, transformOrigin: "left center" }, { scaleX: 1, duration: 9.4, ease: "none" }, 7.78);
+      tl.fromTo("#s3-count", { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, ease: "power3.out" }, 9.68);
+      tl.fromTo("#month", { scale: 0.4, opacity: 0, rotation: -6 }, { scale: 1, opacity: 1, rotation: 0, duration: 0.4, ease: "back.out(2.6)" }, 10.83);
+      railTiles.forEach((t, i) => {
+        const layers = t.querySelectorAll("svg");
+        for (let f = 0; f < 4; f++) {
+          const at = 9.48 + f * 1.6 + i * 0.12;
+          tl.to(t, { scaleY: 0, duration: 0.12, ease: "power2.in" }, at);
+          tl.set(layers[f], { opacity: 0 }, at + 0.12);
+          tl.set(layers[f + 1], { opacity: 1 }, at + 0.12);
+          tl.to(t, { scaleY: 1, duration: 0.14, ease: "power2.out" }, at + 0.12);
+        }
+      });
+      document.querySelectorAll("#chips .chip").forEach((c, i) => {
+        tl.fromTo(c, { y: 50, scale: 0.6, opacity: 0 }, { y: 0, scale: 1, opacity: 1, duration: 0.35, ease: "back.out(2.2)" }, [12.89, 13.49, 14.43][i]);
+      });
+      const s3w = document.querySelectorAll("#s3-line .w");
+      [15.08, 15.36, 15.7, 16.03, 16.4].forEach((t, i) => {
+        tl.fromTo(s3w[i], { y: 36, opacity: 0 }, { y: 0, opacity: 1, duration: 0.3, ease: "power3.out" }, t);
+      });
+      tl.to("#s3-in", { x: -120, opacity: 0, duration: 0.35, ease: "power2.in" }, 16.93);
+
+      // ---------- scene 4 (18.75 – 22.95): no bidding, real clicks ----------
+      tl.fromTo("#s4-in", { x: 120, opacity: 0 }, { x: 0, opacity: 1, duration: 0.3, ease: "power3.out" }, 17.23);
+      tl.fromTo("#s4-title", { scale: 1.3, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.35, ease: "power4.out" }, 17.43);
+      tl.fromTo("#bid", { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 0.3, ease: "power3.out" }, 17.53);
+      tl.fromTo("#strike", { scaleX: 0 }, { scaleX: 1, duration: 0.25, ease: "power3.out" }, 17.88);
+      tl.fromTo("#board", { y: 200, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "power4.out" }, 18.08);
+      tl.fromTo("#you-fill", { scaleX: 0.3 }, { scaleX: 0.98, duration: 1.4, ease: "power2.inOut" }, 18.58);
+      [18.68, 18.98, 19.28, 19.58].forEach((t, k) => {
+        tl.to("#you", { y: -140 * (k + 1), duration: 0.28, ease: "power3.inOut" }, t);
+        tl.to("#r" + (3 - k), { y: 140, duration: 0.28, ease: "power3.inOut" }, t);
+      });
+      tl.fromTo("#crown", { scale: 0, rotation: -30, opacity: 0 }, { scale: 1, rotation: 0, opacity: 1, duration: 0.4, ease: "back.out(3)" }, 19.83);
+      tl.fromTo("#you", { scale: 1 }, { scale: 1.04, duration: 0.14, ease: "power2.out", yoyo: true, repeat: 1, immediateRender: false }, 19.83);
+      tl.fromTo("#s4-line span:first-child", { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 0.35, ease: "power3.out" }, 18.63);
+      tl.fromTo("#season", { scale: 0.5, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.35, ease: "back.out(2.4)" }, 19.93);
+      tl.to("#s4-in", { scale: 0.92, opacity: 0, duration: 0.3, ease: "power2.in" }, 21.08);
+
+      // ---------- scene 5 (22.85 – 29): end card ----------
+      tl.fromTo("#price", { scale: 0.5, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.45, ease: "back.out(1.8)" }, 21.38);
+      tl.fromTo("#price-sub", { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.35, ease: "power3.out" }, 21.88);
+      tl.fromTo(slots, { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3, ease: "back.out(2.2)", stagger: { each: 0.02, from: "start" } }, 22.78);
+      tl.fromTo("#slots b", { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.35, ease: "power3.out" }, 22.88);
+      tl.fromTo("#lockup", { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, ease: "power3.out" }, 24.38);
+      tl.fromTo("#bigmark i", { scaleY: 0, transformOrigin: "bottom center" }, { scaleY: 1, duration: 0.45, ease: "back.out(2)", stagger: 0.08 }, 24.48);
+      tl.fromTo("#cta", { y: 40, scale: 0.9, opacity: 0 }, { y: 0, scale: 1, opacity: 1, duration: 0.4, ease: "back.out(1.8)" }, 25.08);
+      tl.to("#cta div", { scale: 1.04, duration: 0.5, ease: "sine.inOut", yoyo: true, repeat: 2 }, 25.68);
+      tl.fromTo("#reach", { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, ease: "power3.out" }, 25.48);
+
+      window.__timelines["main"] = tl;
+    </script>
+
+  </body>
+</html>

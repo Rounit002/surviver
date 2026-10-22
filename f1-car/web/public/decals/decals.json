@@ -1,0 +1,119 @@
+[
+ {
+  "key": "team_side",
+  "plane": "side",
+  "center": [
+   0.36,
+   0.345
+  ],
+  "width": 0.6,
+  "aspect": 0.14501953125,
+  "color": "#EEEBE4",
+  "ymin": 0.3,
+  "url": "decals/team_side.png"
+ },
+ {
+  "key": "num_airbox",
+  "plane": "side",
+  "center": [
+   -0.56,
+   0.755
+  ],
+  "width": 0.17,
+  "aspect": 0.99658203125,
+  "color": "#EEEBE4",
+  "ymin": 0.09,
+  "url": "decals/num_airbox.png"
+ },
+ {
+  "key": "num_nose",
+  "plane": "top",
+  "center": [
+   1.98,
+   0.0
+  ],
+  "width": 0.15,
+  "aspect": 1.0283203125,
+  "color": "#08090B",
+  "ymin": 0.0,
+  "url": "decals/num_nose.png"
+ },
+ {
+  "key": "axiom_cover",
+  "plane": "side",
+  "center": [
+   -1.14,
+   0.575
+  ],
+  "width": 0.44,
+  "aspect": 0.25,
+  "color": "#EEEBE4",
+  "ymin": 0.1,
+  "url": "decals/axiom_cover.png"
+ },
+ {
+  "key": "voltrix_pod",
+  "plane": "side",
+  "center": [
+   -1.02,
+   0.25
+  ],
+  "width": 0.5,
+  "aspect": 0.14990234375,
+  "color": "#EEEBE4",
+  "ymin": 0.16,
+  "url": "decals/voltrix_pod.png"
+ },
+ {
+  "key": "helix_nose",
+  "plane": "side",
+  "center": [
+   1.66,
+   0.28
+  ],
+  "width": 0.26,
+  "aspect": 0.26708984375,
+  "color": "#EEEBE4",
+  "ymin": 0.05,
+  "url": "decals/helix_nose.png"
+ },
+ {
+  "key": "team_rw",
+  "plane": "side",
+  "center": [
+   -2.63,
+   0.84
+  ],
+  "width": 0.36,
+  "aspect": 0.14501953125,
+  "color": "#EEEBE4",
+  "ymin": 0.44,
+  "url": "decals/team_rw.png"
+ },
+ {
+  "key": "team_fw",
+  "plane": "side",
+  "center": [
+   2.44,
+   0.155
+  ],
+  "width": 0.25,
+  "aspect": 0.14501953125,
+  "color": "#EEEBE4",
+  "ymin": 0.9,
+  "url": "decals/team_fw.png"
+ },
+ {
+  "key": "num_rw",
+  "plane": "side",
+  "center": [
+   -2.66,
+   0.68
+  ],
+  "width": 0.1,
+  "aspect": 1.0283203125,
+  "color": "#FF4310",
+  "ymin": 0.44,
+  "url": "decals/num_rw.png"
+ }
+]

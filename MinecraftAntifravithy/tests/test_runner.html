@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minecraft Java Edition - Voxel Game E2E Test Runner</title>
+  <style>
+    :root {
+      --bg: #121316;
+      --card-bg: #1c1d22;
+      --card-border: #2e3038;
+      --text: #e4e4e7;
+      --text-muted: #9ca3af;
+      --accent: #55c57a;
+      --success: #22c55e;
+      --fail: #ef4444;
+      --pending: #f59e0b;
+      --cyan: #38bdf8;
+      --font-mono: 'Consolas', 'Courier New', Courier, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      padding: 24px;
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    header {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    }
+
+    .title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .badge-mc {
+      background: #2e7d32;
+      color: #fff;
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .stat-card {
+      background: #15161a;
+      border: 1px solid var(--card-border);
+      padding: 12px 16px;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 26px;
+      font-weight: 700;
+      font-family: var(--font-mono);
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 4px;
+    }
+
+    .stat-passed .stat-value { color: var(--success); }
+    .stat-failed .stat-value { color: var(--fail); }
+    .stat-duration .stat-value { color: var(--cyan); }
+    .stat-total .stat-value { color: #fff; }
+
+    /* Progress bar */
+    .progress-bar-container {
+      width: 100%;
+      height: 10px;
+      background: #22232a;
+      border-radius: 5px;
+      overflow: hidden;
+      margin-top: 20px;
+      position: relative;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: var(--success);
+      transition: width 0.2s ease, background-color 0.2s ease;
+    }
+
+    .progress-bar.has-failed {
+      background: var(--fail);
+    }
+
+    /* Controls bar */
+    .controls-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      background: #272832;
+      color: #fff;
+      border: 1px solid var(--card-border);
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    button:hover {
+      background: #353744;
+      border-color: #4a4d5e;
+    }
+
+    button.btn-primary {
+      background: #2563eb;
+      border-color: #3b82f6;
+    }
+
+    button.btn-primary:hover {
+      background: #1d4ed8;
+    }
+
+    button.active {
+      background: #38bdf8;
+      color: #0f172a;
+      border-color: #38bdf8;
+    }
+
+    .search-input {
+      background: #1c1d22;
+      border: 1px solid var(--card-border);
+      color: #fff;
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-size: 14px;
+      min-width: 250px;
+      outline: none;
+    }
+
+    .search-input:focus {
+      border-color: var(--cyan);
+    }
+
+    /* Suite Section */
+    .suite-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+
+    .suite-header {
+      padding: 14px 18px;
+      background: #202229;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+      border-bottom: 1px solid transparent;
+    }
+
+    .suite-header.open {
+      border-bottom-color: var(--card-border);
+    }
+
+    .suite-title {
+      font-size: 16px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .suite-badge {
+      font-size: 12px;
+      font-family: var(--font-mono);
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    .badge-pass { background: rgba(34, 197, 94, 0.2); color: var(--success); }
+    .badge-fail { background: rgba(239, 68, 68, 0.2); color: var(--fail); }
+
+    .test-list {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .test-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 10px 18px;
+      border-bottom: 1px solid #252731;
+      font-size: 14px;
+    }
+
+    .test-item:last-child {
+      border-bottom: none;
+    }
+
+    .test-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-grow: 1;
+    }
+
+    .status-icon {
+      font-weight: 700;
+      font-size: 16px;
+    }
+
+    .status-icon.passed { color: var(--success); }
+    .status-icon.failed { color: var(--fail); }
+
+    .test-name {
+      color: #e4e4e7;
+    }
+
+    .test-meta {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-left: 12px;
+    }
+
+    .error-details {
+      margin-top: 8px;
+      padding: 12px;
+      background: #2b1717;
+      border-left: 4px solid var(--fail);
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: #fca5a5;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="title-row">
+        <div>
+          <h1>Minecraft Java Edition Voxel Game <span class="badge-mc">E2E Test Runner</span></h1>
+          <div class="subtitle">Pure Browser & Headless Test Suite (Tiers 1-4 Feature, Boundary, Pairwise & Workloads)</div>
+        </div>
+        <div class="btn-group">
+          <button id="runAllBtn" class="btn-primary">▶ Run All Tests</button>
+          <button id="exportJsonBtn">Export JSON</button>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card stat-total">
+          <div class="stat-value" id="statTotal">0</div>
+          <div class="stat-label">Total Tests</div>
+        </div>
+        <div class="stat-card stat-passed">
+          <div class="stat-value" id="statPassed">0</div>
+          <div class="stat-label">Passed</div>
+        </div>
+        <div class="stat-card stat-failed">
+          <div class="stat-value" id="statFailed">0</div>
+          <div class="stat-label">Failed</div>
+        </div>
+        <div class="stat-card stat-duration">
+          <div class="stat-value" id="statDuration">0 ms</div>
+          <div class="stat-label">Duration</div>
+        </div>
+      </div>
+
+      <div class="progress-bar-container">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+    </header>
+
+    <div class="controls-bar">
+      <div class="btn-group">
+        <button class="filter-tier active" data-tier="all">All Tiers</button>
+        <button class="filter-tier" data-tier="Tier 1">Tier 1: Features</button>
+        <button class="filter-tier" data-tier="Tier 2">Tier 2: Boundaries</button>
+        <button class="filter-tier" data-tier="Tier 3">Tier 3: Pairwise</button>
+        <button class="filter-tier" data-tier="Tier 4">Tier 4: Workloads</button>
+      </div>
+      <div>
+        <input type="text" id="searchInput" class="search-input" placeholder="Filter tests by name...">
+      </div>
+    </div>
+
+    <div id="suitesContainer">
+      <!-- Test Suites dynamically rendered here -->
+    </div>
+  </div>
+
+  <!-- Test Harness & Suites -->
+  <script src="test_harness.js"></script>
+  <script src="tier1_features.test.js"></script>
+  <script src="tier2_boundaries.test.js"></script>
+  <script src="tier3_pairwise.test.js"></script>
+  <script src="tier4_workloads.test.js"></script>
+
+  <script>
+    let latestResults = null;
+    let currentTierFilter = 'all';
+    let currentSearchFilter = '';
+
+    const statTotal = document.getElementById('statTotal');
+    const statPassed = document.getElementById('statPassed');
+    const statFailed = document.getElementById('statFailed');
+    const statDuration = document.getElementById('statDuration');
+    const progressBar = document.getElementById('progressBar');
+    const suitesContainer = document.getElementById('suitesContainer');
+    const searchInput = document.getElementById('searchInput');
+
+    async function executeTests() {
+      statTotal.textContent = '0';
+      statPassed.textContent = '0';
+      statFailed.textContent = '0';
+      statDuration.textContent = '0 ms';
+      progressBar.style.width = '0%';
+      progressBar.classList.remove('has-failed');
+      suitesContainer.innerHTML = '<div style="text-align:center; padding: 40px; color:#9ca3af;">Executing test suites...</div>';
+
+      const results = await window.TestHarness.runAllSuites({
+        onProgress(testResult, overall) {
+          statTotal.textContent = overall.total;
+          statPassed.textContent = overall.passed;
+          statFailed.textContent = overall.failed;
+          const pct = Math.round((overall.total / Math.max(1, overall.total)) * 100);
+          progressBar.style.width = pct + '%';
+          if (overall.failed > 0) progressBar.classList.add('has-failed');
+        }
+      });
+
+      latestResults = results;
+      statDuration.textContent = results.durationMs + ' ms';
+      statTotal.textContent = results.total;
+      statPassed.textContent = results.passed;
+      statFailed.textContent = results.failed;
+      progressBar.style.width = '100%';
+      renderSuites();
+    }
+
+    function renderSuites() {
+      if (!latestResults) return;
+      suitesContainer.innerHTML = '';
+
+      for (const suite of latestResults.suites) {
+        // Apply tier filter
+        if (currentTierFilter !== 'all' && !suite.name.includes(currentTierFilter)) {
+          continue;
+        }
+
+        // Apply search filter to tests
+        const matchingTests = suite.tests.filter(t => {
+          if (!currentSearchFilter) return true;
+          return t.name.toLowerCase().includes(currentSearchFilter.toLowerCase()) ||
+                 suite.name.toLowerCase().includes(currentSearchFilter.toLowerCase());
+        });
+
+        if (matchingTests.length === 0) continue;
+
+        const card = document.createElement('div');
+        card.className = 'suite-card';
+
+        const hasFailures = suite.failed > 0;
+        const header = document.createElement('div');
+        header.className = 'suite-header open';
+        header.innerHTML = `
+          <div class="suite-title">
+            <span class="status-icon ${hasFailures ? 'failed' : 'passed'}">${hasFailures ? '✖' : '✔'}</span>
+            <span>${suite.name}</span>
+          </div>
+          <div style="display:flex; align-items:center; gap: 8px;">
+            <span class="suite-badge ${hasFailures ? 'badge-fail' : 'badge-pass'}">
+              ${suite.passed} / ${suite.tests.length} passed
+            </span>
+            <span style="color:#9ca3af; font-size:12px; font-family:var(--font-mono);">${suite.durationMs}ms</span>
+          </div>
+        `;
+
+        const testList = document.createElement('div');
+        testList.className = 'test-list';
+
+        header.addEventListener('click', () => {
+          header.classList.toggle('open');
+          testList.style.display = header.classList.contains('open') ? 'flex' : 'none';
+        });
+
+        for (const t of matchingTests) {
+          const item = document.createElement('div');
+          item.className = 'test-item';
+          const isPassed = t.status === 'passed';
+
+          let errorHtml = '';
+          if (t.error) {
+            errorHtml = `<div class="error-details">${t.error.message}\n${t.error.stack || ''}</div>`;
+          }
+
+          item.innerHTML = `
+            <div style="width: 100%;">
+              <div class="test-info">
+                <span class="status-icon ${isPassed ? 'passed' : 'failed'}">${isPassed ? '✓' : '✗'}</span>
+                <span class="test-name">${t.name}</span>
+                <span class="test-meta">${t.durationMs}ms</span>
+              </div>
+              ${errorHtml}
+            </div>
+          `;
+          testList.appendChild(item);
+        }
+
+        card.appendChild(header);
+        card.appendChild(testList);
+        suitesContainer.appendChild(card);
+      }
+    }
+
+    // Filter Buttons
+    document.querySelectorAll('.filter-tier').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-tier').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentTierFilter = btn.getAttribute('data-tier');
+        renderSuites();
+      });
+    });
+
+    // Search Input
+    searchInput.addEventListener('input', (e) => {
+      currentSearchFilter = e.target.value.trim();
+      renderSuites();
+    });
+
+    // Run All Button
+    document.getElementById('runAllBtn').addEventListener('click', executeTests);
+
+    // Export JSON Button
+    document.getElementById('exportJsonBtn').addEventListener('click', () => {
+      if (!latestResults) return alert('Please run tests first!');
+      const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(latestResults, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute('href', dataStr);
+      downloadAnchor.setAttribute('download', 'minecraft_test_results.json');
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    });
+
+    // Auto-execute on load
+    window.addEventListener('DOMContentLoaded', () => {
+      executeTests();
+    });
+  </script>
+</body>
+</html>
